@@ -45,12 +45,4 @@ GiraRifugi è un'app Android innovativa che trasforma l'esperienza dei rifugi al
 
 Distribuito sotto licenza MIT. Vedi `LICENSE` per maggiori informazioni.
 
-## 👥 Team
-
-- [Il tuo nome]
-- [Nome designer]
-- [Nome backend developer]
-
----
-
 **GiraRifugi** - *Trasforma ogni escursione in un'avventura digitale* 🏔️✨

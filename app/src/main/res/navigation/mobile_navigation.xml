@@ -8,31 +8,31 @@
     <fragment
         android:id="@+id/nav_map"
         android:name="com.example.mountainpassport_girarifugi.ui.map.MapFragment"
-        android:label="Mappa"
+        android:label="Mountain Passport"
         tools:layout="@layout/fragment_map" />
 
     <fragment
         android:id="@+id/nav_rifugi"
         android:name="com.example.mountainpassport_girarifugi.ui.rifugi.RifugiFragment"
-        android:label="Rifugi"
+        android:label="Mountain Passport"
         tools:layout="@layout/fragment_rifugi" />
 
     <fragment
         android:id="@+id/nav_scan"
         android:name="com.example.mountainpassport_girarifugi.ui.scan.ScanFragment"
-        android:label="Scan QR"
+        android:label="Mountain Passport"
         tools:layout="@layout/fragment_scan" />
 
     <fragment
         android:id="@+id/nav_leaderboard"
         android:name="com.example.mountainpassport_girarifugi.ui.leaderboard.LeaderboardFragment"
-        android:label="Classifica"
+        android:label="Mountain Passport"
         tools:layout="@layout/fragment_leaderboard" />
 
     <fragment
         android:id="@+id/nav_profile"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.ProfileFragment"
-        android:label="Profilo"
+        android:label="Mountain Passport"
         tools:layout="@layout/fragment_profile" />
 
 </navigation>

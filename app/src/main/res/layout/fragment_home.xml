@@ -7,7 +7,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Scan"
+        android:text="Home"
         android:gravity="center"
         android:textSize="30sp"
         android:textColor="@color/green"/>

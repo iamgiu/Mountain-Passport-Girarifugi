@@ -17,6 +17,8 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
+        supportActionBar?.hide()
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -34,9 +36,9 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        // Gestisci il FAB separatamente
+        // Gestisce il FAB separatamente
         binding.fabScan.setOnClickListener {
-            navController.navigate(R.id.nav_scan) // Se hai questa destinazione
+            navController.navigate(R.id.nav_scan)
         }
 
         setupActionBarWithNavController(navController, appBarConfiguration)

@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="green">#339933</color>
+
+    <!-- Colori principali -->
+    <color name="green">#4CAF50</color>
+    <color name="light_green">#E8F5E8</color>
+    <color name="dark_green">#2E7D32</color>
+
+    <!-- Colori base -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray">#666666</color>
+    <color name="light_gray">#E0E0E0</color>
+
+    <color name="background_light">#F5F5F5</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
 </resources>

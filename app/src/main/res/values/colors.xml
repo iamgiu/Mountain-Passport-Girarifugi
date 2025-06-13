@@ -11,6 +11,9 @@
     <color name="black">#000000</color>
     <color name="gray">#666666</color>
     <color name="light_gray">#E0E0E0</color>
+    <color name="brown">#8D6E63</color>
+    <color name="gray_light">#F5F5F5</color>
+    <color name="gray_dark">#616161</color>
 
     <color name="background_light">#F5F5F5</color>
     <color name="teal_200">#FF03DAC5</color>

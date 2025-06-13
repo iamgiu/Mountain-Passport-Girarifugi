@@ -2,6 +2,7 @@ package com.example.mountainpassport_girarifugi.ui.map
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
 import android.preference.PreferenceManager
@@ -12,6 +13,9 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.model.Rifugio
+import com.example.mountainpassport_girarifugi.data.model.TipoRifugio
 import com.example.mountainpassport_girarifugi.databinding.FragmentMapBinding
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationServices
@@ -20,6 +24,7 @@ import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
@@ -35,6 +40,37 @@ class MapFragment : Fragment() {
     private var myLocationOverlay: MyLocationNewOverlay? = null
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
+
+    // Lista dei rifugi di esempio
+    private val rifugiEsempio = listOf(
+        Rifugio(
+            id = 1,
+            nome = "Rifugio Torino",
+            localita = "Courmayeur, Valle d'Aosta",
+            altitudine = 3375,
+            latitudine = 45.8467,
+            longitudine = 6.8719,
+            tipo = TipoRifugio.RIFUGIO
+        ),
+        Rifugio(
+            id = 2,
+            nome = "Rifugio Vittorio Sella",
+            localita = "Alagna Valsesia, Piemonte",
+            altitudine = 2584,
+            latitudine = 45.9167,
+            longitudine = 7.9333,
+            tipo = TipoRifugio.RIFUGIO
+        ),
+        Rifugio(
+            id = 3,
+            nome = "Bivacco della Grigna",
+            localita = "Mandello del Lario, Lombardia",
+            altitudine = 2184,
+            latitudine = 45.9333,
+            longitudine = 9.3833,
+            tipo = TipoRifugio.BIVACCO
+        )
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -112,6 +148,9 @@ class MapFragment : Fragment() {
             // Configura l'overlay per la posizione utente
             setupLocationOverlay()
 
+            // Aggiungi i marker dei rifugi
+            addRifugiMarkers()
+
             // Forza il refresh della mappa
             binding.mapView.invalidate()
 
@@ -127,6 +166,62 @@ class MapFragment : Fragment() {
         myLocationOverlay?.enableMyLocation()
         myLocationOverlay?.enableFollowLocation()
         binding.mapView.overlays.add(myLocationOverlay)
+    }
+
+    private fun addRifugiMarkers() {
+        rifugiEsempio.forEach { rifugio ->
+            val marker = Marker(binding.mapView).apply {
+                position = GeoPoint(rifugio.latitudine, rifugio.longitudine)
+                title = rifugio.nome
+                snippet = "${rifugio.localita} - ${rifugio.altitudine} m"
+
+                // Imposta l'icona in base al tipo di rifugio
+                icon = getMarkerIcon(rifugio.tipo)
+
+                // Configura l'info window personalizzata
+                infoWindow = CustomInfoWindow(binding.mapView, rifugio) { rifugioCliccato ->
+                    onRifugioDettagliClick(rifugioCliccato)
+                }
+
+                // Gestisci il click sul marker
+                setOnMarkerClickListener { marker, mapView ->
+                    if (marker.isInfoWindowShown) {
+                        marker.closeInfoWindow()
+                    } else {
+                        marker.showInfoWindow()
+                    }
+                    true
+                }
+            }
+
+            binding.mapView.overlays.add(marker)
+        }
+    }
+
+    private fun getMarkerIcon(tipo: TipoRifugio): Drawable? {
+        return when (tipo) {
+            TipoRifugio.RIFUGIO -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_cabin_24)
+            TipoRifugio.BIVACCO -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_cabin_24)
+            TipoRifugio.CAPANNA -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_cabin_24)
+        }?.apply {
+            // Colora l'icona
+            setTint(ContextCompat.getColor(requireContext(), R.color.brown))
+        }
+    }
+
+    private fun onRifugioDettagliClick(rifugio: Rifugio) {
+        // Qui puoi navigare alla scheda dettagli del rifugio
+        // Per ora mostra un toast
+        Toast.makeText(
+            requireContext(),
+            "Apertura dettagli per: ${rifugio.nome}",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        // Esempio di navigazione (uncomment quando avrai il fragment dei dettagli):
+        // findNavController().navigate(
+        //     MapFragmentDirections.actionMapFragmentToDettagliRifugioFragment(rifugio.id)
+        // )
     }
 
     private fun setupClickListeners() {

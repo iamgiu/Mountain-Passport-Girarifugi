@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/info_window_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Immagine del rifugio -->
+    <ImageView
+        android:id="@+id/imageRifugio"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginBottom="12dp"
+        android:background="@color/gray_light"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_cabin_24" />
+
+    <!-- Nome del rifugio -->
+    <TextView
+        android:id="@+id/textNome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:text="Nome Rifugio"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Località -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_location_24"
+            app:tint="@color/green" />
+
+        <TextView
+            android:id="@+id/textLocalita"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Località"
+            android:textColor="@color/gray_dark"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <!-- Altitudine -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_cabin_24"
+            app:tint="@color/green" />
+
+        <TextView
+            android:id="@+id/textAltitudine"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 m s.l.m."
+            android:textColor="@color/gray_dark"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <!-- Bottoni -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/buttonDettagli"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/green"
+            android:text="Dettagli"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
+</LinearLayout>

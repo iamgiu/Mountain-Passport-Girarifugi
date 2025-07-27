@@ -4,14 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/white_green">
 
-    <!-- Header -->
+    <!-- Header  -->
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/green"
         android:orientation="vertical"
         android:padding="16dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -29,13 +28,14 @@
                 android:layout_height="28dp"
                 android:layout_marginEnd="8dp"
                 android:src="@drawable/ic_cabin_24"
-                app:tint="@color/white" />
+                app:tint="@color/black" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_alternates_extrabold"
                 android:text="Mountain Passport"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -46,8 +46,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="4dp"
+            android:fontFamily="@font/montserrat_alternates_bold"
             android:text="Digital Girarifugi"
-            android:textColor="@color/white"
+            android:textColor="@color/black"
             android:textSize="14sp" />
 
     </LinearLayout>
@@ -64,138 +65,72 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="16dp">
 
             <!-- Welcome Message -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="Benvenuto!"
+                android:textColor="@color/black"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:fontFamily="@font/montserrat_semibold"
+                android:text="Naviga tra i rifugi disponibili,\nricevi supporto, fatti guidare."
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:lineSpacingExtra="2dp" />
+
+            <!-- Tabs Per te / Amici -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="Benvenuto!"
-                    android:textColor="@color/black"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="8dp"
-                    android:text="Scegli la tua attività per iniziare l'avventura"
-                    android:textColor="@color/black"
-                    android:textSize="16sp" />
-
-            </LinearLayout>
-
-            <!-- Activity Buttons - Horizontal Layout -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
                 android:orientation="horizontal"
-                android:weightSum="2">
+                android:layout_marginBottom="24dp"
+                android:padding="4dp">
 
-                <!-- Attività Rifugi Button -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/btnAttivitaRifugi"
+                <TextView
+                    android:id="@+id/tab_per_te"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="@color/green"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="8dp"
-                    app:strokeColor="@color/green"
-                    app:strokeWidth="3dp">
+                    android:fontFamily="@font/montserrat_bold"
+                    android:text="Per te"
+                    android:textSize="16sp"
+                    android:textColor="@color/green_black"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:padding="12dp" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:layout_marginEnd="8dp"
-                            android:src="@drawable/ic_cabin_24"
-                            app:tint="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="Attività Rifugi"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Attività Amici Button -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/btnAttivitaAmici"
+                <TextView
+                    android:id="@+id/tab_amici"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="@color/teal_200"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/teal_200"
-                    app:strokeWidth="2dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:layout_marginEnd="8dp"
-                            android:src="@drawable/ic_group_24"
-                            app:tint="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="Attività Amici"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
+                    android:fontFamily="@font/montserrat_semibold"
+                    android:text="Amici"
+                    android:textSize="16sp"
+                    android:textColor="#666666"
+                    android:gravity="center"
+                    android:padding="12dp" />
 
             </LinearLayout>
 
-            <!-- Contenuto Dinamico che cambierà in base al pulsante selezionato -->
+            <!-- Contenuto Dinamico -->
             <LinearLayout
                 android:id="@+id/contenutoAttivita"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- RIFUGI CONTENT (mostrato di default) -->
+                <!-- RIFUGI CONTENT -->
                 <LinearLayout
                     android:id="@+id/rifugiContent"
                     android:layout_width="match_parent"
@@ -203,411 +138,304 @@
                     android:orientation="vertical"
                     android:visibility="visible">
 
+                    <!-- Card Il tuo punteggio -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="20dp"
+                            android:background="@drawable/gradient_green_card">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Il tuo punteggio"
+                                    android:textColor="@color/white"
+                                    android:textSize="23dp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/montserrat_bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Scopri come\nraggiungere i\ntuoi obiettivi!"
+                                    android:textColor="@color/white"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/montserrat_semibold"
+                                    android:lineSpacingExtra="2dp" />
+
+                                <TextView
+                                    android:id="@+id/textScore"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="@color/white"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/montserrat_semibold" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="36dp"
+                                    android:layout_marginTop="12dp"
+                                    android:text="SCOPRI"
+                                    android:textColor="@color/green"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="@color/white"
+                                    app:cornerRadius="18dp"
+                                    android:paddingHorizontal="16dp"
+                                    android:fontFamily="@font/montserrat_bold" />
+
+                            </LinearLayout>
+
+                            <!-- Circular Progress -->
+                            <RelativeLayout
+                                android:layout_width="120dp"
+                                android:layout_height="120dp"
+                                android:layout_gravity="center_vertical">
+
+                                <ProgressBar
+                                    android:id="@+id/progressScore"
+                                    android:layout_width="120dp"
+                                    android:layout_height="120dp"
+                                    android:indeterminateOnly="false"
+                                    android:progress="0"
+                                    android:max="100"
+                                    style="?android:attr/progressBarStyleHorizontal"
+                                    android:progressDrawable="@drawable/circular_progress_thick" />
+
+                                <TextView
+                                    android:id="@+id/textScoreOverlay"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_centerInParent="true"
+                                    android:textColor="@color/white"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/montserrat_bold" />
+                            </RelativeLayout>
+
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:text="🏔️ Attività Rifugi Disponibili"
-                        android:textColor="@color/green"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:text="Escursione programmata per domani"
+                        android:textColor="@color/black"
+                        android:textSize="25dp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/montserrat_bold" />
 
-                    <!-- Card Rifugio 1 -->
-                    <com.google.android.material.card.MaterialCardView
+                    <!-- Escursione programmata -->
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
+                        android:layout_marginBottom="20dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp">
 
-                        <LinearLayout
+                        <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                            android:layout_height="300dp"
+                            android:layout_marginTop="6dp">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Rifugio Monte Bianco"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Altitudine: 2.173m • Posti letto: 120"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
+                            <!-- SFONDO CON IMMAGINE -->
+                            <ImageView
+                                android:id="@+id/backgroundImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/mountain_background"
+                                android:contentDescription="Sfondo rifugio" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Escursione programmata per domani"
-                                android:textColor="@color/green"
-                                android:textSize="12sp" />
+                            <!-- Overlay scuro sopra l'immagine -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="#66000000" />
 
-                        </LinearLayout>
+                            <!-- CONTENUTO ESCURSIONE -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:padding="20dp">
 
-                    </com.google.android.material.card.MaterialCardView>
+                                <!-- Nome Rifugio Grande -->
+                                <TextView
+                                    android:id="@+id/textNomeRifugio"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="@color/white"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/montserrat_bold" />
 
-                    <!-- Card Rifugio 2 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
+                                <!-- Spacer per spingere il contenuto in basso -->
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="0dp"
+                                    android:layout_weight="1" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                                <!-- Layout in basso con km/altitudine a sinistra e freccia a destra -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Rifugio Cervino"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
+                                    <!-- Riga con altitudine e distanza a sinistra -->
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:orientation="horizontal">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Altitudine: 3.260m • Posti letto: 80"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
+                                        <ImageView
+                                            android:layout_width="16dp"
+                                            android:layout_height="16dp"
+                                            android:src="@drawable/ic_route_24"
+                                            app:tint="@color/white"
+                                            android:layout_gravity="center_vertical" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Disponibile per prenotazione"
-                                android:textColor="@color/green"
-                                android:textSize="12sp" />
+                                        <TextView
+                                            android:id="@+id/textDistanza"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="4dp"
+                                            android:layout_marginEnd="12dp"
+                                            android:textColor="@color/white"
+                                            android:textSize="14sp"
+                                            android:fontFamily="@font/montserrat_semibold" />
 
-                        </LinearLayout>
+                                        <ImageView
+                                            android:layout_width="16dp"
+                                            android:layout_height="16dp"
+                                            android:src="@drawable/ic_cabin_24"
+                                            app:tint="@color/white"
+                                            android:layout_gravity="center_vertical" />
 
-                    </com.google.android.material.card.MaterialCardView>
+                                        <TextView
+                                            android:id="@+id/textAltitudine"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="4dp"
+                                            android:textColor="@color/white"
+                                            android:textSize="14sp"
+                                            android:fontFamily="@font/montserrat_semibold" />
+                                    </LinearLayout>
 
-                    <!-- Card Rifugio 3 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
+                                    <!-- Freccia a destra -->
+                                    <ImageView
+                                        android:id="@+id/buttonFreccia"
+                                        android:layout_width="24dp"
+                                        android:layout_height="24dp"
+                                        android:src="@drawable/ic_arrow_forward_24"
+                                        app:tint="@color/white" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                                </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Rifugio Gran Paradiso"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
+                            </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Altitudine: 2.732m • Posti letto: 60"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
+                        </FrameLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Trekking guidato questo weekend"
-                                android:textColor="@color/green"
-                                android:textSize="12sp" />
+                    </androidx.cardview.widget.CardView>
 
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card Rifugio 4 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Rifugio Rosa dei Banchi"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Altitudine: 2.766m • Posti letto: 40"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Chiuso per manutenzione"
-                                android:textColor="@android:color/holo_red_dark"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card Rifugio 4 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
-
+                    <!-- SEZIONE RIFUGI DELLA SETTIMANA CON BONUS PUNTI -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:layout_marginBottom="20dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <!-- Titolo sezione con icona bonus -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Rifugio Rosa dei Banchi"
-                            android:textColor="@color/black"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="16dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Altitudine: 2.766m • Posti letto: 40"
-                            android:textColor="@color/black"
-                            android:textSize="14sp" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Rifugi della settimana"
+                                android:textColor="@color/black"
+                                android:textSize="25sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/montserrat_bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        </LinearLayout>
+
+                        <!-- RecyclerView orizzontale per rifugi bonus -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerRifugiBonus"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Chiuso per manutenzione"
-                            android:textColor="@android:color/holo_red_dark"
-                            android:textSize="12sp" />
+                            android:orientation="horizontal"
+                            android:paddingStart="0dp"
+                            android:paddingEnd="16dp"
+                            android:clipToPadding="false"
+                            tools:listitem="@layout/card_rifugio" />
 
                     </LinearLayout>
 
-                    </com.google.android.material.card.MaterialCardView>
-
-                </LinearLayout>
-
-                <!-- AMICI CONTENT (nascosto di default) -->
-                <LinearLayout
-                    android:id="@+id/amiciContent"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:text="👥 Attività con Amici"
-                        android:textColor="@color/teal_200"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <!-- Card Attività Amici 1 -->
-                    <com.google.android.material.card.MaterialCardView
+                    <!-- SEZIONE SUGGERIMENTI PERSONALIZZATI -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
+                        android:orientation="vertical"
+                        android:layout_marginBottom="20dp">
 
+                        <!-- Titolo sezione -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="16dp">
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="Escursione di Gruppo - Lago Maggiore"
+                                android:layout_weight="1"
+                                android:text="Ti potrebbe interessare..."
                                 android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Partecipanti: Marco, Giulia, Alessandro, Sofia"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Sabato 15 Giugno - Ore 8:00"
-                                android:textColor="@color/teal_200"
-                                android:textSize="12sp" />
+                                android:textSize="25sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/montserrat_bold" />
 
                         </LinearLayout>
 
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card Attività Amici 2 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
-
-                        <LinearLayout
+                        <!-- RecyclerView orizzontale per suggerimenti -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerSuggerimenti"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                            android:orientation="horizontal"
+                            android:paddingStart="0dp"
+                            android:paddingEnd="16dp"
+                            android:clipToPadding="false"
+                            tools:listitem="@layout/card_rifugio" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Trekking Fotografico - Cinque Terre"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Partecipanti: Luca, Emma, Matteo"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Domenica 23 Giugno - Ore 7:30"
-                                android:textColor="@color/teal_200"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card Attività Amici 3 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Via Ferrata - Dolomiti"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Partecipanti: Chiara, Roberto, Francesca, Davide, Anna"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Weekend 29-30 Giugno"
-                                android:textColor="@color/teal_200"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card Attività Amici 4 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="4dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Corso di Arrampicata - Palestra Rocks"
-                                android:textColor="@color/black"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Partecipanti: Martina, Simone, Elisa"
-                                android:textColor="@color/black"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Tutti i martedì - Ore 19:00"
-                                android:textColor="@color/teal_200"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -633,7 +461,7 @@
         android:layout_marginBottom="120dp"
         android:src="@drawable/ic_notifications_black_24dp"
         app:backgroundTint="@color/green"
-        app:fabSize="mini"
+        app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:tint="@color/white" />

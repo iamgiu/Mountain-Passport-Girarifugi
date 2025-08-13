@@ -23,4 +23,6 @@
     <color name="green_black">#03640D</color>
     <color name="green_highlight">#07F51F</color>
     <color name="green_gray">#048611</color>
+
+    <color name="green_2">#AFDCCD</color>
 </resources>

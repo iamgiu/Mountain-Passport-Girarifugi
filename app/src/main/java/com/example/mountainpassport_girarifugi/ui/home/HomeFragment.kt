@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.graphics.Paint
 import android.widget.TextView
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
@@ -43,6 +44,9 @@ class HomeFragment : Fragment() {
 
         // Setup RecyclerViews orizzontali
         setupRecyclerViews(view)
+
+        // Setup Feed Amici
+        setupFeedAmici(view)
     }
 
     private fun setupEscursioneProgrammata(view: View) {
@@ -103,6 +107,24 @@ class HomeFragment : Fragment() {
         val suggerimenti = getSuggerimentiPersonalizzati()
         val adapterSuggerimenti = RifugiHorizontalAdapter(suggerimenti, false) // false per nascondere badge bonus
         recyclerSuggerimenti.adapter = adapterSuggerimenti
+    }
+
+    private fun setupFeedAmici(view: View) {
+        val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
+        recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+
+        val feed = listOf(
+            FeedAmico("Mario Rossi", R.drawable.ic_account_circle_24, "ha visitato un rifugio", "2 ore fa"),
+            FeedAmico("Lucia Bianchi", R.drawable.ic_account_circle_24, "ha guadagnato un achievement", "5 ore fa"),
+            FeedAmico("Giovanni Verde", R.drawable.ic_account_circle_24, "ha visitato un rifugio", "1 giorno fa"),
+            FeedAmico("Anna Blu", R.drawable.ic_account_circle_24, "ha lasciato una recensione", "1 giorno fa"),
+            FeedAmico("Marco Neri", R.drawable.ic_account_circle_24, "ha completato 5 rifugi", "2 giorni fa"),
+            FeedAmico("Sofia Rosa", R.drawable.ic_account_circle_24, "ha visitato un rifugio", "3 giorni fa"),
+            FeedAmico("Luca Viola", R.drawable.ic_account_circle_24, "ha guadagnato 150 punti", "4 giorni fa")
+        )
+
+        val adapter = FeedAmiciAdapter(feed)
+        recyclerFeed.adapter = adapter
     }
 
     private fun getRifugiBonus(): List<RifugioCard> {
@@ -187,9 +209,14 @@ class HomeFragment : Fragment() {
         val tabPerTe = view?.findViewById<TextView>(R.id.tab_per_te)
         val tabAmici = view?.findViewById<TextView>(R.id.tab_amici)
         val rifugiContent = view?.findViewById<LinearLayout>(R.id.rifugiContent)
+        val amiciContent = view?.findViewById<LinearLayout>(R.id.amicicontent)
 
         when (activeButton) {
             "rifugi" -> {
+                // attivo
+                tabPerTe?.paintFlags = (tabPerTe?.paintFlags ?: 0) or Paint.UNDERLINE_TEXT_FLAG
+                // non attivo
+                tabAmici?.paintFlags = (tabAmici?.paintFlags ?: 0) and Paint.UNDERLINE_TEXT_FLAG.inv()
                 tabPerTe?.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
                 tabPerTe?.setTypeface(null, android.graphics.Typeface.BOLD)
                 tabPerTe?.alpha = 1.0f
@@ -201,9 +228,14 @@ class HomeFragment : Fragment() {
                 tabAmici?.animate()?.scaleX(1.0f)?.scaleY(1.0f)?.setDuration(200)?.start()
 
                 rifugiContent?.visibility = View.VISIBLE
+                amiciContent?.visibility = View.GONE
             }
 
             "amici" -> {
+                // attivo
+                tabAmici?.paintFlags = (tabAmici?.paintFlags ?: 0) or Paint.UNDERLINE_TEXT_FLAG
+                // non attivo
+                tabPerTe?.paintFlags = (tabPerTe?.paintFlags ?: 0) and Paint.UNDERLINE_TEXT_FLAG.inv()
                 tabAmici?.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
                 tabAmici?.setTypeface(null, android.graphics.Typeface.BOLD)
                 tabAmici?.alpha = 1.0f
@@ -215,6 +247,7 @@ class HomeFragment : Fragment() {
                 tabPerTe?.animate()?.scaleX(1.0f)?.scaleY(1.0f)?.setDuration(200)?.start()
 
                 rifugiContent?.visibility = View.GONE
+                amiciContent?.visibility = View.VISIBLE
             }
         }
     }
@@ -229,5 +262,30 @@ class HomeFragment : Fragment() {
         val tempo: String,
         val immagine: String,
         val bonusPunti: Int? = null
+    )
+
+    data class FeedAmico(
+        val nomeUtente: String,
+        val avatar: Int,
+        val testoAttivita: String,
+        val tempo: String,
+        val tipoAttivita: TipoAttivita = TipoAttivita.GENERIC,
+        val rifugioInfo: RifugioInfo? = null
+    )
+
+    enum class TipoAttivita {
+        RIFUGIO_VISITATO,
+        ACHIEVEMENT,
+        PUNTI_GUADAGNATI,
+        RECENSIONE,
+        GENERIC
+    }
+
+    data class RifugioInfo(
+        val nome: String,
+        val localita: String,
+        val altitudine: String,
+        val puntiGuadagnati: Int,
+        val immagine: String? = null
     )
 }

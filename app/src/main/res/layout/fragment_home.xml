@@ -103,7 +103,7 @@
                     android:layout_weight="1"
                     android:fontFamily="@font/montserrat_bold"
                     android:text="Per te"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textColor="@color/green_black"
                     android:textStyle="bold"
                     android:gravity="center"
@@ -116,7 +116,7 @@
                     android:layout_weight="1"
                     android:fontFamily="@font/montserrat_semibold"
                     android:text="Amici"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textColor="#666666"
                     android:gravity="center"
                     android:padding="12dp" />
@@ -125,7 +125,7 @@
 
             <!-- Contenuto Dinamico -->
             <LinearLayout
-                android:id="@+id/contenutoAttivita"
+                android:id="@+id/contenutoAmici"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -437,6 +437,21 @@
 
                     </LinearLayout>
 
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/amicicontent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerFeedAmici"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:listitem="@layout/card_feed_amici"/>
                 </LinearLayout>
 
             </LinearLayout>

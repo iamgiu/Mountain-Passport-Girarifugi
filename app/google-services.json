@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "280236733451",
+    "project_id": "mountain-passport-girarifugi",
+    "storage_bucket": "mountain-passport-girarifugi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:280236733451:android:1d3a8d4c5a6a93a5a3030e",
+        "android_client_info": {
+          "package_name": "com.example.mountainpassport_girarifugi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcATzahLu_LBoz0W3nr9Nvqfe1hB85UGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

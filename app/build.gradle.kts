@@ -1,4 +1,7 @@
 plugins {
+    //id("com.android.application")
+    // Google services Gradle plugin
+    id("com.google.gms.google-services")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 }
@@ -51,6 +54,11 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.play.services.gcm)
     implementation(libs.play.services.location)
+    implementation(libs.firebase.bom)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.firebase.auth)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

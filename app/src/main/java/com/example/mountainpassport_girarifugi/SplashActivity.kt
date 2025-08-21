@@ -18,8 +18,8 @@ class SplashActivity : AppCompatActivity() {
         // Hide action bar
         supportActionBar?.hide()
 
-        // TODO SPLASHACTIVITY LAYOUT!
-        // setContentView(R.layout.activity_splash)
+        // TODO SPLASH ACTIVITY LAYOUT!
+        setContentView(R.layout.activity_splash)
 
         firebaseAuth = FirebaseAuth.getInstance()
 

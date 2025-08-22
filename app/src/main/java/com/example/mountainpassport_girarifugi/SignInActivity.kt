@@ -43,11 +43,11 @@ class SignInActivity : AppCompatActivity() {
     private fun validateInput(email: String, password: String): Boolean {
         return when {
             email.isEmpty() -> {
-                binding.emailLayout.error = "Email è richiesta"
+                binding.emailLayout.error = "Email richiesta"
                 false
             }
             password.isEmpty() -> {
-                binding.passwordLayout.error = "Password è richiesta"
+                binding.passwordLayout.error = "Password richiesta"
                 false
             }
             !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
@@ -82,11 +82,11 @@ class SignInActivity : AppCompatActivity() {
         finish()
     }
 
-    override fun onStart() {
-        super.onStart()
-        // Check if user is already signed in
-        if (firebaseAuth.currentUser != null) {
-            navigateToMainActivity()
-        }
-    }
+//    override fun onStart() {
+//        super.onStart()
+//        // Check if user is already signed in
+//        if (firebaseAuth.currentUser != null) {
+//            navigateToMainActivity()
+//        }
+//    }
 }

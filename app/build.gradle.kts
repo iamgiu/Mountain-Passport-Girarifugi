@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.play.services.gcm)
     implementation(libs.play.services.location)
-    implementation(libs.firebase.bom)
+    implementation(platform(libs.firebase.bom))
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)

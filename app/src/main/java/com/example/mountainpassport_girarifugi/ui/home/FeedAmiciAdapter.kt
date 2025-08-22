@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
 
 class FeedAmiciAdapter(
-    private val feedItems: List<HomeFragment.FeedAmico>
+    private val feedItems: List<HomeViewModel.FeedAmico>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -59,7 +59,7 @@ class FeedAmiciAdapter(
         private val textNotifica: TextView = itemView.findViewById(R.id.textNotifica)
         private val textTempo: TextView = itemView.findViewById(R.id.textTempo)
 
-        fun bind(item: HomeFragment.FeedAmico) {
+        fun bind(item: HomeViewModel.FeedAmico) {
             // Genera iniziali dal nome
             val initials = getInitials(item.nomeUtente)
             avatarInitials.text = initials
@@ -96,7 +96,7 @@ class FeedAmiciAdapter(
         private val altitudineRifugio: TextView = itemView.findViewById(R.id.altitudineRifugio)
         private val textPunti: TextView = itemView.findViewById(R.id.textPunti)
 
-        fun bind(item: HomeFragment.FeedAmico) {
+        fun bind(item: HomeViewModel.FeedAmico) {
             // Setup avatar
             val initials = getInitials(item.nomeUtente)
             avatarInitials.text = initials

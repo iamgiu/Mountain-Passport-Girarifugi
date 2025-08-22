@@ -10,13 +10,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
 
 class RifugiHorizontalAdapter(
-    private val rifugi: List<HomeFragment.RifugioCard>,
+    private val rifugi: List<HomeViewModel.RifugioCard>,
     private val showBonusBadge: Boolean = false
 ) : RecyclerView.Adapter<RifugiHorizontalAdapter.RifugioViewHolder>() {
 
-    private var onItemClickListener: ((HomeFragment.RifugioCard) -> Unit)? = null
+    private var onItemClickListener: ((HomeViewModel.RifugioCard) -> Unit)? = null
 
-    fun setOnItemClickListener(listener: (HomeFragment.RifugioCard) -> Unit) {
+    fun setOnItemClickListener(listener: (HomeViewModel.RifugioCard) -> Unit) {
         onItemClickListener = listener
     }
 
@@ -47,7 +47,7 @@ class RifugiHorizontalAdapter(
         private val badgeBonus: LinearLayout = itemView.findViewById(R.id.badgeBonus)
         private val textBonusPunti: TextView = itemView.findViewById(R.id.textBonusPunti)
 
-        fun bind(rifugio: HomeFragment.RifugioCard, showBonusBadge: Boolean) {
+        fun bind(rifugio: HomeViewModel.RifugioCard, showBonusBadge: Boolean) {
             textNomeRifugio.text = rifugio.nome
             textDistanza.text = rifugio.distanza
             textAltitudine.text = rifugio.altitudine

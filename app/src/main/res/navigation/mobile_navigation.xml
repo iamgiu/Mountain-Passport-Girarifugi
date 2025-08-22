@@ -11,6 +11,16 @@
         android:label="Bentornato!"
         tools:layout="@layout/fragment_home" />
 
+        <action
+            android:id="@+id/action_homeFragment_to_notificationsFragment"
+            app:destination="@+id/nav_notifications" />
+
+    <fragment
+        android:id="@+id/nav_notifications"
+        android:name="com.example.mountainpassport_girarifugi.ui.notifications.NotificationsFragment"
+        android:label="Notifiche" />
+
+
     <fragment
         android:id="@+id/nav_map"
         android:name="com.example.mountainpassport_girarifugi.ui.map.MapFragment"

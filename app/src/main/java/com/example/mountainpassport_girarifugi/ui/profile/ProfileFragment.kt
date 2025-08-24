@@ -12,9 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.SignInActivity
-import com.example.mountainpassport_girarifugi.model.User
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 // Data class per rappresentare un timbro
 data class Stamp(
@@ -29,13 +27,6 @@ class ProfileFragment : Fragment() {
     private lateinit var stampsRecyclerView: RecyclerView
     private lateinit var stampsAdapter: StampsAdapter
     private lateinit var firebaseAuth: FirebaseAuth
-    private lateinit var firestore: FirebaseFirestore
-
-    // Views
-    private lateinit var fullNameTextView: TextView
-    private lateinit var usernameTextView: TextView
-    private lateinit var monthlyScoreTextView: TextView
-    private lateinit var visitedRefugesTextView: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,9 +39,8 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza Firebase Auth e Firestore
+        // Inizializza Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance()
-        firestore = FirebaseFirestore.getInstance()
 
         // Inizializza le view
         initViews(view)
@@ -58,10 +48,7 @@ class ProfileFragment : Fragment() {
         // Configura la RecyclerView dei timbri
         setupStampsRecyclerView()
 
-        // Carica i dati utente da Firebase
-        loadUserData()
-
-        // Carica i dati di esempio per i timbri
+        // Carica i dati di esempio
         loadSampleData()
 
         // Setup logout button
@@ -70,58 +57,16 @@ class ProfileFragment : Fragment() {
 
     private fun initViews(view: View) {
         stampsRecyclerView = view.findViewById(R.id.stampsRecyclerView)
-        fullNameTextView = view.findViewById(R.id.fullNameTextView)
-        usernameTextView = view.findViewById(R.id.usernameTextView)
-        monthlyScoreTextView = view.findViewById(R.id.monthlyScoreTextView)
-        visitedRefugesTextView = view.findViewById(R.id.visitedRefugesTextView)
-    }
 
-    private fun loadUserData() {
-        val currentUser = firebaseAuth.currentUser ?: return
+        // Puoi anche impostare i dati del profilo qui se vuoi
+        val fullNameTextView = view.findViewById<TextView>(R.id.fullNameTextView)
+        val usernameTextView = view.findViewById<TextView>(R.id.usernameTextView)
+        val monthlyScoreTextView = view.findViewById<TextView>(R.id.monthlyScoreTextView)
+        val visitedRefugesTextView = view.findViewById<TextView>(R.id.visitedRefugesTextView)
 
-        firestore.collection("users").document(currentUser.uid)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val user = document.toObject(User::class.java)
-                    user?.let {
-                        updateUIWithUserData(it)
-                    }
-                } else {
-                    // Se il documento non esiste, mostra dati di default
-                    setDefaultData()
-                }
-            }
-            .addOnFailureListener {
-                // In caso di errore, mostra dati di default
-                setDefaultData()
-            }
-    }
-
-    private fun updateUIWithUserData(user: User) {
-        // Nome completo
-        val fullName = "${user.nome} ${user.cognome}".trim()
-        if (fullName.isNotBlank()) {
-            fullNameTextView.text = fullName
-        } else {
-            fullNameTextView.text = "Nome non impostato"
-        }
-
-        // Nickname/Username
-        if (user.nickname.isNotBlank()) {
-            usernameTextView.text = user.nickname
-        } else {
-            usernameTextView.text = "username_non_impostato"
-        }
-
-        // Statistiche (static for now)
-        monthlyScoreTextView.text = "1,245"
-        visitedRefugesTextView.text = "23"
-    }
-
-    private fun setDefaultData() {
-        fullNameTextView.text = "Nome non disponibile"
-        usernameTextView.text = "username"
+        // Esempio di dati del profilo
+        fullNameTextView.text = "Marco Rossi"
+        usernameTextView.text = "marcorossi_explorer"
         monthlyScoreTextView.text = "1,245"
         visitedRefugesTextView.text = "23"
     }
@@ -178,11 +123,5 @@ class ProfileFragment : Fragment() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         requireActivity().finish()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Ricarica i dati utente quando il fragment torna in primo piano
-        loadUserData()
     }
 }

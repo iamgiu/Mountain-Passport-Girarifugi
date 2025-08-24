@@ -212,27 +212,6 @@
                     tools:listitem="@layout/item_stamp"
                     tools:itemCount="6" />
 
-                <!-- Logout Section -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="32dp"
-                    android:layout_marginBottom="16dp"
-                    android:background="@color/light_gray" />
-
-                <TextView
-                    android:id="@+id/logoutButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="16dp"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:padding="16dp"
-                    android:text="Logout"
-                    android:textColor="@color/green"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
             </LinearLayout>
 
         </LinearLayout>

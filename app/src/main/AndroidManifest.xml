@@ -71,12 +71,6 @@
             android:name=".ProfileSetupActivity"
             android:exported="false" />
 
-        <!-- Edit Profile Activity -->
-        <activity
-            android:name=".EditProfileActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

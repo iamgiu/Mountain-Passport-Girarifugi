@@ -5,12 +5,15 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mountainpassport_girarifugi.databinding.ActivitySignInBinding
+import com.example.mountainpassport_girarifugi.model.User
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class SignInActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignInBinding
     private lateinit var firebaseAuth: FirebaseAuth
+    private lateinit var firestore: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +25,7 @@ class SignInActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         firebaseAuth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
 
         // Navigate to Sign Up
         binding.signUpText.setOnClickListener {
@@ -67,11 +71,38 @@ class SignInActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Toast.makeText(this, "Accesso effettuato con successo!", Toast.LENGTH_SHORT).show()
-                    navigateToMainActivity()
+                    checkUserProfile()
                 } else {
                     val errorMessage = task.exception?.message ?: "Accesso non riuscito"
                     Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
                 }
+            }
+    }
+
+    private fun checkUserProfile() {
+        val currentUser = firebaseAuth.currentUser ?: return
+
+        firestore.collection("users").document(currentUser.uid)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val user = document.toObject(User::class.java)
+                    if (user != null && user.isProfileComplete()) {
+                        // Profile is complete, go to main activity
+                        navigateToMainActivity()
+                    } else {
+                        // Profile is incomplete, go to profile setup
+                        navigateToProfileSetup()
+                    }
+                } else {
+                    // User document doesn't exist, create profile
+                    navigateToProfileSetup()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Errore nel verificare il profilo: ${e.message}", Toast.LENGTH_SHORT).show()
+                // In case of error, go to profile setup
+                navigateToProfileSetup()
             }
     }
 
@@ -82,11 +113,10 @@ class SignInActivity : AppCompatActivity() {
         finish()
     }
 
-//    override fun onStart() {
-//        super.onStart()
-//        // Check if user is already signed in
-//        if (firebaseAuth.currentUser != null) {
-//            navigateToMainActivity()
-//        }
-//    }
+    private fun navigateToProfileSetup() {
+        val intent = Intent(this, ProfileSetupActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
 }

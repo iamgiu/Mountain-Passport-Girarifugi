@@ -59,12 +59,17 @@
             android:exported="false"
             android:theme="@style/Theme.MountainPassportGirarifugi" />
 
-        <!-- MAIN ACTIVITY - No longer the launcher -->
+        <!-- MAIN ACTIVITY -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:label="@string/app_name"
             android:theme="@style/Theme.MountainPassportGirarifugi" />
+
+        <!-- Profile Setup Activity -->
+        <activity
+            android:name=".ProfileSetupActivity"
+            android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"

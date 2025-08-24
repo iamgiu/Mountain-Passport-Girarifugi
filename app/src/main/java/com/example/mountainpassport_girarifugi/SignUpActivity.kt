@@ -82,15 +82,19 @@ class SignUpActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Toast.makeText(this, "Account creato con successo!", Toast.LENGTH_SHORT).show()
-                    // Navigate back to sign in
-                    val intent = Intent(this, SignInActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    startActivity(intent)
-                    finish()
+                    // Navigate to profile setup for new users
+                    navigateToProfileSetup()
                 } else {
                     val errorMessage = task.exception?.message ?: "Creazione account non riuscita"
                     Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
                 }
             }
+    }
+
+    private fun navigateToProfileSetup() {
+        val intent = Intent(this, ProfileSetupActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

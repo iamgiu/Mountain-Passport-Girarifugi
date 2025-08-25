@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mountainpassport_girarifugi.databinding.ActivitySignInBinding
 import com.example.mountainpassport_girarifugi.model.User
+import android.app.AlertDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -42,6 +43,54 @@ class SignInActivity : AppCompatActivity() {
                 signInUser(email, password)
             }
         }
+
+        binding.forgotPasswordText.setOnClickListener {
+            showForgotPasswordDialog()
+        }
+    }
+
+    private fun showForgotPasswordDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.activity_reset_password, null)
+        val emailEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.emailEt)
+
+        // Pre-populate with current email if available
+        val currentEmail = binding.emailEt.text.toString().trim()
+        if (currentEmail.isNotEmpty()) {
+            emailEditText.setText(currentEmail)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Reimposta Password")
+            .setMessage("Inserisci la tua email per ricevere il link di reset della password")
+            .setView(dialogView)
+            .setPositiveButton("Invia") { _, _ ->
+                val email = emailEditText.text.toString().trim()
+                if (email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    sendPasswordResetEmail(email)
+                } else {
+                    Toast.makeText(this, "Inserisci un'email valida", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Annulla", null)
+            .create()
+
+        dialog.show()
+    }
+
+    private fun sendPasswordResetEmail(email: String) {
+        firebaseAuth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(
+                        this,
+                        "Email di reset inviata! Controlla la tua casella di posta.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    val errorMessage = task.exception?.message ?: "Errore nell'invio dell'email"
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+                }
+            }
     }
 
     private fun validateInput(email: String, password: String): Boolean {

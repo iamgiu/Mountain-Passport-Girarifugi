@@ -30,6 +30,12 @@ class SettingsViewModel : ViewModel() {
     private val _validationErrors = MutableLiveData<ValidationErrors>()
     val validationErrors: LiveData<ValidationErrors> = _validationErrors
 
+    private val _resetPasswordSuccess = MutableLiveData<Boolean>()
+    val resetPasswordSuccess: LiveData<Boolean> = _resetPasswordSuccess
+
+    private val _resetPasswordError = MutableLiveData<String>()
+    val resetPasswordError: LiveData<String> = _resetPasswordError
+
     init {
         loadUserData()
     }
@@ -107,6 +113,25 @@ class SettingsViewModel : ViewModel() {
             }
     }
 
+    fun sendPasswordResetEmail() {
+        val currentUserEmail = firebaseAuth.currentUser?.email
+
+        if (currentUserEmail.isNullOrEmpty()) {
+            _resetPasswordError.value = "Nessuna email associata all'account"
+            return
+        }
+
+        firebaseAuth.sendPasswordResetEmail(currentUserEmail)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _resetPasswordSuccess.value = true
+                } else {
+                    val errorMessage = task.exception?.message ?: "Errore nell'invio dell'email di reset"
+                    _resetPasswordError.value = errorMessage
+                }
+            }
+    }
+
     fun performLogout() {
         firebaseAuth.signOut()
         _logoutEvent.value = true
@@ -127,6 +152,14 @@ class SettingsViewModel : ViewModel() {
     fun onErrorMessageHandled() {
         _errorMessage.value = null
     }
+
+    fun onResetPasswordSuccessHandled() {
+        _resetPasswordSuccess.value = false
+    }
+
+    fun onResetPasswordErrorHandled() {
+        _resetPasswordError.value = null
+    }
 }
 
 data class ValidationErrors(
@@ -134,58 +167,3 @@ data class ValidationErrors(
     var cognomeError: String? = null,
     var nicknameError: String? = null
 )
-
-//    // Esempio di LiveData per gestire le impostazioni
-//    private val _notificationsEnabled = MutableLiveData<Boolean>(true)
-//    val notificationsEnabled: LiveData<Boolean> = _notificationsEnabled
-//
-//    private val _locationEnabled = MutableLiveData<Boolean>(true)
-//    val locationEnabled: LiveData<Boolean> = _locationEnabled
-//
-//    private val _themeMode = MutableLiveData<String>("light")
-//    val themeMode: LiveData<String> = _themeMode
-//
-//    // LiveData per gestire il logout
-//    private val _logoutEvent = MutableLiveData<Boolean>()
-//    val logoutEvent: LiveData<Boolean> = _logoutEvent
-//
-//    fun toggleNotifications(enabled: Boolean) {
-//        _notificationsEnabled.value = enabled
-//        // Qui potresti salvare la preferenza in SharedPreferences o database
-//        saveNotificationPreference(enabled)
-//    }
-//
-//    fun toggleLocation(enabled: Boolean) {
-//        _locationEnabled.value = enabled
-//        // Salva la preferenza
-//        saveLocationPreference(enabled)
-//    }
-//
-//    fun setTheme(theme: String) {
-//        _themeMode.value = theme
-//        // Salva la preferenza
-//        saveThemePreference(theme)
-//    }
-//
-//    fun performLogout() {
-//        firebaseAuth.signOut()
-//        _logoutEvent.value = true
-//    }
-//
-//    // Metodo per resettare l'evento di logout dopo averlo gestito
-//    fun onLogoutEventHandled() {
-//        _logoutEvent.value = false
-//    }
-//
-//    private fun saveNotificationPreference(enabled: Boolean) {
-//        // TODO: Implementa il salvataggio delle preferenze
-//        // SharedPreferences o Firebase
-//    }
-//
-//    private fun saveLocationPreference(enabled: Boolean) {
-//        // TODO: Implementa il salvataggio delle preferenze
-//    }
-//
-//    private fun saveThemePreference(theme: String) {
-//        // TODO: Implementa il salvataggio delle preferenze
-//    }

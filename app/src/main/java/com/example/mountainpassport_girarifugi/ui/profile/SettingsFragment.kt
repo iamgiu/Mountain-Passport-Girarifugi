@@ -53,6 +53,10 @@ class SettingsFragment : Fragment() {
         binding.logoutButton.setOnClickListener {
             showLogoutConfirmationDialog()
         }
+
+        binding.resetPasswordButton.setOnClickListener {
+            showResetPasswordConfirmationDialog()
+        }
     }
 
     private fun setupObservers() {
@@ -66,6 +70,7 @@ class SettingsFragment : Fragment() {
             binding.salvaButton.isEnabled = !isLoading
             binding.annullaButton.isEnabled = !isLoading
             binding.logoutButton.isEnabled = !isLoading
+            binding.resetPasswordButton.isEnabled = !isLoading
 
             // Puoi aggiungere un progress bar se necessario
         }
@@ -101,6 +106,26 @@ class SettingsFragment : Fragment() {
                 viewModel.onLogoutEventHandled()
             }
         }
+
+        // Observer per il successo del reset password
+        viewModel.resetPasswordSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(
+                    requireContext(),
+                    "Email di reset password inviata! Controlla la tua casella di posta.",
+                    Toast.LENGTH_LONG
+                ).show()
+                viewModel.onResetPasswordSuccessHandled()
+            }
+        }
+
+        // Observer per gli errori del reset password
+        viewModel.resetPasswordError.observe(viewLifecycleOwner) { errorMessage ->
+            errorMessage?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                viewModel.onResetPasswordErrorHandled()
+            }
+        }
     }
 
     private fun populateFields(user: User) {
@@ -115,6 +140,17 @@ class SettingsFragment : Fragment() {
             .setMessage("Sei sicuro di voler uscire?")
             .setPositiveButton("Sì") { _, _ ->
                 viewModel.performLogout()
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun showResetPasswordConfirmationDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Reset Password")
+            .setMessage("Vuoi ricevere un'email per reimpostare la password?")
+            .setPositiveButton("Sì") { _, _ ->
+                viewModel.sendPasswordResetEmail()
             }
             .setNegativeButton("Annulla", null)
             .show()

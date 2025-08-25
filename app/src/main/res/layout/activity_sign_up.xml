@@ -19,6 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="60dp"
+            android:fontFamily="@font/montserrat_bold"
             android:text="Crea Account"
             android:textColor="@color/white"
             android:textSize="32sp"
@@ -32,6 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/montserrat_semibold"
             android:text="Unisciti alla community degli escursionisti"
             android:textColor="@color/white"
             android:textSize="16sp"
@@ -92,7 +94,7 @@
                     app:boxStrokeColor="@color/green"
                     app:hintTextColor="@color/green"
                     app:passwordToggleEnabled="true"
-                    app:passwordToggleTint="@color/green">
+                    app:passwordToggleTint="@color/blue_black">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/passwordEt"
@@ -114,7 +116,7 @@
                     app:boxStrokeColor="@color/green"
                     app:hintTextColor="@color/green"
                     app:passwordToggleEnabled="true"
-                    app:passwordToggleTint="@color/green">
+                    app:passwordToggleTint="@color/blue_black">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/confirmPasswordEt"
@@ -131,7 +133,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginBottom="16dp"
-                    android:backgroundTint="@color/green"
+                    android:backgroundTint="@color/blue"
+                    android:fontFamily="@font/montserrat_bold"
                     android:text="Crea Account"
                     android:textColor="@color/white"
                     android:textSize="16sp"
@@ -151,6 +154,7 @@
             android:layout_marginBottom="32dp"
             android:background="?android:attr/selectableItemBackground"
             android:padding="12dp"
+            android:fontFamily="@font/montserrat_semibold"
             android:text="Hai già un account? Accedi"
             android:textColor="@color/white"
             android:textSize="16sp"

@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="0dp"
     android:layout_marginVertical="4dp"
-    app:cardBackgroundColor="@color/green_2"
+    app:cardBackgroundColor="@color/green_light"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp">
 
@@ -37,7 +37,7 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:background="@color/green">
+                    android:background="@color/blue">
 
                     <TextView
                         android:id="@+id/avatarInitials"
@@ -121,7 +121,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rifugio Laghi Verdi"
-                    android:textColor="@color/black"
+                    android:textColor="@color/blue_black"
                     android:textSize="16sp"
                     android:fontFamily="@font/montserrat_bold" />
 
@@ -157,7 +157,7 @@
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_leaderboard_24"
-                        app:tint="@color/green"
+                        app:tint="@color/blue_black"
                         android:layout_marginEnd="4dp" />
 
                     <TextView
@@ -165,7 +165,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="+75 punti"
-                        android:textColor="@color/green"
+                        android:textColor="@color/blue_black"
                         android:textSize="12sp"
                         android:fontFamily="@font/montserrat_bold" />
 
@@ -179,7 +179,7 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@drawable/ic_arrow_forward_24"
-                app:tint="@color/green"
+                app:tint="@color/blue_black"
                 android:layout_marginStart="8dp" />
 
         </LinearLayout>

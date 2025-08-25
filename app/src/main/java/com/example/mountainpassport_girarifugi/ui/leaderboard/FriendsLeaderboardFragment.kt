@@ -5,13 +5,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.lifecycle.Observer
 import com.example.mountainpassport_girarifugi.databinding.FragmentFriendsLeaderboardBinding
+import com.google.android.material.snackbar.Snackbar
 
 class FriendsLeaderboardFragment : Fragment() {
 
     private var _binding: FragmentFriendsLeaderboardBinding? = null
     private val binding get() = _binding!!
+
+    // Condividi il ViewModel con il Fragment padre
+    private val viewModel: LeaderboardViewModel by activityViewModels()
+
+    private lateinit var adapter: FriendsLeaderboardAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -25,31 +33,29 @@ class FriendsLeaderboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Per ora mostro solo un messaggio di test
-        // Quando avrai il layout fragment_friends_leaderboard.xml,
-        // puoi configurare qui il RecyclerView
-
-        // Esempio di dati di test (rimuovi quando implementi i dati reali)
-        setupTestData()
+        setupRecyclerView()
+        observeViewModel()
     }
 
-    private fun setupTestData() {
-        // Se hai un RecyclerView nel layout, puoi configurarlo così:
-        /*
-        binding.recyclerViewFriends.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = FriendsAdapter(getTestFriends())
-        }
-        */
+    private fun setupRecyclerView() {
+        adapter = FriendsLeaderboardAdapter()
+        binding.recyclerViewFriends.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewFriends.adapter = adapter
     }
 
-    // Dati di test (rimuovi quando implementi i dati reali)
-    private fun getTestFriends(): List<Friend> {
-        return listOf(
-            Friend("Marco Rossi", "MR", 2850, 45),
-            Friend("Anna Bianchi", "AB", 2340, 38),
-            Friend("Luca Verdi", "LV", 1890, 29)
-        )
+    private fun observeViewModel() {
+        // Osserva i dati degli amici
+        viewModel.friendsLeaderboard.observe(viewLifecycleOwner, Observer { friends ->
+            adapter.submitList(friends)
+        })
+    }
+
+    private fun showErrorMessage(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setAction("Riprova") {
+                viewModel.loadFriendsLeaderboard()
+            }
+            .show()
     }
 
     override fun onDestroyView() {
@@ -57,11 +63,3 @@ class FriendsLeaderboardFragment : Fragment() {
         _binding = null
     }
 }
-
-// Classe di esempio per i dati (sostituisci con la tua classe)
-data class Friend(
-    val name: String,
-    val initials: String,
-    val points: Int,
-    val refuges: Int
-)

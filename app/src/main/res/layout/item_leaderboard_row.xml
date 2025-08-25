@@ -27,31 +27,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
-            android:text="1°"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:fontFamily="@font/montserrat_bold"
+            android:gravity="center"
             android:minWidth="32dp"
-            android:gravity="center" />
+            android:text="1°"
+            android:textColor="@color/blue_black"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-        <!-- Avatar (cerchio con iniziali) -->
+        <!-- Foto utente circolare -->
         <androidx.cardview.widget.CardView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
             android:layout_marginEnd="16dp"
-            app:cardCornerRadius="24dp"
-            app:cardBackgroundColor="@color/green"
-            app:cardElevation="2dp">
+            app:cardCornerRadius="40dp"
+            app:cardElevation="4dp">
 
-            <TextView
-                android:id="@+id/textViewAvatar"
+            <ImageView
+                android:id="@+id/imageSecondPlace"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="MR"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
+                android:scaleType="centerCrop"
+                android:src="@drawable/avatar_giovanni" />
         </androidx.cardview.widget.CardView>
 
         <!-- Informazioni dell'amico -->
@@ -65,8 +62,9 @@
                 android:id="@+id/textViewFriendName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_bold"
                 android:text="Marco Rossi"
-                android:textColor="@color/black"
+                android:textColor="@color/blue_black"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -74,9 +72,10 @@
                 android:id="@+id/textViewRefuges"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_medium"
                 android:layout_marginTop="2dp"
                 android:text="45 rifugi"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="@color/blue_black"
                 android:textSize="12sp" />
 
         </LinearLayout>
@@ -93,16 +92,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="2850 pt"
-                android:textColor="@color/green"
+                android:textColor="@color/blue_black"
+                android:fontFamily="@font/montserrat_bold"
                 android:textSize="16sp"
                 android:textStyle="bold" />
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginTop="2dp"
-                android:src="@drawable/ic_cabin_24"
-                app:tint="@color/green" />
 
         </LinearLayout>
 

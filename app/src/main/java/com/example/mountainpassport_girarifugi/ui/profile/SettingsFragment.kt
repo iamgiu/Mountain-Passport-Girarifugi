@@ -10,9 +10,11 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.SignInActivity
 import com.example.mountainpassport_girarifugi.databinding.FragmentSettingsBinding
 import com.example.mountainpassport_girarifugi.model.User
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class SettingsFragment : Fragment() {
 
@@ -35,6 +37,9 @@ class SettingsFragment : Fragment() {
 
         setupClickListeners()
         setupObservers()
+
+        // Setup settings FAB
+        setupForwardButton(view)
     }
 
     private fun setupClickListeners() {
@@ -166,5 +171,12 @@ class SettingsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun setupForwardButton(view: View) {
+        val fabForward = view.findViewById<FloatingActionButton>(R.id.fabForward)
+        fabForward.setOnClickListener {
+            findNavController().navigate(R.id.action_settingsFragment_to_profilefragment)
+        }
     }
 }

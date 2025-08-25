@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardViewTop3"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@android:color/transparent"
+    app:cardElevation="0dp"
+    app:cardCornerRadius="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="24dp"
+        android:baselineAligned="false">
+
+        <!-- Secondo posto (sinistra) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="60dp">
+
+            <!-- Card container per secondo posto -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="6dp"
+                app:cardBackgroundColor="@color/green_light">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingVertical="16dp"
+                    android:paddingHorizontal="12dp">
+
+                    <!-- Foto utente circolare -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        app:cardCornerRadius="40dp"
+                        app:cardElevation="4dp">
+
+                        <ImageView
+                            android:id="@+id/imageSecondPlace"
+                            android:layout_width="91dp"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/avatar_giovanni" />
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Nome -->
+                    <TextView
+                        android:id="@+id/textSecondPlaceName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="Alice"
+                        android:textColor="@color/blue_black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <!-- Punteggio -->
+                    <TextView
+                        android:id="@+id/textSecondPlaceScore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/montserrat_semibold"
+                        android:text="10967"
+                        android:textColor="@color/blue_black"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Badge secondo posto -->
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/circle_badge_silver"
+                android:gravity="center"
+                android:text="2"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:elevation="4dp" />
+        </LinearLayout>
+
+        <!-- Primo posto (centro) - più alto -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginHorizontal="8dp">
+
+            <!-- Card container per primo posto -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="@color/green">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingVertical="20dp"
+                    android:paddingHorizontal="16dp">
+
+                    <!-- Foto utente più grande -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="4dp">
+
+                        <ImageView
+                            android:id="@+id/imageFirstPlace"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/avatar_lucia" />
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Nome -->
+                    <TextView
+                        android:id="@+id/textFirstPlaceName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="Giulia"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <!-- Punteggio -->
+                    <TextView
+                        android:id="@+id/textFirstPlaceScore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/montserrat_semibold"
+                        android:text="17849"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Badge primo posto -->
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/circle_badge_gold"
+                android:gravity="center"
+                android:text="1"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:elevation="6dp" />
+        </LinearLayout>
+
+        <!-- Terzo posto (destra) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="60dp">
+
+            <!-- Card container per terzo posto -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="6dp"
+                app:cardBackgroundColor="@color/green_light">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingVertical="16dp"
+                    android:paddingHorizontal="12dp">
+
+                    <!-- Foto utente circolare -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        app:cardCornerRadius="40dp"
+                        app:cardElevation="4dp">
+
+                        <ImageView
+                            android:id="@+id/imageThirdPlace"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/avatar_mario" />
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Nome -->
+                    <TextView
+                        android:id="@+id/textThirdPlaceName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="Fra"
+                        android:textColor="@color/blue_black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <!-- Punteggio -->
+                    <TextView
+                        android:id="@+id/textThirdPlaceScore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/montserrat_semibold"
+                        android:text="9908"
+                        android:textColor="@color/blue_black"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Badge terzo posto -->
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/circle_badge_bronze"
+                android:gravity="center"
+                android:text="3"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:elevation="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

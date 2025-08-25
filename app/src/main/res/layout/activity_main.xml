@@ -42,7 +42,7 @@
         android:id="@+id/fabScan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/green"
+        android:backgroundTint="@color/green_black"
         android:contentDescription="Scansiona QR Code"
         android:src="@drawable/ic_qr_code_scanner_24"
         app:layout_anchor="@id/bottomAppBar"

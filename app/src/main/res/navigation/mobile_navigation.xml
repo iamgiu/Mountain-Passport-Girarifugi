@@ -20,6 +20,10 @@
         android:name="com.example.mountainpassport_girarifugi.ui.notifications.NotificationsFragment"
         android:label="Notifiche" />
 
+        <action
+            android:id="@+id/action_notificationsFragment_to_homeFragment"
+            app:destination="@+id/nav_home" />
+
 
     <fragment
         android:id="@+id/nav_map"
@@ -53,5 +57,9 @@
         android:id="@+id/nav_settings"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.SettingsFragment"
         android:label="Settings" />
+
+        <action
+            android:id="@+id/action_settingsFragment_to_profilefragment"
+            app:destination="@+id/nav_profile" />
 
 </navigation>

@@ -1,58 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<androidx.recyclerview.widget.RecyclerView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/recyclerViewLeaderboard"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <!-- Barra di ricerca -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
-
-            <androidx.appcompat.widget.SearchView
-                android:id="@+id/searchViewFriends"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                app:queryHint="Cerca tra i tuoi amici..."
-                app:iconifiedByDefault="false" />
-
-        </androidx.cardview.widget.CardView>
-
-        <!-- Lista degli amici -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewFriends"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"
-            android:paddingBottom="80dp" />
-
-    </LinearLayout>
-
-    <!-- Add Friends -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddFriend"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="120dp"
-        android:contentDescription="Aggiungi Amico"
-        app:backgroundTint="@color/green"
-        android:src="@drawable/ic_person_add_24"
-        app:tint="@color/white"
-        app:fabSize="mini" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    android:padding="8dp" />

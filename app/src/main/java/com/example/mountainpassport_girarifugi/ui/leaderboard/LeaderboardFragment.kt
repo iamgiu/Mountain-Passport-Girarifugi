@@ -4,11 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import android.animation.ObjectAnimator
+import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.FragmentLeaderboardBinding
-import com.google.android.material.tabs.TabLayoutMediator
 
 class LeaderboardFragment : Fragment() {
 
@@ -28,57 +30,90 @@ class LeaderboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupViewPager()
-        setupTabButtons()
+        setupTabs()
+
+        // Imposta "Amici" come tab selezionato di default
+        selectTab(0)
     }
 
     private fun setupViewPager() {
         val adapter = LeaderboardPagerAdapter(this)
         binding.viewPagerLeaderboard.adapter = adapter
 
-        // Callback per aggiornare i tab quando si cambia pagina
+        // Sincronizza ViewPager con i tab
         binding.viewPagerLeaderboard.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                updateTabSelection(position)
+                selectTab(position)
             }
         })
     }
 
-    private fun setupTabButtons() {
-        binding.btnTabGeneral.setOnClickListener {
+    private fun setupTabs() {
+        binding.btnTabGroups.setOnClickListener {
+            selectTab(0)
             binding.viewPagerLeaderboard.currentItem = 0
         }
-
-        binding.btnTabMonthly.setOnClickListener {
+        binding.btnTabFriends.setOnClickListener {
+            selectTab(1)
             binding.viewPagerLeaderboard.currentItem = 1
         }
-
-        binding.btnTabWeekly.setOnClickListener {
+        binding.btnTabGlobal.setOnClickListener {
+            selectTab(2)
             binding.viewPagerLeaderboard.currentItem = 2
         }
-
-        binding.btnTabFriends.setOnClickListener {
-            binding.viewPagerLeaderboard.currentItem = 3
-        }
-
-        // Imposta il primo tab come selezionato
-        updateTabSelection(0)
     }
 
-    private fun updateTabSelection(position: Int) {
-        // Reset di tutti i tab
-        binding.btnTabGeneral.alpha = 0.6f
-        binding.btnTabMonthly.alpha = 0.6f
-        binding.btnTabWeekly.alpha = 0.6f
-        binding.btnTabFriends.alpha = 0.6f
+    private fun selectTab(position: Int) {
+        // Reset all tabs
+        resetAllTabs()
 
-        // Evidenzia il tab selezionato
         when (position) {
-            0 -> binding.btnTabGeneral.alpha = 1.0f
-            1 -> binding.btnTabMonthly.alpha = 1.0f
-            2 -> binding.btnTabWeekly.alpha = 1.0f
-            3 -> binding.btnTabFriends.alpha = 1.0f
+            0 -> {
+                binding.btnTabGroups.setBackgroundResource(R.drawable.rounded_button_selected)
+                binding.btnTabGroups.setTextColor(ContextCompat.getColor(requireContext(), R.color.light_green))
+                // Aggiungi l'animazione di ingrandimento
+                animateTabSize(binding.btnTabGroups, 1.15f)
+            }
+            1 -> {
+                binding.btnTabFriends.setBackgroundResource(R.drawable.rounded_button_selected)
+                binding.btnTabFriends.setTextColor(ContextCompat.getColor(requireContext(), R.color.light_green))
+                // Aggiungi l'animazione di ingrandimento
+                animateTabSize(binding.btnTabFriends, 1.15f)
+            }
+            2 -> {
+                binding.btnTabGlobal.setBackgroundResource(R.drawable.rounded_button_selected)
+                binding.btnTabGlobal.setTextColor(ContextCompat.getColor(requireContext(), R.color.light_green))
+                // Aggiungi l'animazione di ingrandimento
+                animateTabSize(binding.btnTabGlobal, 1.15f)
+            }
         }
+    }
+
+    private fun animateTabSize(view: View, scale: Float) {
+        val scaleX = ObjectAnimator.ofFloat(view, "scaleX", scale)
+        val scaleY = ObjectAnimator.ofFloat(view, "scaleY", scale)
+        scaleX.duration = 200 // Durata dell'animazione in millisecondi
+        scaleY.duration = 200
+        scaleX.start()
+        scaleY.start()
+    }
+
+    private fun resetAllTabs() {
+        binding.btnTabGroups.setBackgroundResource(R.drawable.rounded_button_unselected)
+        binding.btnTabGroups.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
+        binding.btnTabGroups.scaleX = 1.0f
+        binding.btnTabGroups.scaleY = 1.0f
+
+        binding.btnTabFriends.setBackgroundResource(R.drawable.rounded_button_unselected)
+        binding.btnTabFriends.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
+        binding.btnTabFriends.scaleX = 1.0f
+        binding.btnTabFriends.scaleY = 1.0f
+
+        binding.btnTabGlobal.setBackgroundResource(R.drawable.rounded_button_unselected)
+        binding.btnTabGlobal.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
+        binding.btnTabGlobal.scaleX = 1.0f
+        binding.btnTabGlobal.scaleY = 1.0f
     }
 
     override fun onDestroyView() {
@@ -86,16 +121,15 @@ class LeaderboardFragment : Fragment() {
         _binding = null
     }
 
-    // Adapter per il ViewPager
-    private class LeaderboardPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
-        override fun getItemCount(): Int = 4
+    // Adapter per il ViewPager2
+    private inner class LeaderboardPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
+        override fun getItemCount(): Int = 3
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {
-                0 -> FriendsLeaderboardFragment()
-                1 -> GroupsLeaderboardFragment()
-                2 -> RegionalLeaderboardFragment()
-                3 -> GlobalLeaderboardFragment()
+                0 -> GroupsLeaderboardFragment()
+                1 -> FriendsLeaderboardFragment()
+                2 -> GlobalLeaderboardFragment()
                 else -> FriendsLeaderboardFragment()
             }
         }

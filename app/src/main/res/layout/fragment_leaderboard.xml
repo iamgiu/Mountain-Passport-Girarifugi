@@ -37,7 +37,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_search_24"
-            app:backgroundTint="@color/green_2"
+            app:backgroundTint="@color/green"
             app:fabSize="normal"
             app:tint="@color/green_black" />
     </LinearLayout>

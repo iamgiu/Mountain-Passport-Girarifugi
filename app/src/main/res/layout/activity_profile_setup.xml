@@ -19,6 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="80dp"
+            android:fontFamily="@font/montserrat_bold"
             android:text="Completa il tuo profilo"
             android:textColor="@color/white"
             android:textSize="28sp"
@@ -32,6 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/montserrat_medium"
             android:text="Aggiungi le tue informazioni personali"
             android:textColor="@color/white"
             android:textSize="16sp"
@@ -46,6 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
+            android:fontFamily="@font/montserrat_medium"
             android:text="Email account:"
             android:textColor="@color/white"
             android:textSize="14sp"
@@ -58,6 +61,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:fontFamily="@font/montserrat_semibold"
             android:text="user@example.com"
             android:textColor="@color/white"
             android:textSize="16sp"
@@ -93,6 +97,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
+                    android:fontFamily="@font/montserrat_bold"
                     android:hint="Nome"
                     app:boxStrokeColor="@color/green"
                     app:hintTextColor="@color/green">
@@ -113,6 +118,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
+                    android:fontFamily="@font/montserrat_bold"
                     android:hint="Cognome"
                     app:boxStrokeColor="@color/green"
                     app:hintTextColor="@color/green">
@@ -136,6 +142,7 @@
                     android:hint="Nickname"
                     app:boxStrokeColor="@color/green"
                     app:hintTextColor="@color/green"
+                    android:fontFamily="@font/montserrat_bold"
                     app:helperText="Sarà visibile agli altri utenti">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -152,7 +159,8 @@
                     android:id="@+id/saveButton"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:backgroundTint="@color/green"
+                    android:backgroundTint="@color/blue"
+                    android:fontFamily="@font/montserrat_bold"
                     android:text="Salva Profilo"
                     android:textColor="@color/white"
                     android:textSize="16sp"

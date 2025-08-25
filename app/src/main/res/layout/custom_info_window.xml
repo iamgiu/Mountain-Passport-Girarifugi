@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:background="@drawable/info_window_background"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:backgroundTint="@color/green_light">
 
     <!-- Immagine del rifugio -->
     <ImageView
@@ -24,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:text="Nome Rifugio"
-        android:textColor="@color/black"
+        android:textColor="@color/blue_black"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -41,7 +42,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="8dp"
             android:src="@drawable/ic_location_24"
-            app:tint="@color/green" />
+            app:tint="@color/blue" />
 
         <TextView
             android:id="@+id/textLocalita"
@@ -67,7 +68,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="8dp"
             android:src="@drawable/ic_cabin_24"
-            app:tint="@color/green" />
+            app:tint="@color/blue" />
 
         <TextView
             android:id="@+id/textAltitudine"
@@ -90,8 +91,9 @@
             android:id="@+id/buttonDettagli"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/montserrat_bold"
             android:layout_weight="1"
-            android:backgroundTint="@color/green"
+            android:backgroundTint="@color/blue"
             android:text="Dettagli"
             android:textColor="@color/white" />
 

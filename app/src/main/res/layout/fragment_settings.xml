@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white_green">
+    android:background="@color/light_green">
 
     <!-- Header  -->
     <LinearLayout
@@ -70,6 +70,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_medium"
                 android:text="Modifica le tue informazioni personali"
                 android:textColor="@color/gray"
                 android:textSize="16sp"
@@ -84,17 +85,17 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:hint="Nome"
-                app:boxStrokeColor="@color/green"
-                app:hintTextColor="@color/green"
+                app:boxStrokeColor="@color/green_black"
+                app:hintTextColor="@color/green_black"
                 app:startIconDrawable="@drawable/ic_person_24"
-                app:startIconTint="@color/green">
+                app:startIconTint="@color/green_black">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/nomeEt"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName|textCapWords"
-                    android:textColor="@color/black"
+                    android:textColor="@color/green_black"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -106,17 +107,17 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:hint="Cognome"
-                app:boxStrokeColor="@color/green"
-                app:hintTextColor="@color/green"
+                app:boxStrokeColor="@color/green_black"
+                app:hintTextColor="@color/green_black"
                 app:startIconDrawable="@drawable/ic_person_24"
-                app:startIconTint="@color/green">
+                app:startIconTint="@color/green_black">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/cognomeEt"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName|textCapWords"
-                    android:textColor="@color/black"
+                    android:textColor="@color/green_black"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -128,11 +129,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="40dp"
                 android:hint="Nickname"
-                app:boxStrokeColor="@color/green"
-                app:hintTextColor="@color/green"
+                app:boxStrokeColor="@color/green_black"
+                app:hintTextColor="@color/green_black"
                 app:helperText="Sarà visibile agli altri utenti"
                 app:startIconDrawable="@drawable/ic_account_circle_24"
-                app:startIconTint="@color/green">
+                app:startIconTint="@color/green_black">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/nicknameEt"
@@ -148,7 +149,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Account"
-                android:textColor="@color/black"
+                android:textColor="@color/green_black"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
@@ -161,14 +162,14 @@
                 android:layout_height="56dp"
                 android:layout_marginBottom="32dp"
                 android:text="Logout"
-                android:textColor="@color/green"
+                android:textColor="@color/blue_black"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:cornerRadius="28dp"
-                app:strokeColor="@color/green"
+                app:strokeColor="@color/blue_black"
                 app:strokeWidth="2dp"
                 app:icon="@drawable/ic_person_24"
-                app:iconTint="@color/green"
+                app:iconTint="@color/blue_black"
                 android:textAllCaps="false" />
 
 
@@ -194,11 +195,11 @@
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     android:text="Annulla"
-                    android:textColor="@color/green"
+                    android:textColor="@color/light_blue"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:cornerRadius="28dp"
-                    app:strokeColor="@color/green"
+                    app:strokeColor="@color/light_blue"
                     app:strokeWidth="2dp"
                     android:textAllCaps="false" />
 
@@ -209,7 +210,7 @@
                     android:layout_height="56dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:backgroundTint="@color/green"
+                    android:backgroundTint="@color/blue"
                     android:text="Salva"
                     android:textColor="@color/white"
                     android:textSize="16sp"

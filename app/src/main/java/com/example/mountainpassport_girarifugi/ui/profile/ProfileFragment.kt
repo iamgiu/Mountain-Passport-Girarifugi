@@ -15,7 +15,8 @@ import com.example.mountainpassport_girarifugi.R
 import android.net.Uri
 import android.widget.ImageView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import androidx.core.net.toUri
+import android.graphics.BitmapFactory
+import android.util.Base64
 import java.io.File
 
 class ProfileFragment : Fragment() {
@@ -154,30 +155,42 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    // Fixed method to load saved profile image
     private fun loadSavedProfileImage() {
-        val sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val imagePath = sharedPreferences.getString("profile_image_path", null)
-
-        imagePath?.let { path ->
-            try {
-                val imageFile = File(path)
-                if (imageFile.exists()) {
-                    val imageUri = Uri.fromFile(imageFile)
-                    profileImageView.setImageURI(imageUri)
-                } else {
-                    // File doesn't exist, remove the preference
-                    sharedPreferences.edit()
-                        .remove("profile_image_path")
-                        .apply()
-                }
-            } catch (e: Exception) {
-                // If image can't be loaded, keep default and remove invalid preference
-                e.printStackTrace()
-                sharedPreferences.edit()
-                    .remove("profile_image_path")
-                    .apply()
+        // Observe profile data to get the image
+        viewModel.profileData.observe(viewLifecycleOwner) { profileData ->
+            // Load from Firebase if available
+            val currentUser = viewModel.currentUser.value
+            if (currentUser != null) {
+                loadUserProfileImage(currentUser.uid)
             }
+        }
+    }
+
+    private fun loadUserProfileImage(userId: String) {
+        val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        firestore.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val user = document.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
+                    user?.let {
+                        if (it.profileImageUrl.isNotEmpty()) {
+                            loadImageFromBase64(it.profileImageUrl)
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun loadImageFromBase64(base64String: String) {
+        try {
+            if (base64String.isNotEmpty()) {
+                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                profileImageView.setImageBitmap(bitmap)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

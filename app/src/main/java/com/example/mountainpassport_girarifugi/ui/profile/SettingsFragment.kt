@@ -25,6 +25,8 @@ import android.widget.ImageView
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import android.graphics.BitmapFactory
+import android.util.Base64
 
 class SettingsFragment : Fragment() {
 
@@ -168,6 +170,19 @@ class SettingsFragment : Fragment() {
                 viewModel.onResetPasswordErrorHandled()
             }
         }
+
+        viewModel.imageUploadSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Immagine profilo caricata con successo!", Toast.LENGTH_SHORT).show()
+                viewModel.onImageUploadSuccessHandled()
+            }
+        }
+
+        viewModel.profileImageUri.observe(viewLifecycleOwner) { imageUrl ->
+            if (!imageUrl.isNullOrEmpty()) {
+                loadImageFromBase64(imageUrl)
+            }
+        }
     }
 
     private fun populateFields(user: User) {
@@ -248,26 +263,15 @@ class SettingsFragment : Fragment() {
 
     private fun handleSelectedImage(imageUri: Uri) {
         try {
-            // Copy the image to internal storage
-            val savedImageFile = copyImageToInternalStorage(imageUri)
+            // Mostra l'immagine selezionata immediatamente
+            profileImageView.setImageURI(imageUri)
 
-            if (savedImageFile != null) {
-                // Display the image from internal storage
-                val savedImageUri = Uri.fromFile(savedImageFile)
-                profileImageView.setImageURI(savedImageUri)
+            // Carica su Firestore come Base64
+            viewModel.uploadProfileImageAsBase64(requireContext(), imageUri)
 
-                // Save the internal file path to SharedPreferences
-                val sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
-                sharedPreferences.edit()
-                    .putString("profile_image_path", savedImageFile.absolutePath)
-                    .apply()
-
-                Toast.makeText(requireContext(), "Profile image aggiornata!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(requireContext(), "Errore nel salvare l'immagine", Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(requireContext(), "Caricamento immagine profilo...", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Errore caricamento immagine: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Errore nella selezione immagine: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -297,20 +301,21 @@ class SettingsFragment : Fragment() {
     }
 
     private fun loadSavedProfileImage() {
-        val sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val imagePath = sharedPreferences.getString("profile_image_path", null)
+        val currentUser = viewModel.currentUser.value
+        if (!currentUser?.profileImageUrl.isNullOrEmpty()) {
+            loadImageFromBase64(currentUser!!.profileImageUrl)
+        }
+    }
 
-        imagePath?.let { path ->
-            try {
-                val imageFile = File(path)
-                if (imageFile.exists()) {
-                    val imageUri = Uri.fromFile(imageFile)
-                    profileImageView.setImageURI(imageUri)
-                }
-            } catch (e: Exception) {
-                // If image can't be loaded, keep default
-                e.printStackTrace()
+    private fun loadImageFromBase64(base64String: String) {
+        try {
+            if (base64String.isNotEmpty()) {
+                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                profileImageView.setImageBitmap(bitmap)
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

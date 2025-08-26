@@ -6,6 +6,10 @@ import androidx.lifecycle.MutableLiveData
 import com.example.mountainpassport_girarifugi.user.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 
 class SettingsViewModel : ViewModel() {
 
@@ -38,6 +42,75 @@ class SettingsViewModel : ViewModel() {
 
     private val _profileImageUri = MutableLiveData<String>()
     val profileImageUri: LiveData<String> = _profileImageUri
+
+    private val _imageUploadSuccess = MutableLiveData<Boolean>()
+    val imageUploadSuccess: LiveData<Boolean> = _imageUploadSuccess
+
+    fun uploadProfileImageAsBase64(context: android.content.Context, imageUri: android.net.Uri) {
+        val currentUser = firebaseAuth.currentUser ?: return
+
+        _isLoading.value = true
+
+        try {
+            // Converti l'immagine in Base64
+            val inputStream = context.contentResolver.openInputStream(imageUri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+
+            // Ridimensiona l'immagine per ridurre le dimensioni
+            val resizedBitmap = resizeBitmap(bitmap, 300, 300)
+
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
+            val imageBytes = byteArrayOutputStream.toByteArray()
+            val base64String = Base64.encodeToString(imageBytes, Base64.DEFAULT)
+
+            // Aggiorna il profilo utente con l'immagine Base64
+            updateUserProfileImage(base64String)
+
+        } catch (e: Exception) {
+            _isLoading.value = false
+            _errorMessage.value = "Errore nel processare l'immagine: ${e.message}"
+        }
+    }
+
+    private fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        val ratioBitmap = width.toFloat() / height.toFloat()
+        val ratioMax = maxWidth.toFloat() / maxHeight.toFloat()
+
+        var finalWidth = maxWidth
+        var finalHeight = maxHeight
+
+        if (ratioMax > ratioBitmap) {
+            finalWidth = (maxHeight.toFloat() * ratioBitmap).toInt()
+        } else {
+            finalHeight = (maxWidth.toFloat() / ratioBitmap).toInt()
+        }
+
+        return Bitmap.createScaledBitmap(bitmap, finalWidth, finalHeight, true)
+    }
+
+    private fun updateUserProfileImage(base64Image: String) {
+        val currentUser = firebaseAuth.currentUser ?: return
+        val originalUser = _currentUser.value ?: return
+
+        val updatedUser = originalUser.copy(profileImageUrl = base64Image)
+
+        firestore.collection("users").document(currentUser.uid)
+            .set(updatedUser)
+            .addOnSuccessListener {
+                _isLoading.value = false
+                _currentUser.value = updatedUser
+                _profileImageUri.value = base64Image
+                _imageUploadSuccess.value = true
+            }
+            .addOnFailureListener { e ->
+                _isLoading.value = false
+                _errorMessage.value = "Errore nell'aggiornare il profilo: ${e.message}"
+            }
+    }
 
     init {
         loadUserData()
@@ -167,6 +240,10 @@ class SettingsViewModel : ViewModel() {
 
     fun onResetPasswordErrorHandled() {
         _resetPasswordError.value = null
+    }
+
+    fun onImageUploadSuccessHandled() {
+        _imageUploadSuccess.value = false
     }
 }
 

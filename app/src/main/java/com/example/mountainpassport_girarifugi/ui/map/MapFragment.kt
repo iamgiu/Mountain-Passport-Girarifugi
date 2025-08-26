@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.data.model.Rifugio
 import com.example.mountainpassport_girarifugi.data.model.TipoRifugio
@@ -20,6 +21,7 @@ import com.example.mountainpassport_girarifugi.databinding.FragmentMapBinding
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.tasks.Task
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -101,6 +103,16 @@ class MapFragment : Fragment() {
 
         // Richiedi i permessi di localizzazione
         requestLocationPermissions()
+
+        // Inizializzazione Search Cabin Button
+        setupSeachCabinButton(view)
+    }
+
+    private fun setupSeachCabinButton(view: View) {
+        val buttonFilterRifugi = view.findViewById<FloatingActionButton>(R.id.buttonFilterRifugi)
+        buttonFilterRifugi.setOnClickListener {
+            findNavController().navigate(R.id.action_mapFragment_to_SearchCabinFragment)
+        }
     }
 
     private fun setupLocationRequest() {
@@ -231,11 +243,6 @@ class MapFragment : Fragment() {
             } else {
                 requestLocationPermissions()
             }
-        }
-
-        binding.buttonFilterRifugi.setOnClickListener {
-            Toast.makeText(requireContext(), "Bottone Filtro Rifugi premuto", Toast.LENGTH_SHORT).show()
-            // Qui implementerai il filtro dei rifugi
         }
     }
 

@@ -28,10 +28,10 @@ class GroupsViewModel : ViewModel() {
     val isLoading: LiveData<Boolean> = _isLoading
 
     fun loadGroupData(groupId: String) {
-        _isLoading.value = true
-
         // TODO: Carica i dati reali dal database Firebase
         // Per ora usa dati di esempio
+        _isLoading.value = true
+
         loadSampleGroupMembers()
     }
 
@@ -73,7 +73,7 @@ class GroupsViewModel : ViewModel() {
     }
 
     // Metodo per caricare i membri dal database (da implementare)
-    fun loadGroupMembersFromDatabase(groupId: String) {
+    /*fun loadGroupMembersFromDatabase(groupId: String) {
         _isLoading.value = true
 
         firestore.collection("groups").document(groupId)
@@ -100,10 +100,10 @@ class GroupsViewModel : ViewModel() {
                 // Fallback ai dati di esempio
                 loadSampleGroupMembers()
             }
-    }
+    }*/
 
     // Metodo per caricare le statistiche del gruppo dal database
-    fun loadGroupStatsFromDatabase(groupId: String) {
+    /*fun loadGroupStatsFromDatabase(groupId: String) {
         firestore.collection("groups").document(groupId)
             .get()
             .addOnSuccessListener { document ->
@@ -128,5 +128,5 @@ class GroupsViewModel : ViewModel() {
             .addOnFailureListener { exception ->
                 _loadingError.value = "Errore di connessione: ${exception.message}"
             }
-    }
+    }*/
 }

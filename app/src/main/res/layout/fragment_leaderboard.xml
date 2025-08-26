@@ -31,6 +31,28 @@
             android:layout_height="0dp"
             android:layout_weight="1"/>
 
+        <!-- SearchView nascosta inizialmente, accanto al FAB -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/searchContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:layout_marginEnd="12dp"
+            android:visibility="gone"
+            app:cardCornerRadius="25dp"
+            app:cardElevation="4dp">
+
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/searchView"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:queryHint="Cerca utenti..."
+                android:iconifiedByDefault="false"
+                app:closeIcon="@drawable/ic_close_24px"
+                app:searchIcon="@drawable/ic_search_24" />
+
+        </androidx.cardview.widget.CardView>
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabSearch"
             android:contentDescription="Cerca Amici"

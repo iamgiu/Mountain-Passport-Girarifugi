@@ -18,15 +18,18 @@ data class LeaderboardUser(
 
 class LeaderboardViewModel : ViewModel() {
 
-    // LiveData per i dati degli amici
+    // LiveData per i dati originali
+    private val _originalFriendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
+    private val _originalGlobalLeaderboard = MutableLiveData<List<LeaderboardUser>>()
+    private val _originalGroupsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
+
+    // LiveData per i dati filtrati (visibili nell'UI)
     private val _friendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val friendsLeaderboard: LiveData<List<LeaderboardUser>> = _friendsLeaderboard
 
-    // LiveData per i dati globali
     private val _globalLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val globalLeaderboard: LiveData<List<LeaderboardUser>> = _globalLeaderboard
 
-    // LiveData per i dati dei gruppi
     private val _groupsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val groupsLeaderboard: LiveData<List<LeaderboardUser>> = _groupsLeaderboard
 
@@ -38,8 +41,10 @@ class LeaderboardViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    // Query di ricerca corrente
+    private var currentSearchQuery: String = ""
+
     init {
-        // Carica i dati iniziali
         loadFriendsLeaderboard()
         loadGlobalLeaderboard()
         loadGroupsLeaderboard()
@@ -49,9 +54,8 @@ class LeaderboardViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Qui metteresti la chiamata al repository/API
-                // Per ora uso dati mock
                 val friends = getFriendsMockData()
+                _originalFriendsLeaderboard.value = friends
                 _friendsLeaderboard.value = friends
                 _error.value = null
             } catch (e: Exception) {
@@ -66,8 +70,8 @@ class LeaderboardViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Chiamata API per dati globali
                 val globalData = getGlobalMockData()
+                _originalGlobalLeaderboard.value = globalData
                 _globalLeaderboard.value = globalData
                 _error.value = null
             } catch (e: Exception) {
@@ -82,8 +86,8 @@ class LeaderboardViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Chiamata API per dati dei gruppi
                 val groupsData = getGroupsMockData()
+                _originalGroupsLeaderboard.value = groupsData
                 _groupsLeaderboard.value = groupsData
                 _error.value = null
             } catch (e: Exception) {
@@ -94,7 +98,49 @@ class LeaderboardViewModel : ViewModel() {
         }
     }
 
-    // Funzione per ricaricare tutti i dati
+    // Funzioni di ricerca
+    fun searchInFriends(query: String) {
+        currentSearchQuery = query
+        val originalList = _originalFriendsLeaderboard.value ?: emptyList()
+        val filteredList = filterUsers(originalList, query)
+        _friendsLeaderboard.value = filteredList
+    }
+
+    fun searchInGlobal(query: String) {
+        currentSearchQuery = query
+        val originalList = _originalGlobalLeaderboard.value ?: emptyList()
+        val filteredList = filterUsers(originalList, query)
+        _globalLeaderboard.value = filteredList
+    }
+
+    fun searchInGroups(query: String) {
+        currentSearchQuery = query
+        val originalList = _originalGroupsLeaderboard.value ?: emptyList()
+        val filteredList = filterUsers(originalList, query)
+        _groupsLeaderboard.value = filteredList
+    }
+
+    fun clearSearch() {
+        currentSearchQuery = ""
+        // Ripristina le liste originali
+        _friendsLeaderboard.value = _originalFriendsLeaderboard.value
+        _globalLeaderboard.value = _originalGlobalLeaderboard.value
+        _groupsLeaderboard.value = _originalGroupsLeaderboard.value
+    }
+
+    private fun filterUsers(users: List<LeaderboardUser>, query: String): List<LeaderboardUser> {
+        return if (query.isBlank()) {
+            users
+        } else {
+            val lowerCaseQuery = query.lowercase().trim()
+            users.filter { user ->
+                user.name.lowercase().contains(lowerCaseQuery)
+            }.mapIndexed { index, user ->
+                user.copy(position = index + 1)
+            }
+        }
+    }
+
     fun refreshAllData() {
         loadFriendsLeaderboard()
         loadGlobalLeaderboard()
@@ -113,7 +159,10 @@ class LeaderboardViewModel : ViewModel() {
             LeaderboardUser("Anna", 7500, R.drawable.avatar_sara, 7, 8),
             LeaderboardUser("Paolo", 6200, R.drawable.avatar_sara, 8, 6),
             LeaderboardUser("Marta", 5800, R.drawable.avatar_sara, 9, 5),
-            LeaderboardUser("Federico", 4900, R.drawable.avatar_sara, 10, 4)
+            LeaderboardUser("Federico", 4900, R.drawable.avatar_sara, 10, 4),
+            LeaderboardUser("Alessandro", 4200, R.drawable.avatar_sara, 11, 3),
+            LeaderboardUser("Francesca", 3800, R.drawable.avatar_sara, 12, 2),
+            LeaderboardUser("Matteo", 3200, R.drawable.avatar_sara, 13, 1)
         )
     }
 
@@ -123,7 +172,12 @@ class LeaderboardViewModel : ViewModel() {
             LeaderboardUser("Peak_Hunter", 78234, R.drawable.avatar_marco, 2, 58),
             LeaderboardUser("Summit_King", 65421, R.drawable.avatar_luca, 3, 52),
             LeaderboardUser("Alpine_Pro", 54123, R.drawable.avatar_giovanni, 4, 45),
-            LeaderboardUser("Trail_Master", 43876, R.drawable.avatar_lucia, 5, 38)
+            LeaderboardUser("Trail_Master", 43876, R.drawable.avatar_lucia, 5, 38),
+            LeaderboardUser("Mountain_Explorer", 38954, R.drawable.avatar_sara, 6, 32),
+            LeaderboardUser("Ridge_Walker", 32567, R.drawable.avatar_sara, 7, 28),
+            LeaderboardUser("Peak_Seeker", 28943, R.drawable.avatar_sara, 8, 24),
+            LeaderboardUser("Alpine_Climber", 25432, R.drawable.avatar_sara, 9, 20),
+            LeaderboardUser("Summit_Explorer", 22876, R.drawable.avatar_sara, 10, 18)
         )
     }
 
@@ -133,11 +187,15 @@ class LeaderboardViewModel : ViewModel() {
             LeaderboardUser("Mountain Crew", 134567, R.drawable.avatar_marco, 2, 76),
             LeaderboardUser("Peak Seekers", 112345, R.drawable.avatar_luca, 3, 65),
             LeaderboardUser("Summit Squad", 98765, R.drawable.avatar_giovanni, 4, 54),
-            LeaderboardUser("Trail Blazers", 87654, R.drawable.avatar_lucia, 5, 43)
+            LeaderboardUser("Trail Blazers", 87654, R.drawable.avatar_lucia, 5, 43),
+            LeaderboardUser("Alpine Warriors", 76543, R.drawable.avatar_sara, 6, 38),
+            LeaderboardUser("Mountain Tigers", 65432, R.drawable.avatar_sara, 7, 32),
+            LeaderboardUser("Peak Legends", 54321, R.drawable.avatar_sara, 8, 28),
+            LeaderboardUser("Summit Heroes", 43210, R.drawable.avatar_sara, 9, 24),
+            LeaderboardUser("Trail Masters", 32109, R.drawable.avatar_sara, 10, 20)
         )
     }
 
-    // Funzioni di utilità per ordinamento
     fun sortByPoints(users: List<LeaderboardUser>): List<LeaderboardUser> {
         return users.sortedByDescending { it.points }
             .mapIndexed { index, user -> user.copy(position = index + 1) }

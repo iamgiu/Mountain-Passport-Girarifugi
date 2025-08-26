@@ -43,6 +43,20 @@
         android:label="Mountain Passport"
         tools:layout="@layout/fragment_leaderboard" />
 
+        <action
+            android:id="@+id/action_leaderboardfragment_to_addfriendsFragment"
+            app:destination="@+id/nav_addfriends" />
+
+    <fragment
+        android:id="@+id/nav_addfriends"
+        android:name="com.example.mountainpassport_girarifugi.ui.leaderboard.AddFriendsFragment"
+        android:label="Mountain Passport"
+        tools:layout="@layout/fragment_add_friends" />
+
+        <action
+            android:id="@+id/action_addfriendsFragment_to_leaderboardfragment"
+            app:destination="@+id/nav_leaderboard" />
+
     <fragment
         android:id="@+id/nav_profile"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.ProfileFragment"

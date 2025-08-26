@@ -1,0 +1,241 @@
+package com.example.mountainpassport_girarifugi.ui.leaderboard
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.widget.SearchView
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.databinding.FragmentAddFriendsBinding
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+
+class AddFriendsFragment : Fragment() {
+
+    private var _binding: FragmentAddFriendsBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: AddFriendsViewModel by viewModels()
+
+    private lateinit var usersAdapter: AddFriendsAdapter
+    private var currentTab = 0 // 0 = Utenti, 1 = Gruppi
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentAddFriendsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupTabs()
+        setupRecyclerView()
+        setupSearchFunctionality()
+        observeViewModel()
+
+        // Imposta "Utenti" come tab selezionato di default
+        selectTab(0)
+
+        val fabForwardLeaderboard = view.findViewById<FloatingActionButton>(R.id.fabForwardLeaderboard)
+        fabForwardLeaderboard.setOnClickListener {
+            findNavController().navigate(R.id.action_addfriendsFragment_to_leaderboardfragment)
+        }
+    }
+
+
+    private fun setupTabs() {
+        binding.btnTabPersone.setOnClickListener {
+            selectTab(0)
+        }
+
+        binding.btnTabGroups.setOnClickListener {
+            selectTab(1)
+        }
+    }
+
+    private fun setupRecyclerView() {
+        usersAdapter = AddFriendsAdapter(
+            onUserClick = { user -> onUserProfileClicked(user) },
+            onAddFriendClick = { user -> onAddFriendClicked(user) }
+        )
+
+        binding.recyclerViewUsers.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = usersAdapter
+
+            // Aggiungi un po' di padding per evitare che l'ultimo elemento sia nascosto
+            setPadding(0, 0, 0, 100)
+            clipToPadding = false
+        }
+    }
+
+    private fun setupSearchFunctionality() {
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String): Boolean {
+                performSearch(query)
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String): Boolean {
+                // Ricerca in tempo reale mentre l'utente digita
+                performSearch(newText)
+                return true
+            }
+        })
+
+        // Imposta il focus sulla SearchView
+        binding.searchView.requestFocus()
+    }
+
+    private fun observeViewModel() {
+        viewModel.searchResults.observe(viewLifecycleOwner) { users ->
+            usersAdapter.submitList(users)
+
+            // Mostra/nasconde il messaggio di "nessun risultato"
+            if (users.isEmpty() && binding.searchView.query.isNotEmpty()) {
+                showNoResultsMessage()
+            } else {
+                hideNoResultsMessage()
+            }
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun performSearch(query: String) {
+        when (currentTab) {
+            0 -> viewModel.searchUsers(query)
+            1 -> viewModel.searchGroups(query)
+        }
+    }
+
+    private fun selectTab(position: Int) {
+        currentTab = position
+
+        when (position) {
+            0 -> {
+                // Tab Utenti selezionato
+                binding.btnTabPersone.setBackgroundResource(R.drawable.rounded_button_selected)
+                binding.btnTabPersone.setTextColor(resources.getColor(R.color.light_green, null))
+
+                binding.btnTabGroups.setBackgroundResource(R.drawable.rounded_button_unselected)
+                binding.btnTabGroups.setTextColor(resources.getColor(R.color.green_black, null))
+
+                binding.searchView.queryHint = "Cerca utenti..."
+            }
+            1 -> {
+                // Tab Gruppi selezionato
+                binding.btnTabGroups.setBackgroundResource(R.drawable.rounded_button_selected)
+                binding.btnTabGroups.setTextColor(resources.getColor(R.color.light_green, null))
+
+                binding.btnTabPersone.setBackgroundResource(R.drawable.rounded_button_unselected)
+                binding.btnTabPersone.setTextColor(resources.getColor(R.color.green_black, null))
+
+                binding.searchView.queryHint = "Cerca gruppi..."
+            }
+        }
+
+        // Esegui nuovamente la ricerca con la query corrente per il nuovo tab
+        val currentQuery = binding.searchView.query.toString()
+        if (currentQuery.isNotEmpty()) {
+            performSearch(currentQuery)
+        } else {
+            // Se non c'è query, carica i dati di default
+            when (currentTab) {
+                0 -> viewModel.loadDefaultUsers()
+                1 -> viewModel.loadDefaultGroups()
+            }
+        }
+    }
+
+    private fun onUserProfileClicked(user: AddFriendUser) {
+        // Naviga al profilo dell'utente o del gruppo
+        when (currentTab) {
+            0 -> {
+                // Apri il profilo utente
+                // Qui puoi navigare al fragment del profilo utente
+                Toast.makeText(
+                    requireContext(),
+                    "Apertura profilo di ${user.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Esempio di navigazione (sostituisci con il tuo sistema di navigazione)
+                // findNavController().navigate(
+                //     AddFriendsFragmentDirections.actionToUserProfile(user.id)
+                // )
+            }
+            1 -> {
+                // Apri il profilo del gruppo
+                Toast.makeText(
+                    requireContext(),
+                    "Apertura gruppo ${user.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Esempio di navigazione per i gruppi
+                // findNavController().navigate(
+                //     AddFriendsFragmentDirections.actionToGroupProfile(user.id)
+                // )
+            }
+        }
+    }
+
+    private fun onAddFriendClicked(user: AddFriendUser) {
+        // Gestisce la richiesta di amicizia o di unione al gruppo
+        when (currentTab) {
+            0 -> {
+                // Logica per aggiungere un utente come amico
+                viewModel.addFriend(user)
+                Toast.makeText(
+                    requireContext(),
+                    "Richiesta di amicizia inviata a ${user.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            1 -> {
+                // Logica per unirsi a un gruppo
+                viewModel.joinGroup(user)
+                Toast.makeText(
+                    requireContext(),
+                    "Richiesta di accesso inviata al gruppo ${user.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun showNoResultsMessage() {
+        binding.textViewNoResults.visibility = View.VISIBLE
+        binding.textViewNoResults.text = when (currentTab) {
+            0 -> "Nessun utente trovato"
+            1 -> "Nessun gruppo trovato"
+            else -> "Nessun risultato trovato"
+        }
+    }
+
+    private fun hideNoResultsMessage() {
+        binding.textViewNoResults.visibility = View.GONE
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}

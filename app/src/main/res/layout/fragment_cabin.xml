@@ -98,7 +98,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="+75 punti"
+                        android:text="+100 punti"
                         android:textColor="@color/blue"
                         android:textSize="14sp"
                         android:fontFamily="@font/montserrat_bold"

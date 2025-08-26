@@ -1,5 +1,6 @@
 package com.example.mountainpassport_girarifugi.ui.scan
 
+import PuntiBottomSheet
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,5 +22,13 @@ class ScanFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val fabPunti = view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabPunti)
+        fabPunti.setOnClickListener {
+            // Creiamo e mostriamo il Bottom Sheet
+            val bottomSheet = PuntiBottomSheet()
+            bottomSheet.show(parentFragmentManager, "PuntiBottomSheet")
+        }
     }
+
+
 }

@@ -5,7 +5,8 @@ data class User(
     val email: String = "",
     val nome: String = "",
     val cognome: String = "",
-    val nickname: String = ""
+    val nickname: String = "",
+    val profileImageUrl: String = "" // String perché usero l'URL
 ) {
     // Firestore requires a no-argument constructor
     constructor() : this("", "", "", "", "")

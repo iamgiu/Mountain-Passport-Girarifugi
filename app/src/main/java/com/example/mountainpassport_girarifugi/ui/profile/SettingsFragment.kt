@@ -15,6 +15,16 @@ import com.example.mountainpassport_girarifugi.user.SignInActivity
 import com.example.mountainpassport_girarifugi.databinding.FragmentSettingsBinding
 import com.example.mountainpassport_girarifugi.user.User
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import android.os.Build
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.widget.ImageView
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 class SettingsFragment : Fragment() {
 
@@ -22,6 +32,25 @@ class SettingsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: SettingsViewModel by viewModels()
+
+    private lateinit var profileImageView: ImageView
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            handleSelectedImage(it)
+        }
+    }
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            openImagePicker()
+        } else {
+            Toast.makeText(requireContext(), "Permission denied to read external storage", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +66,9 @@ class SettingsFragment : Fragment() {
 
         setupClickListeners()
         setupObservers()
+
+        // Profile image initialization
+        initProfileImage(view)
 
         // Setup settings FAB
         setupForwardButton(view)
@@ -61,6 +93,11 @@ class SettingsFragment : Fragment() {
 
         binding.resetPasswordButton.setOnClickListener {
             showResetPasswordConfirmationDialog()
+        }
+
+        // Click listener for profile image button
+        binding.changeImageButton.setOnClickListener {
+            checkPermissionAndOpenGallery()
         }
     }
 
@@ -166,6 +203,115 @@ class SettingsFragment : Fragment() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         requireActivity().finish()
+    }
+
+    // Fixed methods for profile image handling
+    private fun initProfileImage(view: View) {
+        profileImageView = view.findViewById(R.id.profileImageView)
+        loadSavedProfileImage()
+    }
+
+    private fun checkPermissionAndOpenGallery() {
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                when {
+                    ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.READ_MEDIA_IMAGES
+                    ) == PackageManager.PERMISSION_GRANTED -> {
+                        openImagePicker()
+                    }
+                    else -> {
+                        permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                    }
+                }
+            }
+            else -> {
+                when {
+                    ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED -> {
+                        openImagePicker()
+                    }
+                    else -> {
+                        permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun openImagePicker() {
+        imagePickerLauncher.launch("image/*")
+    }
+
+    private fun handleSelectedImage(imageUri: Uri) {
+        try {
+            // Copy the image to internal storage
+            val savedImageFile = copyImageToInternalStorage(imageUri)
+
+            if (savedImageFile != null) {
+                // Display the image from internal storage
+                val savedImageUri = Uri.fromFile(savedImageFile)
+                profileImageView.setImageURI(savedImageUri)
+
+                // Save the internal file path to SharedPreferences
+                val sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+                sharedPreferences.edit()
+                    .putString("profile_image_path", savedImageFile.absolutePath)
+                    .apply()
+
+                Toast.makeText(requireContext(), "Profile image aggiornata!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Errore nel salvare l'immagine", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Errore caricamento immagine: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun copyImageToInternalStorage(sourceUri: Uri): File? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(sourceUri)
+            val profileImageDir = File(requireContext().filesDir, "profile_images")
+
+            if (!profileImageDir.exists()) {
+                profileImageDir.mkdirs()
+            }
+
+            val imageFile = File(profileImageDir, "profile_image.jpg")
+            val outputStream = FileOutputStream(imageFile)
+
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            imageFile
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun loadSavedProfileImage() {
+        val sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val imagePath = sharedPreferences.getString("profile_image_path", null)
+
+        imagePath?.let { path ->
+            try {
+                val imageFile = File(path)
+                if (imageFile.exists()) {
+                    val imageUri = Uri.fromFile(imageFile)
+                    profileImageView.setImageURI(imageUri)
+                }
+            } catch (e: Exception) {
+                // If image can't be loaded, keep default
+                e.printStackTrace()
+            }
+        }
     }
 
     override fun onDestroyView() {

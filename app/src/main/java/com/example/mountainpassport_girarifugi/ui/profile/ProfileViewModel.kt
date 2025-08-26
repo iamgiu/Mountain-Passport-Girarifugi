@@ -139,6 +139,7 @@ class ProfileViewModel : ViewModel() {
         loadGroups()
     }
 
+    // Implementazione del caricamento dei dati del profilo dal database
     fun performLogout() {
         firebaseAuth.signOut()
         _logoutEvent.value = true

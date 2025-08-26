@@ -18,8 +18,8 @@ class SettingsViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _errorMessage = MutableLiveData<String>()
-    val errorMessage: LiveData<String> = _errorMessage
+    private val _errorMessage = MutableLiveData<String?>()
+    val errorMessage: LiveData<String?> = _errorMessage
 
     private val _saveSuccess = MutableLiveData<Boolean>()
     val saveSuccess: LiveData<Boolean> = _saveSuccess
@@ -33,11 +33,19 @@ class SettingsViewModel : ViewModel() {
     private val _resetPasswordSuccess = MutableLiveData<Boolean>()
     val resetPasswordSuccess: LiveData<Boolean> = _resetPasswordSuccess
 
-    private val _resetPasswordError = MutableLiveData<String>()
-    val resetPasswordError: LiveData<String> = _resetPasswordError
+    private val _resetPasswordError = MutableLiveData<String?>()
+    val resetPasswordError: LiveData<String?> = _resetPasswordError
+
+    private val _profileImageUri = MutableLiveData<String>()
+    val profileImageUri: LiveData<String> = _profileImageUri
 
     init {
         loadUserData()
+    }
+
+    // Sve profile image URI
+    fun saveProfileImageUri(imageUri: String) {
+        _profileImageUri.value = imageUri
     }
 
     fun loadUserData() {

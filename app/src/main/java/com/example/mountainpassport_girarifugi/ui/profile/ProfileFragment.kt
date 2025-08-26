@@ -12,7 +12,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
+import android.net.Uri
+import android.widget.ImageView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.core.net.toUri
+import java.io.File
 
 class ProfileFragment : Fragment() {
 
@@ -31,6 +35,9 @@ class ProfileFragment : Fragment() {
 
     // ViewModel
     private val viewModel: ProfileViewModel by viewModels()
+
+    // Profile image view reference
+    private lateinit var profileImageView: ImageView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,6 +71,7 @@ class ProfileFragment : Fragment() {
         usernameTextView = view.findViewById(R.id.usernameTextView)
         monthlyScoreTextView = view.findViewById(R.id.monthlyScoreTextView)
         visitedRefugesTextView = view.findViewById(R.id.visitedRefugesTextView)
+        profileImageView = view.findViewById(R.id.profileImageView)
     }
 
     private fun setupStampsRecyclerView() {
@@ -120,6 +128,7 @@ class ProfileFragment : Fragment() {
                 hideLoadingState()
             }
         }
+        loadSavedProfileImage()
     }
 
     private fun updateProfileUI(profileData: ProfileData) {
@@ -142,6 +151,33 @@ class ProfileFragment : Fragment() {
         val fabSettings = view.findViewById<FloatingActionButton>(R.id.fabSettings)
         fabSettings.setOnClickListener {
             findNavController().navigate(R.id.action_profilefragment_to_settingsFragment)
+        }
+    }
+
+    // Fixed method to load saved profile image
+    private fun loadSavedProfileImage() {
+        val sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val imagePath = sharedPreferences.getString("profile_image_path", null)
+
+        imagePath?.let { path ->
+            try {
+                val imageFile = File(path)
+                if (imageFile.exists()) {
+                    val imageUri = Uri.fromFile(imageFile)
+                    profileImageView.setImageURI(imageUri)
+                } else {
+                    // File doesn't exist, remove the preference
+                    sharedPreferences.edit()
+                        .remove("profile_image_path")
+                        .apply()
+                }
+            } catch (e: Exception) {
+                // If image can't be loaded, keep default and remove invalid preference
+                e.printStackTrace()
+                sharedPreferences.edit()
+                    .remove("profile_image_path")
+                    .apply()
+            }
         }
     }
 
@@ -172,6 +208,8 @@ class ProfileFragment : Fragment() {
         super.onResume()
         // Ricarica i dati quando il fragment torna in primo piano
         viewModel.refreshData()
+        // Reload profile image in case it was changed in settings
+        loadSavedProfileImage()
     }
 
     // Metodo pubblico per ricaricare il profilo

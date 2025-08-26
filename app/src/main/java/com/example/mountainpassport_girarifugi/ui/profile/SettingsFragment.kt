@@ -11,9 +11,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
-import com.example.mountainpassport_girarifugi.SignInActivity
+import com.example.mountainpassport_girarifugi.ui.user.SignInActivity
 import com.example.mountainpassport_girarifugi.databinding.FragmentSettingsBinding
-import com.example.mountainpassport_girarifugi.model.User
+import com.example.mountainpassport_girarifugi.ui.user.User
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class SettingsFragment : Fragment() {

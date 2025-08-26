@@ -1,12 +1,13 @@
-package com.example.mountainpassport_girarifugi
+package com.example.mountainpassport_girarifugi.ui.user
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mountainpassport_girarifugi.databinding.ActivitySignInBinding
-import com.example.mountainpassport_girarifugi.model.User
 import android.app.AlertDialog
+import com.example.mountainpassport_girarifugi.MainActivity
+import com.example.mountainpassport_girarifugi.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -51,7 +52,9 @@ class SignInActivity : AppCompatActivity() {
 
     private fun showForgotPasswordDialog() {
         val dialogView = layoutInflater.inflate(R.layout.activity_reset_password, null)
-        val emailEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.emailEt)
+        val emailEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
+            R.id.emailEt
+        )
 
         // Pre-populate with current email if available
         val currentEmail = binding.emailEt.text.toString().trim()

@@ -3,7 +3,7 @@ package com.example.mountainpassport_girarifugi.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.mountainpassport_girarifugi.model.User
+import com.example.mountainpassport_girarifugi.ui.user.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore

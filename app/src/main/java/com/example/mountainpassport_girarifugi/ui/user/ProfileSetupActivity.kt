@@ -1,11 +1,11 @@
-package com.example.mountainpassport_girarifugi
+package com.example.mountainpassport_girarifugi.ui.user
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mountainpassport_girarifugi.MainActivity
 import com.example.mountainpassport_girarifugi.databinding.ActivityProfileSetupBinding
-import com.example.mountainpassport_girarifugi.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 

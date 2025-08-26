@@ -38,7 +38,7 @@
 
         <!-- SPLASH ACTIVITY -->
         <activity
-            android:name=".SplashActivity"
+            android:name=".ui.user.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.MountainPassportGirarifugi">
             <intent-filter>
@@ -49,13 +49,13 @@
 
         <!-- SIGN IN ACTIVITY -->
         <activity
-            android:name=".SignInActivity"
+            android:name=".ui.user.SignInActivity"
             android:exported="false"
             android:theme="@style/Theme.MountainPassportGirarifugi" />
 
         <!-- SIGN UP ACTIVITY -->
         <activity
-            android:name=".SignUpActivity"
+            android:name=".ui.user.SignUpActivity"
             android:exported="false"
             android:theme="@style/Theme.MountainPassportGirarifugi" />
 
@@ -68,7 +68,7 @@
 
         <!-- Profile Setup Activity -->
         <activity
-            android:name=".ProfileSetupActivity"
+            android:name=".ui.user.ProfileSetupActivity"
             android:exported="false" />
 
         <meta-data

@@ -1,10 +1,12 @@
-package com.example.mountainpassport_girarifugi
+package com.example.mountainpassport_girarifugi.ui.user
 
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mountainpassport_girarifugi.MainActivity
+import com.example.mountainpassport_girarifugi.R
 import com.google.firebase.auth.FirebaseAuth
 
 class SplashActivity : AppCompatActivity() {

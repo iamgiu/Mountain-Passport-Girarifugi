@@ -1,4 +1,4 @@
-package com.example.mountainpassport_girarifugi
+package com.example.mountainpassport_girarifugi.ui.user
 
 import android.content.Intent
 import android.os.Bundle

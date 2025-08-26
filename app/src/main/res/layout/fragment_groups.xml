@@ -19,12 +19,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:id="@+id/appLogo"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:contentDescription="App Logo"
-            android:src="@drawable/ic_launcher_foreground" />
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabForward"
+            android:contentDescription="Torna al Profilo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_reply_24"
+            app:backgroundTint="@color/green"
+            app:fabSize="normal"
+            app:tint="@color/green_light" />
 
         <View
             android:layout_width="0dp"
@@ -32,8 +35,8 @@
             android:layout_weight="1"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabSettings"
-            android:contentDescription="impostazioni"
+            android:id="@+id/fabSettingsGroup"
+            android:contentDescription="Impostazioni Gruppo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_settings_24"
@@ -121,7 +124,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:fontFamily="@font/montserrat_bold"
-                    android:text="Marco Rossi"
+                    android:text="Gli Alpinisti"
                     android:textColor="@color/blue_black"
                     android:textSize="30sp"
                     android:textStyle="bold" />
@@ -134,7 +137,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="4dp"
                     android:fontFamily="@font/montserrat_medium"
-                    android:text="marcorossi_explorer"
+                    android:text="gli_alpinisti"
                     android:textColor="@color/gray"
                     android:textSize="16sp" />
 
@@ -150,7 +153,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/montserrat_bold"
-                    android:text="Le tue statistiche"
+                    android:text="Statistiche del Gruppo"
                     android:textColor="@color/blue_black"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -241,53 +244,29 @@
 
                 </LinearLayout>
 
-                <!-- Sezione Timbri -->
+                <!-- Sezione Membri -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/montserrat_bold"
-                    android:text="I tuoi timbri"
-                    android:textColor="@color/blue_black"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
-
-                <!-- RecyclerView Timbri Orizzontale -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/stampsRecyclerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:nestedScrollingEnabled="false"
-                    android:clipToPadding="false"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="16dp"
-                    tools:listitem="@layout/item_stamp"
-                    tools:itemCount="6" />
-
-                <!-- Sezione Gruppi -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/montserrat_bold"
-                    android:text="I tuoi gruppi"
+                    android:text="Membri"
                     android:textColor="@color/blue_black"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="12dp" />
 
-                <!-- RecyclerView Gruppi Orizzontale -->
+                <!-- RecyclerView Gruppi verticale -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/groupsRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     android:nestedScrollingEnabled="false"
                     android:clipToPadding="false"
                     android:paddingStart="0dp"
                     android:paddingEnd="16dp"
-                    tools:listitem="@layout/item_group"
+                    tools:listitem="@layout/item_member"
                     tools:itemCount="4" />
 
             </LinearLayout>

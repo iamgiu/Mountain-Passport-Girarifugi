@@ -24,6 +24,14 @@ data class Stamp(
     val region: String
 )
 
+// Data class per rappresentare un gruppo
+data class Group(
+    val id: String,
+    val name: String,
+    val memberCount: Int,
+    val description: String = "",
+)
+
 class ProfileViewModel : ViewModel() {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
@@ -36,6 +44,10 @@ class ProfileViewModel : ViewModel() {
     // LiveData per la lista dei timbri
     private val _stamps = MutableLiveData<List<Stamp>>()
     val stamps: LiveData<List<Stamp>> = _stamps
+
+    // LiveData per la lista dei gruppi
+    private val _groups = MutableLiveData<List<Group>>()
+    val groups: LiveData<List<Group>> = _groups
 
     // LiveData per gestire il logout
     private val _logoutEvent = MutableLiveData<Boolean>()
@@ -56,6 +68,7 @@ class ProfileViewModel : ViewModel() {
     init {
         loadUserData()
         loadStamps()
+        loadGroups()
     }
 
     private fun loadUserData() {
@@ -65,7 +78,6 @@ class ProfileViewModel : ViewModel() {
         if (currentUser != null) {
             loadUserProfileFromDatabase(currentUser.uid)
         } else {
-            // Utente non autenticato, usa valori di default
             val profileData = ProfileData(
                 fullName = "Utente",
                 username = "utente_guest",
@@ -77,8 +89,6 @@ class ProfileViewModel : ViewModel() {
     }
 
     private fun loadStamps() {
-        // Qui dovresti caricare i timbri reali dal database
-        // Per ora uso dati di esempio
         val sampleStamps = listOf(
             Stamp("Rifugio Città di Milano", "15/05/2024", "2581m", "Lombardia"),
             Stamp("Rifugio Branca", "22/05/2024", "2486m", "Lombardia"),
@@ -92,9 +102,41 @@ class ProfileViewModel : ViewModel() {
         _stamps.value = sampleStamps
     }
 
+    private fun loadGroups() {
+        // Dati di esempio per i gruppi
+        val sampleGroups = listOf(
+            Group(
+                id = "group1",
+                name = "Amanti delle Alpi",
+                memberCount = 12,
+                description = "Gruppo per esplorare le Alpi lombarde",
+            ),
+            Group(
+                id = "group2",
+                name = "Rifugi del Nord",
+                memberCount = 8,
+                description = "Scopriamo insieme i rifugi del nord Italia",
+            ),
+            Group(
+                id = "group3",
+                name = "Trekkers Milano",
+                memberCount = 25,
+                description = "Gruppo di trekking della zona di Milano",
+            ),
+            Group(
+                id = "group4",
+                name = "Escursioni Weekend",
+                memberCount = 15,
+                description = "Escursioni nei weekend",
+            )
+        )
+        _groups.value = sampleGroups
+    }
+
     fun refreshData() {
         loadUserData()
         loadStamps()
+        loadGroups()
     }
 
     fun performLogout() {
@@ -102,12 +144,10 @@ class ProfileViewModel : ViewModel() {
         _logoutEvent.value = true
     }
 
-    // Metodo per resettare l'evento di logout dopo averlo gestito
     fun onLogoutEventHandled() {
         _logoutEvent.value = false
     }
 
-    // Implementazione del caricamento dei dati del profilo dal database
     fun loadUserProfileFromDatabase(userId: String) {
         _isLoading.value = true
 
@@ -128,12 +168,11 @@ class ProfileViewModel : ViewModel() {
                             val profileData = ProfileData(
                                 fullName = displayFullName,
                                 username = displayNickname,
-                                monthlyScore = "1,245", // TODO: Calcolare il punteggio reale
-                                visitedRefuges = "23"    // TODO: Contare i rifugi visitati reali
+                                monthlyScore = "1,245",
+                                visitedRefuges = "23"
                             )
                             _profileData.value = profileData
                         } else {
-                            // Documento esiste ma non è un oggetto User valido
                             _loadingError.value = "Errore nel caricamento del profilo utente"
                             setDefaultProfileData()
                         }
@@ -142,7 +181,6 @@ class ProfileViewModel : ViewModel() {
                         setDefaultProfileData()
                     }
                 } else {
-                    // Il documento non esiste, l'utente non ha ancora completato il profilo
                     _loadingError.value = "Profilo utente non trovato. Completa la registrazione."
                     setDefaultProfileData()
                 }
@@ -165,17 +203,17 @@ class ProfileViewModel : ViewModel() {
         _profileData.value = profileData
     }
 
-    fun loadStampsFromDatabase(userId: String) {
-        // TODO: Implementa il caricamento dei timbri dal database
-        // Per ora manteniamo i dati di esempio
-        loadStamps()
-    }
-
-    // Metodo per ricaricare i dati utente (utile dopo aver aggiornato il profilo)
     fun reloadUserProfile() {
         val currentUser = firebaseAuth.currentUser
         if (currentUser != null) {
             loadUserProfileFromDatabase(currentUser.uid)
         }
+    }
+
+    // Metodo per caricare i gruppi dal database (da implementare)
+    fun loadGroupsFromDatabase(userId: String) {
+        // TODO: Implementa il caricamento dei gruppi dal database
+        // Per ora manteniamo i dati di esempio
+        loadGroups()
     }
 }

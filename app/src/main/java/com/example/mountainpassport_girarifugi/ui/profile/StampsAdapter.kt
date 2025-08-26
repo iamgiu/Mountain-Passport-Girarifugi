@@ -10,10 +10,7 @@ import com.example.mountainpassport_girarifugi.R
 class StampsAdapter(private var stamps: List<Stamp>) : RecyclerView.Adapter<StampsAdapter.StampViewHolder>() {
 
     class StampViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val refugeNameTextView: TextView = itemView.findViewById(R.id.refugeNameTextView)
-        val dateTextView: TextView = itemView.findViewById(R.id.dateTextView)
-        val altitudeTextView: TextView = itemView.findViewById(R.id.altitudeTextView)
-        val regionTextView: TextView = itemView.findViewById(R.id.regionTextView)
+        val refugeNameTextView: TextView = itemView.findViewById(R.id.stampNameTextView)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StampViewHolder {
@@ -25,9 +22,6 @@ class StampsAdapter(private var stamps: List<Stamp>) : RecyclerView.Adapter<Stam
         val stamp = stamps[position]
 
         holder.refugeNameTextView.text = stamp.refugeName
-        holder.dateTextView.text = stamp.date
-        holder.altitudeTextView.text = stamp.altitude
-        holder.regionTextView.text = stamp.region
     }
 
     override fun getItemCount(): Int = stamps.size

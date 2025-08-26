@@ -9,7 +9,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -18,6 +18,10 @@ class ProfileFragment : Fragment() {
 
     private lateinit var stampsRecyclerView: RecyclerView
     private lateinit var stampsAdapter: StampsAdapter
+
+    // Aggiungi RecyclerView e Adapter per i gruppi
+    private lateinit var groupsRecyclerView: RecyclerView
+    private lateinit var groupsAdapter: GroupsAdapter
 
     // Views del profilo
     private lateinit var fullNameTextView: TextView
@@ -44,6 +48,7 @@ class ProfileFragment : Fragment() {
 
         // Configura la RecyclerView
         setupStampsRecyclerView()
+        setupGroupsRecyclerView()
 
         // Configura gli observer per il ViewModel
         setupObservers()
@@ -54,6 +59,7 @@ class ProfileFragment : Fragment() {
 
     private fun initViews(view: View) {
         stampsRecyclerView = view.findViewById(R.id.stampsRecyclerView)
+        groupsRecyclerView = view.findViewById(R.id.groupsRecyclerView)
         fullNameTextView = view.findViewById(R.id.fullNameTextView)
         usernameTextView = view.findViewById(R.id.usernameTextView)
         monthlyScoreTextView = view.findViewById(R.id.monthlyScoreTextView)
@@ -61,12 +67,26 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupStampsRecyclerView() {
-        // Configura il layout manager per una griglia di 2 colonne
-        stampsRecyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
+        // Configura il layout manager per lo scorrimento ORIZZONTALE
+        val layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        stampsRecyclerView.layoutManager = layoutManager
 
         // Inizializza l'adapter
         stampsAdapter = StampsAdapter(emptyList())
         stampsRecyclerView.adapter = stampsAdapter
+    }
+
+    private fun setupGroupsRecyclerView() {
+        // Configura il layout manager orizzontale per i gruppi
+        val layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        groupsRecyclerView.layoutManager = layoutManager
+
+        // Inizializza l'adapter con il listener per i click
+        groupsAdapter = GroupsAdapter(emptyList()) { group ->
+            // Navigazione al profilo del gruppo
+            navigateToGroupProfile(group)
+        }
+        groupsRecyclerView.adapter = groupsAdapter
     }
 
     private fun setupObservers() {
@@ -80,6 +100,11 @@ class ProfileFragment : Fragment() {
             stampsAdapter.updateStamps(stamps)
         }
 
+        // Observer per i gruppi
+        viewModel.groups.observe(viewLifecycleOwner) { groups ->
+            groupsAdapter.updateGroups(groups)
+        }
+
         // Observer per gli errori di caricamento
         viewModel.loadingError.observe(viewLifecycleOwner) { errorMessage ->
             if (errorMessage.isNotBlank()) {
@@ -89,13 +114,9 @@ class ProfileFragment : Fragment() {
 
         // Observer per lo stato di caricamento
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Qui potresti mostrare/nascondere un indicatore di caricamento
-            // Ad esempio un ProgressBar
             if (isLoading) {
-                // Mostra loading indicator
                 showLoadingState()
             } else {
-                // Nascondi loading indicator
                 hideLoadingState()
             }
         }
@@ -109,13 +130,12 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showLoadingState() {
-        // Opzionale: Mostra uno stato di caricamento
         fullNameTextView.text = "Caricamento..."
         usernameTextView.text = "Caricamento..."
     }
 
     private fun hideLoadingState() {
-        // Lo stato normale sarà ripristinato dagli observer dei dati
+        // Lo stato normale sarÃ  ripristinato dagli observer dei dati
     }
 
     private fun setupSettingsButton(view: View) {
@@ -125,13 +145,36 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Metodo per navigare al profilo del gruppo
+    private fun navigateToGroupProfile(group: Group) {
+        // Crea il bundle con i dati del gruppo
+        val bundle = Bundle().apply {
+            putString("groupId", group.id)
+            putString("groupName", group.name)
+            putInt("memberCount", group.memberCount)
+            putString("description", group.description)
+        }
+
+        try {
+            // Naviga al fragment del profilo del gruppo
+            // Assicurati che questa action esista nel tuo navigation graph
+            findNavController().navigate(R.id.action_profileFragment_to_groupsFragment, bundle)
+        } catch (e: Exception) {
+            // Se la navigazione fallisce, mostra un messaggio di fallback
+            Toast.makeText(requireContext(), "Apertura gruppo: ${group.name}", Toast.LENGTH_SHORT).show()
+
+            // In alternativa, puoi logare l'errore per il debug
+            android.util.Log.e("ProfileFragment", "Errore navigazione: ${e.message}")
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // Ricarica i dati quando il fragment torna in primo piano
         viewModel.refreshData()
     }
 
-    // Metodo pubblico per ricaricare il profilo (utile se chiamato da altre parti dell'app)
+    // Metodo pubblico per ricaricare il profilo
     fun reloadProfile() {
         viewModel.reloadUserProfile()
     }

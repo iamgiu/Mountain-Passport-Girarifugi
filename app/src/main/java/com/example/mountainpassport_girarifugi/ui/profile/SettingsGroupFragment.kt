@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.FragmentSettingsGroupBinding
+import com.example.mountainpassport_girarifugi.ui.profile.settings.SettingsViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 class SettingsGroupFragment : Fragment() {
 

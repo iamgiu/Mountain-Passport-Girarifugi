@@ -1,4 +1,4 @@
-package com.example.mountainpassport_girarifugi.ui.profile
+package com.example.mountainpassport_girarifugi.ui.profile.settings
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -27,6 +27,10 @@ import java.io.FileOutputStream
 import java.io.IOException
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.app.Activity
+import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
+import android.content.Context
 
 class SettingsFragment : Fragment() {
 
@@ -40,8 +44,46 @@ class SettingsFragment : Fragment() {
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            handleSelectedImage(it)
+            launchCropActivity(it)
         }
+    }
+
+    private val cropActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Recupera l'immagine croppata dalle SharedPreferences
+            val croppedBitmap = getCroppedImageFromTemp()
+            croppedBitmap?.let { bitmap ->
+                handleCroppedImage(bitmap)
+            }
+        }
+    }
+
+    private fun getCroppedImageFromTemp(): Bitmap? {
+        return try {
+            val sharedPreferences = requireContext().getSharedPreferences("crop_temp", Context.MODE_PRIVATE)
+            val base64String = sharedPreferences.getString("cropped_image", null)
+
+            if (!base64String.isNullOrEmpty()) {
+                // Pulisci i dati temporanei
+                sharedPreferences.edit().remove("cropped_image").apply()
+
+                // Converti da Base64 a Bitmap
+                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+    private fun launchCropActivity(imageUri: Uri) {
+        val intent = Intent(requireContext(), ImageCropActivity::class.java)
+        intent.putExtra(ImageCropActivity.EXTRA_IMAGE_URI, imageUri)
+        cropActivityLauncher.launch(intent)
     }
 
     private val permissionLauncher = registerForActivityResult(
@@ -261,17 +303,30 @@ class SettingsFragment : Fragment() {
         imagePickerLauncher.launch("image/*")
     }
 
-    private fun handleSelectedImage(imageUri: Uri) {
+    private fun handleCroppedImage(bitmap: Bitmap) {
         try {
-            // Mostra l'immagine selezionata immediatamente
-            profileImageView.setImageURI(imageUri)
+            // Show the cropped image immediately
+            profileImageView.setImageBitmap(bitmap)
 
-            // Carica su Firestore come Base64
-            viewModel.uploadProfileImageAsBase64(requireContext(), imageUri)
+            // Convert bitmap to Base64 and upload
+            uploadBitmapAsBase64(bitmap)
 
             Toast.makeText(requireContext(), "Caricamento immagine profilo...", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Errore nella selezione immagine: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun uploadBitmapAsBase64(bitmap: Bitmap) {
+        try {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
+            val imageBytes = byteArrayOutputStream.toByteArray()
+            val base64String = Base64.encodeToString(imageBytes, Base64.DEFAULT)
+
+            viewModel.updateUserProfileImageDirect(base64String)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Errore nel processare l'immagine: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 

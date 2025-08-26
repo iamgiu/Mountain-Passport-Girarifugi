@@ -98,7 +98,7 @@
 
     <fragment
         android:id="@+id/nav_settings"
-        android:name="com.example.mountainpassport_girarifugi.ui.profile.SettingsFragment"
+        android:name="com.example.mountainpassport_girarifugi.ui.profile.settings.SettingsFragment"
         android:label="Settings"
         tools:layout="@layout/fragment_settings"/>
 

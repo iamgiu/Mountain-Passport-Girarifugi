@@ -74,6 +74,13 @@
             android:name=".user.ProfileSetupActivity"
             android:exported="false" />
 
+        <!-- Image Crop Activity -->
+        <activity
+            android:name=".ui.profile.settings.ImageCropActivity"
+            android:theme="@style/Theme.Material3.DynamicColors.Dark.NoActionBar"
+            android:exported="false" />
+
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

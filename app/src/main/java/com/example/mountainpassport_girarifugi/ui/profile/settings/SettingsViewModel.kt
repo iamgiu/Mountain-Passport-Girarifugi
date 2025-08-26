@@ -1,4 +1,4 @@
-package com.example.mountainpassport_girarifugi.ui.profile
+package com.example.mountainpassport_girarifugi.ui.profile.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.LiveData
@@ -96,6 +96,27 @@ class SettingsViewModel : ViewModel() {
         val currentUser = firebaseAuth.currentUser ?: return
         val originalUser = _currentUser.value ?: return
 
+        val updatedUser = originalUser.copy(profileImageUrl = base64Image)
+
+        firestore.collection("users").document(currentUser.uid)
+            .set(updatedUser)
+            .addOnSuccessListener {
+                _isLoading.value = false
+                _currentUser.value = updatedUser
+                _profileImageUri.value = base64Image
+                _imageUploadSuccess.value = true
+            }
+            .addOnFailureListener { e ->
+                _isLoading.value = false
+                _errorMessage.value = "Errore nell'aggiornare il profilo: ${e.message}"
+            }
+    }
+
+    fun updateUserProfileImageDirect(base64Image: String) {
+        val currentUser = firebaseAuth.currentUser ?: return
+        val originalUser = _currentUser.value ?: return
+
+        _isLoading.value = true
         val updatedUser = originalUser.copy(profileImageUrl = base64Image)
 
         firestore.collection("users").document(currentUser.uid)

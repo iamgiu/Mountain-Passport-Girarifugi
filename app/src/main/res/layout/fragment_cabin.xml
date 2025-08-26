@@ -1,0 +1,650 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/light_green">
+
+    <!-- Header fisso -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        android:gravity="center_vertical"
+        android:layout_alignParentTop="true">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabBack"
+            android:contentDescription="Torna indietro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_reply_24"
+            app:backgroundTint="@color/green"
+            app:fabSize="normal"
+            app:tint="@color/green_light" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+
+        <ImageView
+            android:id="@+id/appLogo"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:contentDescription="App Logo"
+            android:src="@drawable/ic_launcher_foreground" />
+
+    </LinearLayout>
+
+    <!-- Contenuto scrollabile -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Rifugio Immagine -->
+            <ImageView
+                android:id="@+id/cabinImageView"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:src="@drawable/rifugio_torino"
+                android:scaleType="centerCrop"
+                android:contentDescription="Immagine del rifugio" />
+
+            <!-- Nome Rifugio e Timbro -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="20dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/cabinNameTextView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:text="Rifugio Torino"
+                    android:textColor="@color/blue_black"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/stampView"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:contentDescription="Timbro rifugio"
+                    android:src="@drawable/stamps" />
+
+            </LinearLayout>
+
+            <!-- Statistiche Principali -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="24dp">
+
+                <!-- Quota altitudine -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/stats_card_background"
+                    android:padding="16dp"
+                    android:layout_marginEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_cabin_24"
+                        app:tint="@color/blue_black"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="Altitudine" />
+
+                    <TextView
+                        android:id="@+id/altitudeTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="1890m"
+                        android:textColor="@color/blue_black"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quota\nAltitudine"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- Coordinate -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/stats_card_background"
+                    android:padding="16dp"
+                    android:layout_marginHorizontal="4dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_location_searching_24"
+                        app:tint="@color/blue_black"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="Coordinate" />
+
+                    <TextView
+                        android:id="@+id/coordinatesTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="46.42375\n8.33514"
+                        android:textColor="@color/blue_black"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Coordinate"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- Luogo -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/stats_card_background"
+                    android:padding="16dp"
+                    android:layout_marginStart="8dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_route_24"
+                        app:tint="@color/blue_black"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="Luogo" />
+
+                    <TextView
+                        android:id="@+id/locationTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="Valle d'Aosta"
+                        android:textColor="@color/blue_black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Luogo"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Sezione Servizi -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="24dp"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Servizi"
+                    android:textColor="@color/blue_black"
+                    android:textSize="22sp"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Periodo di apertura -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_schedule_24"
+                        app:tint="@color/blue_black"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="Apertura" />
+
+                    <TextView
+                        android:id="@+id/openingPeriodTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Stagionale (Giugno - Settembre)"
+                        android:textColor="@color/blue_black"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/montserrat_semibold" />
+
+                </LinearLayout>
+
+                <!-- Posti letto -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_hotel_24px"
+                        app:tint="@color/blue_black"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="Posti letto" />
+
+                    <TextView
+                        android:id="@+id/bedsTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="45 posti letto"
+                        android:textColor="@color/blue_black"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/montserrat_semibold" />
+
+                </LinearLayout>
+
+                <!-- Lista servizi -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Servizi riga 1 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="4dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_water_drop_24px"
+                                app:tint="@color/blue_black"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="4dp"
+                                android:contentDescription="Acqua" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Acqua calda"
+                                android:textColor="@color/gray"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/montserrat_medium" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_electric_bolt_24px"
+                                app:tint="@color/blue_black"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="4dp"
+                                android:contentDescription="Elettricità" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Luce elettrica"
+                                android:textColor="@color/gray"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/montserrat_medium" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Servizi riga 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_shower_24px"
+                                app:tint="@color/blue_black"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="4dp"
+                                android:contentDescription="Docce" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Docce"
+                                android:textColor="@color/gray"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/montserrat_medium" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_coffee_24px"
+                                app:tint="@color/blue_black"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="4dp"
+                                android:contentDescription="Ristorante" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ristorante"
+                                android:textColor="@color/gray"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/montserrat_medium" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Sezione Come Arrivare -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="24dp"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Come Arrivare"
+                    android:textColor="@color/blue_black"
+                    android:textSize="22sp"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Informazioni del percorso -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <!-- Distanza -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_route_24"
+                            app:tint="@color/blue_black"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Distanza" />
+
+                        <TextView
+                            android:id="@+id/distanceTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2.5 km"
+                            android:textColor="@color/blue_black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/montserrat_semibold" />
+
+                    </LinearLayout>
+
+                    <!-- Dislivello -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_trending_up_24px"
+                            app:tint="@color/blue_black"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Dislivello" />
+
+                        <TextView
+                            android:id="@+id/elevationTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="1060m"
+                            android:textColor="@color/blue_black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/montserrat_semibold" />
+
+                    </LinearLayout>
+
+                    <!-- Tempo -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_schedule_24"
+                            app:tint="@color/blue_black"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Tempo" />
+
+                        <TextView
+                            android:id="@+id/timeTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="3h 30m"
+                            android:textColor="@color/blue_black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/montserrat_semibold" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Difficoltà -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_footprint_24"
+                        app:tint="@color/blue_black"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="Difficoltà" />
+
+                    <TextView
+                        android:id="@+id/difficultyTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Difficoltà: Escursionisti [E]"
+                        android:textColor="@color/blue_black"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/montserrat_semibold" />
+
+                </LinearLayout>
+
+                <!-- Descrizione completa -->
+                <TextView
+                    android:id="@+id/routeDescriptionTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Accesso: Stazione di partenza della funivia del Sabbione\n\nLocalità di partenza: Stazione di partenza della funivia del Sabbione\nQuota di partenza: 1850 m\nDislivello: 1060 m\nTempo di percorrenza: 3 ore e 30 min."
+                    android:textColor="@color/gray"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/montserrat_medium"
+                    android:lineSpacingExtra="2dp" />
+
+            </LinearLayout>
+
+            <!-- Sezione Recensioni -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="100dp"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Recensioni"
+                        android:textColor="@color/blue_black"
+                        android:textSize="22sp"
+                        android:fontFamily="@font/montserrat_bold" />
+
+                    <TextView
+                        android:id="@+id/reviewsRatingTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⭐ 4.5 (23 recensioni)"
+                        android:textColor="@color/blue_black"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/montserrat_semibold" />
+
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewUsers"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginHorizontal="16dp"
+                    app:layout_constraintTop_toBottomOf="@id/searchContainer"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    tools:listitem="@layout/item_review" />
+
+                <!-- Placeholder se non ci sono recensioni -->
+                <TextView
+                    android:id="@+id/noReviewsTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Nessuna recensione disponibile"
+                    android:textColor="@color/gray"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/montserrat_medium"
+                    android:gravity="center"
+                    android:padding="24dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- Floating Action Button per salvare il rifugio -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabSave"
+        android:contentDescription="Salva Rifugio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="120dp"
+        android:src="@drawable/ic_bookmark_24px"
+        app:backgroundTint="@color/green_black"
+        app:fabSize="normal"
+        app:tint="@color/light_green" />
+
+</RelativeLayout>

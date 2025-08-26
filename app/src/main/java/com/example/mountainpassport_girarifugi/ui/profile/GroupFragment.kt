@@ -80,7 +80,7 @@ class GroupsFragment : Fragment() {
     }
 
     private fun initViews(view: View) {
-        membersRecyclerView = view.findViewById(R.id.groupsRecyclerView) // Riutilizza la RecyclerView per i membri
+        membersRecyclerView = view.findViewById(R.id.membersRecyclerView)
         groupNameTextView = view.findViewById(R.id.fullNameTextView)
         groupUsernameTextView = view.findViewById(R.id.usernameTextView)
         monthlyScoreTextView = view.findViewById(R.id.monthlyScoreTextView)

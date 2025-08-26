@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardViewCabin"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/light_blue"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Immagine del rifugio -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
+
+            <ImageView
+                android:id="@+id/imageRifugio"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/rifugio_torino"
+                android:contentDescription="Immagine rifugio" />
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Contenuto testuale -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Nome del rifugio -->
+            <TextView
+                android:id="@+id/nomeRifugio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nome Rifugio"
+                android:textColor="@color/blue_black"
+                android:textSize="16sp"
+                android:fontFamily="@font/montserrat_bold"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Località del rifugio -->
+            <TextView
+                android:id="@+id/localitaRifugio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Località"
+                android:textColor="@color/gray"
+                android:textSize="14sp"
+                android:fontFamily="@font/montserrat_medium"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Altitudine e distanza -->
+            <TextView
+                android:id="@+id/altitudineRifugio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="1890 m s.l.m."
+                android:textColor="@color/blue_black"
+                android:textSize="12sp"
+                android:fontFamily="@font/montserrat_semibold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Punti o badge (opzionale) -->
+            <TextView
+                android:id="@+id/textPunti"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/stats_card_background"
+                android:padding="4dp"
+                android:text="Rifugio"
+                android:textColor="@color/green"
+                android:textSize="10sp"
+                android:fontFamily="@font/montserrat_bold"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Freccia per indicare che è cliccabile -->
+        <ImageView
+            android:id="@+id/arrowDetail"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_arrow_forward_24"
+            app:tint="@color/blue"
+            android:contentDescription="Vedi dettagli" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -1,4 +1,4 @@
-package com.example.mountainpassport_girarifugi.ui.user
+package com.example.mountainpassport_girarifugi.user
 
 data class User(
     val uid: String = "",

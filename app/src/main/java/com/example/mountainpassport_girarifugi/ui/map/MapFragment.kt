@@ -17,11 +17,16 @@ import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.data.model.Rifugio
 import com.example.mountainpassport_girarifugi.data.model.TipoRifugio
+import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import com.example.mountainpassport_girarifugi.databinding.FragmentMapBinding
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.tasks.Task
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -40,39 +45,12 @@ class MapFragment : Fragment() {
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
     private var myLocationOverlay: MyLocationNewOverlay? = null
+    private lateinit var rifugioRepository: RifugioRepository
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
-    // Lista dei rifugi di esempio
-    private val rifugiEsempio = listOf(
-        Rifugio(
-            id = 1,
-            nome = "Rifugio Torino",
-            localita = "Courmayeur, Valle d'Aosta",
-            altitudine = 3375,
-            latitudine = 45.8467,
-            longitudine = 6.8719,
-            tipo = TipoRifugio.RIFUGIO
-        ),
-        Rifugio(
-            id = 2,
-            nome = "Rifugio Vittorio Sella",
-            localita = "Alagna Valsesia, Piemonte",
-            altitudine = 2584,
-            latitudine = 45.9167,
-            longitudine = 7.9333,
-            tipo = TipoRifugio.RIFUGIO
-        ),
-        Rifugio(
-            id = 3,
-            nome = "Bivacco della Grigna",
-            localita = "Mandello del Lario, Lombardia",
-            altitudine = 2184,
-            latitudine = 45.9333,
-            longitudine = 9.3833,
-            tipo = TipoRifugio.BIVACCO
-        )
-    )
+    // Lista dei rifugi caricati dal JSON
+    private var rifugiList: List<Rifugio> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -85,6 +63,9 @@ class MapFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Inizializza il repository
+        rifugioRepository = RifugioRepository(requireContext())
 
         // Inizializza il client di localizzazione
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
@@ -160,8 +141,8 @@ class MapFragment : Fragment() {
             // Configura l'overlay per la posizione utente
             setupLocationOverlay()
 
-            // Aggiungi i marker dei rifugi
-            addRifugiMarkers()
+            // Carica i rifugi dal JSON e aggiungi i marker
+            loadRifugiAndAddMarkers()
 
             // Forza il refresh della mappa
             binding.mapView.invalidate()
@@ -173,6 +154,36 @@ class MapFragment : Fragment() {
         }
     }
 
+    private fun loadRifugiAndAddMarkers() {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                // Carica i rifugi dal JSON in background
+                val rifugi = withContext(Dispatchers.IO) {
+                    rifugioRepository.getAllRifugi()
+                }
+                
+                rifugiList = rifugi
+                
+                // Aggiungi i marker alla mappa
+                addRifugiMarkers()
+                
+                // Mostra un messaggio con il numero di rifugi caricati
+                Toast.makeText(
+                    requireContext(), 
+                    "Caricati ${rifugi.size} rifugi sulla mappa", 
+                    Toast.LENGTH_SHORT
+                ).show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(), 
+                    "Errore nel caricamento rifugi: ${e.message}", 
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     private fun setupLocationOverlay() {
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(requireContext()), binding.mapView)
         myLocationOverlay?.enableMyLocation()
@@ -181,7 +192,7 @@ class MapFragment : Fragment() {
     }
 
     private fun addRifugiMarkers() {
-        rifugiEsempio.forEach { rifugio ->
+        rifugiList.forEach { rifugio ->
             val marker = Marker(binding.mapView).apply {
                 position = GeoPoint(rifugio.latitudine, rifugio.longitudine)
                 title = rifugio.nome
@@ -222,18 +233,11 @@ class MapFragment : Fragment() {
     }
 
     private fun onRifugioDettagliClick(rifugio: Rifugio) {
-        // Qui puoi navigare alla scheda dettagli del rifugio
-        // Per ora mostra un toast
-        Toast.makeText(
-            requireContext(),
-            "Apertura dettagli per: ${rifugio.nome}",
-            Toast.LENGTH_SHORT
-        ).show()
-
-        // Esempio di navigazione (uncomment quando avrai il fragment dei dettagli):
-        // findNavController().navigate(
-        //     MapFragmentDirections.actionMapFragmentToDettagliRifugioFragment(rifugio.id)
-        // )
+        // Naviga al dettaglio del rifugio
+        val bundle = Bundle().apply {
+            putInt("rifugioId", rifugio.id)
+        }
+        findNavController().navigate(R.id.action_mapFragment_to_cabinFragment, bundle)
     }
 
     private fun setupClickListeners() {
@@ -248,6 +252,14 @@ class MapFragment : Fragment() {
 
     private fun requestLocationPermissions() {
         if (!checkLocationPermissions()) {
+            // Mostra un messaggio informativo prima di richiedere i permessi
+            Toast.makeText(
+                requireContext(),
+                "L'app ha bisogno dei permessi di localizzazione per mostrare la tua posizione sulla mappa",
+                Toast.LENGTH_LONG
+            ).show()
+            
+            // Richiedi i permessi
             requestPermissions(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -283,7 +295,21 @@ class MapFragment : Fragment() {
                     startLocationUpdates()
                     Toast.makeText(requireContext(), "Permessi di localizzazione concessi", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(requireContext(), "Permessi di localizzazione negati", Toast.LENGTH_LONG).show()
+                    // Verifica se l'utente ha negato i permessi permanentemente
+                    val shouldShowRationale = shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
+                    if (shouldShowRationale) {
+                        Toast.makeText(
+                            requireContext(), 
+                            "I permessi di localizzazione sono necessari per mostrare la tua posizione sulla mappa. Puoi abilitarli nelle impostazioni dell'app.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(), 
+                            "Permessi di localizzazione negati. La tua posizione non sarà mostrata sulla mappa.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
         }
@@ -336,6 +362,14 @@ class MapFragment : Fragment() {
                     Toast.makeText(requireContext(), "Impossibile ottenere la posizione attuale", Toast.LENGTH_SHORT).show()
                 }
             }
+        } else {
+            // Se i permessi non sono concessi, richiedili
+            Toast.makeText(
+                requireContext(),
+                "Permessi di localizzazione necessari per centrare la mappa sulla tua posizione",
+                Toast.LENGTH_LONG
+            ).show()
+            requestLocationPermissions()
         }
     }
 

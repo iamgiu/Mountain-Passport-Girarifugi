@@ -265,17 +265,43 @@
                     tools:listitem="@layout/item_stamp"
                     tools:itemCount="6" />
 
-                <!-- Sezione Gruppi -->
-                <TextView
+                <LinearLayout
+                    android:id="@+id/groups"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/montserrat_bold"
-                    android:text="I tuoi gruppi"
-                    android:textColor="@color/blue_black"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="24dp"
-                    android:layout_marginBottom="12dp" />
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <!-- Sezione Gruppi -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:text="I tuoi gruppi"
+                        android:textColor="@color/blue_black"
+                        android:textSize="18sp"
+                        android:gravity="center"/>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/fabAddNewGroup"
+                        android:contentDescription="Nuovo Gruppo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_group_add_24px"
+                        app:backgroundTint="@color/light_blue"
+                        app:fabSize="normal"
+                        app:tint="@color/blue" />
+
+                </LinearLayout>
 
                 <!-- RecyclerView Gruppi Orizzontale -->
                 <androidx.recyclerview.widget.RecyclerView
@@ -285,7 +311,7 @@
                     android:orientation="horizontal"
                     android:nestedScrollingEnabled="false"
                     android:clipToPadding="false"
-                    android:paddingStart="0dp"
+                    android:paddingStart="2dp"
                     android:paddingEnd="16dp"
                     tools:listitem="@layout/item_group"
                     tools:itemCount="4" />

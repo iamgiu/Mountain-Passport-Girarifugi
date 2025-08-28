@@ -67,27 +67,67 @@
                 android:layout_marginBottom="32dp"
                 android:layout_gravity="center_horizontal" />
 
-            <!-- Nome Input -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/nomeLayout"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            <!-- Nome + Immagine profilo affiancati -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:hint="Nome"
-                app:boxStrokeColor="@color/green_black"
-                app:hintTextColor="@color/green_black"
-                app:startIconDrawable="@drawable/ic_person_24"
-                app:startIconTint="@color/green_black">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="20dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/nomeEt"
-                    android:layout_width="match_parent"
+                <!-- Nome -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/nomeLayout"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:inputType="textPersonName|textCapWords"
-                    android:textColor="@color/green_black"
-                    android:textSize="16sp" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_weight="2"
+                    android:hint="Nome"
+                    app:boxStrokeColor="@color/green_black"
+                    app:hintTextColor="@color/green_black"
+                    app:startIconDrawable="@drawable/ic_person_24"
+                    app:startIconTint="@color/green_black">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/nomeEt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName|textCapWords"
+                        android:textColor="@color/green_black"
+                        android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Immagine profilo -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:layout_marginStart="16dp">
+
+                    <ImageView
+                        android:id="@+id/profileImageView"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:src="@drawable/ic_person_24"
+                        android:scaleType="centerCrop"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/changeImageButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Change Picture"
+                        android:textAllCaps="false"
+                        app:cornerRadius="20dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="@color/green_black"
+                        android:textColor="@color/green_black" />
+
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- Cognome Input -->
             <com.google.android.material.textfield.TextInputLayout
@@ -133,48 +173,6 @@
                     android:textColor="@color/black"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Profile Picture Section -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Profile Picture"
-        android:textColor="@color/green_black"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="16dp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="24dp">
-
-        <ImageView
-            android:id="@+id/profileImageView"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/ic_person_24"
-            android:background="@drawable/ic_account_circle_24"
-            android:scaleType="centerCrop"
-            android:layout_marginEnd="16dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/changeImageButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Change Picture"
-            android:textColor="@color/green_black"
-            android:textSize="14sp"
-            app:cornerRadius="20dp"
-            app:strokeColor="@color/green_black"
-            app:strokeWidth="1dp"
-            android:textAllCaps="false" />
-
-    </LinearLayout>
 
             <!-- Account Section -->
             <TextView
@@ -222,13 +220,6 @@
                 app:iconTint="@color/blue_black"
                 android:textAllCaps="false" />
 
-
-<!--            &lt;!&ndash; Spacer to push buttons to bottom &ndash;&gt;-->
-<!--            <View-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="0dp"-->
-<!--                android:layout_weight="1" />-->
-
             <!-- Buttons Container -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -273,6 +264,5 @@
         </LinearLayout>
 
     </ScrollView>
-
 
 </LinearLayout>

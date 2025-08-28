@@ -6,17 +6,32 @@
     android:background="@drawable/info_window_background"
     android:orientation="vertical"
     android:padding="16dp"
-    android:backgroundTint="@color/green_light">
+    android:backgroundTint="@color/light_green">
 
-    <!-- Immagine del rifugio -->
-    <ImageView
-        android:id="@+id/imageRifugio"
+    <!-- Wrapper per immagine + pulsante chiudi -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:layout_marginBottom="12dp"
-        android:background="@color/gray_light"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_cabin_24" />
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <ImageView
+            android:id="@+id/imageRifugio"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="@color/gray_light"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_cabin_24" />
+
+        <ImageButton
+            android:id="@+id/buttonClose"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="top|end"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Chiudi"
+            android:src="@drawable/ic_close_24px"
+            app:tint="@color/blue_black" />
+    </FrameLayout>
 
     <!-- Nome del rifugio -->
     <TextView

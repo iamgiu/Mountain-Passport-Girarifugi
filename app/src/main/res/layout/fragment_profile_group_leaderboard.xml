@@ -20,8 +20,8 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabForward"
-            android:contentDescription="Torna al Profilo"
+            android:id="@+id/fabBack"
+            android:contentDescription="Torna indietro"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_reply_24"
@@ -31,18 +31,15 @@
 
         <View
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="1dp"
             android:layout_weight="1"/>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabSettingsGroup"
-            android:contentDescription="Impostazioni Gruppo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_settings_24"
-            app:backgroundTint="@color/green_black"
-            app:fabSize="normal"
-            app:tint="@color/green_light" />
+        <ImageView
+            android:id="@+id/appLogo"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:contentDescription="App Logo"
+            android:src="@drawable/ic_launcher_foreground" />
 
     </LinearLayout>
 

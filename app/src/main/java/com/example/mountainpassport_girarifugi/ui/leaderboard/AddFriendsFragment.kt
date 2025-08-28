@@ -1,5 +1,6 @@
 package com.example.mountainpassport_girarifugi.ui.leaderboard
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -165,37 +166,17 @@ class AddFriendsFragment : Fragment() {
     }
 
     private fun onUserProfileClicked(user: AddFriendUser) {
-        // Naviga al profilo dell'utente o del gruppo
-        when (currentTab) {
-            0 -> {
-                // Apri il profilo utente
-                // Qui puoi navigare al fragment del profilo utente
-                Toast.makeText(
-                    requireContext(),
-                    "Apertura profilo di ${user.name}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                // Esempio di navigazione (sostituisci con il tuo sistema di navigazione)
-                // findNavController().navigate(
-                //     AddFriendsFragmentDirections.actionToUserProfile(user.id)
-                // )
-            }
-            1 -> {
-                // Apri il profilo del gruppo
-                Toast.makeText(
-                    requireContext(),
-                    "Apertura gruppo ${user.name}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                // Esempio di navigazione per i gruppi
-                // findNavController().navigate(
-                //     AddFriendsFragmentDirections.actionToGroupProfile(user.id)
-                // )
-            }
-        }
+        val intent = Intent(requireContext(), ProfileActivity::class.java)
+        intent.putExtra("USER_ID", user.id)
+        intent.putExtra("USER_NAME", user.name)
+        intent.putExtra("USER_USERNAME", user.username ?: "")
+        intent.putExtra("USER_POINTS", user.points)
+        intent.putExtra("USER_REFUGES", user.refugesCount)
+        intent.putExtra("USER_AVATAR", user.avatarResource)
+        intent.putExtra("TYPE", if (currentTab == 0) "USER" else "GROUP")
+        startActivity(intent)
     }
+
 
     private fun onAddFriendClicked(user: AddFriendUser) {
         // Gestisce la richiesta di amicizia o di unione al gruppo

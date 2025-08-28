@@ -14,12 +14,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.mountainpassport_girarifugi.MainActivity
 import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
-import com.example.mountainpassport_girarifugi.ui.notifications.NotificationsFragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import android.content.Intent
+import com.example.mountainpassport_girarifugi.CabinActivity
 
 class HomeFragment : Fragment() {
 
@@ -111,10 +110,10 @@ class HomeFragment : Fragment() {
 
     private fun setupEscursioneProgrammata(view: View, escursione: HomeViewModel.Escursione) {
         val backgroundImageView = view.findViewById<ImageView>(R.id.backgroundImage)
+        val cardEscursione = view.findViewById<androidx.cardview.widget.CardView>(R.id.cardEscursione)
 
         // Usa il metodo del ViewModel per ottenere il nome della risorsa
         val nomeRisorsa = viewModel.getImageResourceName(escursione.nome)
-
         val resId = resources.getIdentifier(nomeRisorsa, "drawable", requireContext().packageName)
 
         // Se trovata, la imposti come immagine
@@ -129,6 +128,33 @@ class HomeFragment : Fragment() {
         view.findViewById<TextView>(R.id.textNomeRifugio).text = escursione.nome
         view.findViewById<TextView>(R.id.textAltitudine).text = escursione.altitudine
         view.findViewById<TextView>(R.id.textDistanza).text = escursione.distanza
+
+        // Click listener sull'intera card
+        cardEscursione.setOnClickListener {
+            navigateToRifugioDetail(escursione)
+        }
+    }
+
+    // Metodo per navigare ai dettagli del rifugio
+    private fun navigateToRifugioDetail(escursione: HomeViewModel.Escursione) {
+        val intent = Intent(requireContext(), CabinActivity::class.java).apply {
+            // Passa tutti i dati del rifugio all'activity
+            putExtra("RIFUGIO_NOME", escursione.nome)
+            putExtra("RIFUGIO_ALTITUDINE", escursione.altitudine)
+            putExtra("RIFUGIO_DISTANZA", escursione.distanza)
+            putExtra("RIFUGIO_LOCALITA", escursione.localita)
+            putExtra("RIFUGIO_COORDINATE", escursione.coordinate)
+            putExtra("RIFUGIO_DIFFICOLTA", escursione.difficolta)
+            putExtra("RIFUGIO_TEMPO", escursione.tempo)
+            putExtra("RIFUGIO_DESCRIZIONE", escursione.descrizione)
+            putExtra("RIFUGIO_ID", escursione.id)
+
+            // Passa anche la lista dei servizi come stringa
+            if (escursione.servizi.isNotEmpty()) {
+                putExtra("RIFUGIO_SERVIZI", escursione.servizi.joinToString(","))
+            }
+        }
+        startActivity(intent)
     }
 
     private fun setupPunteggio(view: View, punteggio: Int) {
@@ -143,7 +169,13 @@ class HomeFragment : Fragment() {
         val recyclerRifugiBonus = view.findViewById<RecyclerView>(R.id.recyclerRifugiBonus)
         recyclerRifugiBonus.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
-        val adapterRifugiBonus = RifugiHorizontalAdapter(rifugiBonus, true) // true per mostrare badge bonus
+        val adapterRifugiBonus = RifugiHorizontalAdapter(
+            rifugiBonus,
+            true, // mostra badge bonus
+            onRifugioClick = { rifugioCard ->
+                navigateToRifugioFromCard(rifugioCard)
+            }
+        )
         recyclerRifugiBonus.adapter = adapterRifugiBonus
     }
 
@@ -151,15 +183,57 @@ class HomeFragment : Fragment() {
         val recyclerSuggerimenti = view.findViewById<RecyclerView>(R.id.recyclerSuggerimenti)
         recyclerSuggerimenti.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
-        val adapterSuggerimenti = RifugiHorizontalAdapter(suggerimenti, false) // false per nascondere badge bonus
+        val adapterSuggerimenti = RifugiHorizontalAdapter(
+            suggerimenti,
+            false, // nascondi badge bonus
+            onRifugioClick = { rifugioCard ->
+                navigateToRifugioFromCard(rifugioCard)
+            }
+        )
         recyclerSuggerimenti.adapter = adapterSuggerimenti
+    }
+
+    // Metodo per navigare dai rifugi delle card orizzontali
+    private fun navigateToRifugioFromCard(rifugioCard: HomeViewModel.RifugioCard) {
+        val intent = Intent(requireContext(), CabinActivity::class.java).apply {
+            // Passa i dati disponibili dalla card
+            putExtra("RIFUGIO_NOME", rifugioCard.nome)
+            putExtra("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
+            putExtra("RIFUGIO_DISTANZA", rifugioCard.distanza)
+            putExtra("RIFUGIO_DIFFICOLTA", rifugioCard.difficolta)
+            putExtra("RIFUGIO_TEMPO", rifugioCard.tempo)
+
+            // Per i dati mancanti, puoi usare valori di default o recuperarli dal ViewModel
+            putExtra("RIFUGIO_LOCALITA", "Località da specificare")
+            putExtra("RIFUGIO_COORDINATE", "0.0000,0.0000")
+            putExtra("RIFUGIO_DESCRIZIONE", "Descrizione non disponibile")
+        }
+        startActivity(intent)
     }
 
     private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
         val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
         recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
 
-        val adapter = FeedAmiciAdapter(feedAmici)
+        val adapter = FeedAmiciAdapter(feedAmici) { rifugioInfo ->
+            val intent = Intent(requireContext(), CabinActivity::class.java).apply {
+                putExtra("RIFUGIO_NOME", rifugioInfo.nome)
+                putExtra("RIFUGIO_ALTITUDINE", "${rifugioInfo.altitudine} m")
+                putExtra("RIFUGIO_LOCALITA", rifugioInfo.localita)
+
+                // Valori di default per parametri mancanti
+                putExtra("RIFUGIO_DISTANZA", "N/A")
+                putExtra("RIFUGIO_COORDINATE", "0.0000,0.0000")
+                putExtra("RIFUGIO_DIFFICOLTA", "Non specificata")
+                putExtra("RIFUGIO_TEMPO", "Non specificato")
+                putExtra("RIFUGIO_DESCRIZIONE", "Rifugio visitato da ${feedAmici.find { it.rifugioInfo == rifugioInfo }?.nomeUtente ?: "un amico"}")
+
+                // Dati extra
+                rifugioInfo.immagine?.let { putExtra("RIFUGIO_IMMAGINE", it) }
+            }
+            startActivity(intent)
+        }
+
         recyclerFeed.adapter = adapter
     }
 

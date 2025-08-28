@@ -286,8 +286,7 @@ class SearchCabinFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Aggiorna la lista dei rifugi
-        viewModel.refreshRifugi()
+        // I rifugi vengono caricati automaticamente nel ViewModel
     }
 
     override fun onPause() {

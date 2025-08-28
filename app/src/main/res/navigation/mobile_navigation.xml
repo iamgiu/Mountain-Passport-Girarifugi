@@ -39,6 +39,10 @@
             android:id="@+id/action_mapFragment_to_SearchCabinFragment"
             app:destination="@+id/nav_searchcabin" />
 
+        <action
+            android:id="@+id/action_mapFragment_to_cabinFragment"
+            app:destination="@+id/nav_cabin" />
+
     <fragment
         android:id="@+id/nav_searchcabin"
         android:name="com.example.mountainpassport_girarifugi.ui.map.SearchCabinFragment"
@@ -87,7 +91,7 @@
 
         <action
             android:id="@+id/action_addfriendsFragment_to_leaderboardfragment"
-            app:destination="@+id/nav_leaderboard" />
+            app:destination="@+id/nav_leaderboard" />>
 
     <fragment
         android:id="@+id/nav_profile"

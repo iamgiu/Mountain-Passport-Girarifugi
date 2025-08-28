@@ -20,8 +20,8 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabForward"
-            android:contentDescription="Torna al Profilo"
+            android:id="@+id/fabBack"
+            android:contentDescription="Torna indietro"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_reply_24"
@@ -31,18 +31,15 @@
 
         <View
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="1dp"
             android:layout_weight="1"/>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabSettingsGroup"
-            android:contentDescription="Impostazioni Gruppo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_settings_24"
-            app:backgroundTint="@color/green_black"
-            app:fabSize="normal"
-            app:tint="@color/green_light" />
+        <ImageView
+            android:id="@+id/appLogo"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:contentDescription="App Logo"
+            android:src="@drawable/ic_launcher_foreground" />
 
     </LinearLayout>
 
@@ -124,7 +121,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:fontFamily="@font/montserrat_bold"
-                    android:text="Gli Alpinisti"
+                    android:text="Marco Rossi"
                     android:textColor="@color/blue_black"
                     android:textSize="30sp"
                     android:textStyle="bold" />
@@ -137,7 +134,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="4dp"
                     android:fontFamily="@font/montserrat_medium"
-                    android:text="gli_alpinisti"
+                    android:text="marcorossi_explorer"
                     android:textColor="@color/gray"
                     android:textSize="16sp" />
 
@@ -153,7 +150,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/montserrat_bold"
-                    android:text="Statistiche del Gruppo"
+                    android:text="Le tue statistiche"
                     android:textColor="@color/blue_black"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -244,45 +241,53 @@
 
                 </LinearLayout>
 
-                <!-- Sezione Membri -->
-                <LinearLayout
+                <!-- Sezione Timbri -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:text="I tuoi timbri"
+                    android:textColor="@color/blue_black"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- RecyclerView Timbri Orizzontale -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/stampsRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="12dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Membri"
-                        android:textColor="@color/blue_black"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/montserrat_bold" />
-
-                    <TextView
-                        android:id="@+id/NumeroMembri"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="23 membri"
-                        android:textColor="@color/blue_black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/montserrat_semibold" />
-
-                </LinearLayout>
-
-                <!-- RecyclerView Gruppi verticale -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/membersRecyclerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
                     android:nestedScrollingEnabled="false"
                     android:clipToPadding="false"
                     android:paddingStart="0dp"
                     android:paddingEnd="16dp"
-                    tools:listitem="@layout/item_member"
+                    tools:listitem="@layout/item_stamp"
                     tools:itemCount="6" />
+
+
+                <!-- Sezione Gruppi -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:text="I tuoi gruppi"
+                    android:textColor="@color/blue_black"
+                    android:textSize="18sp"
+                    android:gravity="center"/>
+
+                <!-- RecyclerView Gruppi Orizzontale -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/groupsRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:nestedScrollingEnabled="false"
+                    android:clipToPadding="false"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="16dp"
+                    tools:listitem="@layout/item_group"
+                    tools:itemCount="4" />
 
             </LinearLayout>
 

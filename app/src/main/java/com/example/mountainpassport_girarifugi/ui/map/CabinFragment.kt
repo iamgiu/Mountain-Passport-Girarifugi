@@ -1,9 +1,11 @@
 package com.example.mountainpassport_girarifugi.ui.map
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RatingBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -11,6 +13,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.FragmentCabinBinding
+import android.widget.Button
+import android.widget.EditText
 
 class CabinFragment : Fragment() {
 
@@ -34,6 +38,9 @@ class CabinFragment : Fragment() {
 
         // Inizializza il ViewModel
         viewModel = ViewModelProvider(this)[CabinViewModel::class.java]
+
+        // Inizializza l'adapter per le recensioni
+        reviewsAdapter = ReviewAdapter()
 
         // Configura gli observer
         setupObservers()
@@ -72,6 +79,28 @@ class CabinFragment : Fragment() {
         viewModel.isSaved.observe(viewLifecycleOwner) { isSaved ->
             updateSaveButtonIcon(isSaved)
         }
+        
+        viewModel.reviews.observe(viewLifecycleOwner) { reviews ->
+            android.util.Log.d("CabinFragment", "Recensioni aggiornate: ${reviews.size} recensioni")
+            reviewsAdapter.updateReviews(reviews)
+            updateReviewsVisibility(reviews)
+            
+            if (reviews.isNotEmpty()) {
+                Toast.makeText(requireContext(), "Recensioni aggiornate: ${reviews.size} recensioni", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        viewModel.successMessage.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                viewModel.clearSuccessMessage()
+            }
+        }
+        
+        viewModel.stats.observe(viewLifecycleOwner) { stats ->
+            // Aggiorna le statistiche quando cambiano
+            viewModel.rifugio.value?.let { populateUI(it) }
+        }
     }
 
     private fun loadRifugioData() {
@@ -93,7 +122,28 @@ class CabinFragment : Fragment() {
 
         // Bottone salva rifugio
         binding.fabSave.setOnClickListener {
+            val currentState = viewModel.isSaved.value ?: false
             viewModel.toggleSaveRifugio()
+            
+            // Mostra il toast appropriato
+            val message = if (!currentState) {
+                "Rifugio salvato!"
+            } else {
+                "Rifugio rimosso dai salvati"
+            }
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
+        
+        // Bottone per aggiungere recensioni di test
+        binding.addTestReviewsButton.setOnClickListener {
+            android.util.Log.d("CabinFragment", "Bottone Aggiungi Recensioni Test cliccato")
+            Toast.makeText(requireContext(), "Aggiungendo recensioni di test...", Toast.LENGTH_SHORT).show()
+            viewModel.addTestReviews()
+        }
+        
+        // Bottone per aggiungere recensione utente
+        binding.addReviewButton.setOnClickListener {
+            showAddReviewDialog()
         }
     }
 
@@ -114,6 +164,9 @@ class CabinFragment : Fragment() {
             // Servizi (usa le funzioni del ViewModel)
             openingPeriodTextView.text = viewModel.getOpeningPeriod(rifugio)
             bedsTextView.text = viewModel.getBeds(rifugio)
+            
+            // Servizi dinamici
+            updateServicesVisibility(rifugio)
 
             // Come arrivare (usa le funzioni del ViewModel)
             distanceTextView.text = viewModel.getDistance(rifugio)
@@ -135,26 +188,91 @@ class CabinFragment : Fragment() {
         }
 
         binding.fabSave.setImageResource(iconRes)
-
-        val message = if (isSaved) {
-            "Rifugio salvato!"
-        } else {
-            "Rifugio rimosso dai salvati"
-        }
-
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        
+        // Non mostrare toast qui, solo aggiornare l'icona
+        // Il toast verrà mostrato solo quando l'utente clicca il bottone
     }
 
     private fun setupReviewsRecyclerView() {
-        // Configura l'adapter per le recensioni (quando sarà implementato)
         binding.recyclerViewUsers.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            // adapter = reviewsAdapter (quando sarà implementato)
+            adapter = reviewsAdapter
         }
-
-        // Per ora nascondiamo la RecyclerView e mostriamo il placeholder
-        binding.recyclerViewUsers.visibility = View.GONE
-        binding.noReviewsTextView.visibility = View.VISIBLE
+    }
+    
+    private fun updateReviewsVisibility(reviews: List<com.example.mountainpassport_girarifugi.data.model.Review>) {
+        if (reviews.isEmpty()) {
+            binding.recyclerViewUsers.visibility = View.GONE
+            binding.noReviewsTextView.visibility = View.VISIBLE
+        } else {
+            binding.recyclerViewUsers.visibility = View.VISIBLE
+            binding.noReviewsTextView.visibility = View.GONE
+        }
+    }
+    
+    private fun updateServicesVisibility(rifugio: com.example.mountainpassport_girarifugi.data.model.Rifugio) {
+        android.util.Log.d("CabinFragment", "Aggiornando servizi per rifugio: ${rifugio.nome} (Tipo: ${rifugio.tipo}, Altitudine: ${rifugio.altitudine})")
+        
+        val hasHotWater = viewModel.hasHotWater(rifugio)
+        val hasShowers = viewModel.hasShowers(rifugio)
+        val hasElectricity = viewModel.hasElectricity(rifugio)
+        val hasRestaurant = viewModel.hasRestaurant(rifugio)
+        
+        android.util.Log.d("CabinFragment", "Servizi disponibili - Acqua: $hasHotWater, Docce: $hasShowers, Elettricità: $hasElectricity, Ristorante: $hasRestaurant")
+        
+        with(binding) {
+            // Acqua calda
+            hotWaterLayout.visibility = if (hasHotWater) View.VISIBLE else View.GONE
+            android.util.Log.d("CabinFragment", "Acqua calda visibility: ${hotWaterLayout.visibility}")
+            
+            // Docce
+            showersLayout.visibility = if (hasShowers) View.VISIBLE else View.GONE
+            android.util.Log.d("CabinFragment", "Docce visibility: ${showersLayout.visibility}")
+            
+            // Luce elettrica
+            electricityLayout.visibility = if (hasElectricity) View.VISIBLE else View.GONE
+            android.util.Log.d("CabinFragment", "Elettricità visibility: ${electricityLayout.visibility}")
+            
+            // Ristorante
+            restaurantLayout.visibility = if (hasRestaurant) View.VISIBLE else View.GONE
+            android.util.Log.d("CabinFragment", "Ristorante visibility: ${restaurantLayout.visibility}")
+        }
+    }
+    
+    private fun showAddReviewDialog() {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_review, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        
+        val ratingBar = dialogView.findViewById<RatingBar>(R.id.ratingBar)
+        val commentEditText = dialogView.findViewById<EditText>(R.id.commentEditText)
+        val submitButton = dialogView.findViewById<Button>(R.id.submitButton)
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancelButton)
+        
+        submitButton.setOnClickListener {
+            val rating = ratingBar.rating
+            val comment = commentEditText.text.toString().trim()
+            
+            if (comment.isEmpty()) {
+                Toast.makeText(requireContext(), "Inserisci un commento", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            if (rating == 0f) {
+                Toast.makeText(requireContext(), "Inserisci una valutazione", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            viewModel.addUserReview(rating, comment)
+            dialog.dismiss()
+        }
+        
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialog.show()
     }
 
     override fun onDestroyView() {

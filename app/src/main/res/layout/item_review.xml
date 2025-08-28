@@ -4,35 +4,28 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/stats_card_background"
-    android:layout_marginBottom="12dp"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@drawable/rounded_border_container"
+    android:layout_marginBottom="8dp">
 
-    <!-- Header con avatar, nome e rating -->
+    <!-- Header con avatar, nome utente e rating -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:layout_marginBottom="8dp">
 
-        <!-- Foto utente circolare -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:layout_marginEnd="16dp"
-            app:cardCornerRadius="40dp"
-            app:cardElevation="4dp">
+        <!-- Avatar utente (placeholder per ora) -->
+        <ImageView
+            android:id="@+id/userAvatarImageView"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_person_24"
+            android:background="@drawable/circle_badge_bronze"
+            android:padding="8dp"
+            android:contentDescription="Avatar utente" />
 
-            <ImageView
-                android:id="@+id/imageSecondPlace"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/avatar_giovanni" />
-        </androidx.cardview.widget.CardView>
-
-        <!-- Container nome e rating -->
+        <!-- Nome utente e rating -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -40,69 +33,48 @@
             android:orientation="vertical"
             android:layout_marginStart="12dp">
 
-            <!-- Nome utente -->
             <TextView
                 android:id="@+id/userNameTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Marco Rossi"
+                android:text="Nome Utente"
                 android:textColor="@color/blue_black"
                 android:textSize="16sp"
                 android:fontFamily="@font/montserrat_bold"
                 android:textStyle="bold" />
 
-            <!-- Rating con stelle -->
-            <LinearLayout
+            <TextView
+                android:id="@+id/ratingTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="2dp">
-
-                <TextView
-                    android:id="@+id/ratingStarsTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="★★★★★"
-                    android:textColor="@color/blue"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/ratingValueTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="5.0"
-                    android:textColor="@color/gray"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/montserrat_medium"
-                    android:layout_marginStart="4dp" />
-
-            </LinearLayout>
+                android:text="⭐ 4.5"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                android:fontFamily="@font/montserrat_semibold" />
 
         </LinearLayout>
 
         <!-- Data recensione -->
         <TextView
-            android:id="@+id/reviewDateTextView"
+            android:id="@+id/dateTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="2 giorni fa"
+            android:text="27/01/2025"
             android:textColor="@color/gray"
             android:textSize="12sp"
             android:fontFamily="@font/montserrat_medium" />
 
     </LinearLayout>
 
-    <!-- Testo della recensione -->
+    <!-- Commento recensione -->
     <TextView
-        android:id="@+id/reviewTextView"
+        android:id="@+id/commentTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Rifugio bellissimo con una vista mozzafiato sul Monte Bianco. Il personale è stato molto accogliente e la cucina ottima. Consiglio vivamente di prenotare in anticipo, soprattutto nei weekend estivi."
+        android:text="Commento della recensione..."
         android:textColor="@color/blue_black"
         android:textSize="14sp"
         android:fontFamily="@font/montserrat_medium"
-        android:lineSpacingExtra="2dp"
-        android:layout_marginBottom="8dp" />
+        android:lineSpacingExtra="2dp" />
 
 </LinearLayout>

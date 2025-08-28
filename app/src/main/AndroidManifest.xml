@@ -80,14 +80,6 @@
             android:theme="@style/Theme.Material3.DynamicColors.Dark.NoActionBar"
             android:exported="false" />
 
-        <activity
-            android:name=".CabinActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.leaderboard.ProfileActivity"
-            android:exported="false" />
-
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

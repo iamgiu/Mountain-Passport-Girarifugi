@@ -21,7 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/montserrat_medium"
-        android:text="• Punto A\n• Punto B\n• Punto C"
+        android:text="🏔️ 1 punto ogni 100m di altitudine\n\n⭐ Rifugi storici/speciali: Punti doppi!"
         android:textColor="@android:color/black"
         android:textSize="16sp"/>
 
@@ -30,7 +30,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/montserrat_bold"
-        android:text="Sfide del Mese:"
+        android:text="Esempi di Punti:"
         android:textColor="@color/blue_black"
         android:textStyle="bold"
         android:textSize="18sp"/>
@@ -40,7 +40,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/montserrat_medium"
-        android:text="• Punto A\n• Punto B\n• Punto C"
+        android:text="• Rifugio 2000m: 20 punti\n• Rifugio 3000m: 30 punti\n• Rifugio storico 2500m: 50 punti (doppi)"
         android:textColor="@android:color/black"
         android:textSize="16sp"/>
 

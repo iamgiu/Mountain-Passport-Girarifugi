@@ -1,5 +1,6 @@
 package com.example.mountainpassport_girarifugi.ui.home
 
+import android.content.Intent
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
 
 class FeedAmiciAdapter(
-    private val feedItems: List<HomeViewModel.FeedAmico>
+    private val feedItems: List<HomeViewModel.FeedAmico>,
+    private val onRifugioClick: (HomeViewModel.RifugioInfo) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -21,24 +23,22 @@ class FeedAmiciAdapter(
 
     override fun getItemViewType(position: Int): Int {
         val item = feedItems[position]
-        return when {
-            item.testoAttivita.contains("visitato") -> TYPE_RIFUGIO_VISITATO
-            else -> TYPE_GENERIC
+        return if (item.tipoAttivita == HomeViewModel.TipoAttivita.RIFUGIO_VISITATO && item.rifugioInfo != null) {
+            TYPE_RIFUGIO_VISITATO
+        } else {
+            TYPE_GENERIC
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when (viewType) {
-            TYPE_RIFUGIO_VISITATO -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.card_feed_rifugio_visitato, parent, false)
-                RifugioVisitatoViewHolder(view)
-            }
-            else -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.card_feed_amici, parent, false)
-                GenericFeedViewHolder(view)
-            }
+        return if (viewType == TYPE_RIFUGIO_VISITATO) {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.card_feed_rifugio_visitato, parent, false)
+            RifugioVisitatoViewHolder(view, onRifugioClick)
+        } else {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.card_feed_amici, parent, false)
+            GenericFeedViewHolder(view)
         }
     }
 
@@ -52,7 +52,7 @@ class FeedAmiciAdapter(
 
     override fun getItemCount(): Int = feedItems.size
 
-    // ViewHolder per card generiche (achievement, punti, ecc.)
+    // ViewHolder generico
     class GenericFeedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val avatarContainer: LinearLayout = itemView.findViewById(R.id.avatarContainer)
         private val avatarInitials: TextView = itemView.findViewById(R.id.avatarInitials)
@@ -60,15 +60,12 @@ class FeedAmiciAdapter(
         private val textTempo: TextView = itemView.findViewById(R.id.textTempo)
 
         fun bind(item: HomeViewModel.FeedAmico) {
-            // Genera iniziali dal nome
             val initials = getInitials(item.nomeUtente)
             avatarInitials.text = initials
 
-            // Colore avatar basato sul nome (per varietà)
             val colors = listOf("#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336", "#00BCD4")
-            val colorIndex = item.nomeUtente.hashCode() % colors.size
-            val backgroundColor = Color.parseColor(colors[Math.abs(colorIndex)])
-            avatarContainer.setBackgroundColor(backgroundColor)
+            val colorIndex = Math.abs(item.nomeUtente.hashCode() % colors.size)
+            avatarContainer.setBackgroundColor(Color.parseColor(colors[colorIndex]))
 
             textNotifica.text = "${item.nomeUtente} ${item.testoAttivita}"
             textTempo.text = item.tempo
@@ -78,61 +75,64 @@ class FeedAmiciAdapter(
             val parts = name.split(" ")
             return when {
                 parts.size >= 2 -> "${parts[0].firstOrNull()?.uppercase()}${parts[1].firstOrNull()?.uppercase()}"
-                parts.size == 1 -> "${parts[0].take(2).uppercase()}"
+                parts.size == 1 -> parts[0].take(2).uppercase()
                 else -> "NA"
             }
         }
     }
 
-    // ViewHolder per rifugi visitati (con dettagli rifugio)
-    class RifugioVisitatoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    // ViewHolder rifugio visitato
+    class RifugioVisitatoViewHolder(
+        itemView: View,
+        private val onRifugioClick: (HomeViewModel.RifugioInfo) -> Unit
+    ) : RecyclerView.ViewHolder(itemView) {
+
         private val avatarContainer: LinearLayout = itemView.findViewById(R.id.avatarContainer)
         private val avatarInitials: TextView = itemView.findViewById(R.id.avatarInitials)
         private val textNotifica: TextView = itemView.findViewById(R.id.textNotifica)
         private val textTempo: TextView = itemView.findViewById(R.id.textTempo)
-        private val imageRifugio: ImageView = itemView.findViewById(R.id.imageRifugio)
         private val nomeRifugio: TextView = itemView.findViewById(R.id.nomeRifugio)
         private val localitaRifugio: TextView = itemView.findViewById(R.id.localitaRifugio)
         private val altitudineRifugio: TextView = itemView.findViewById(R.id.altitudineRifugio)
         private val textPunti: TextView = itemView.findViewById(R.id.textPunti)
+        private val imageRifugio: ImageView = itemView.findViewById(R.id.imageRifugio)
+        private val rifugioDetailsContainer: LinearLayout? = itemView.findViewById(R.id.rifugioDetailsContainer)
 
         fun bind(item: HomeViewModel.FeedAmico) {
-            // Setup avatar
+            // Setup avatar e header
             val initials = getInitials(item.nomeUtente)
             avatarInitials.text = initials
 
             val colors = listOf("#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336", "#00BCD4")
-            val colorIndex = item.nomeUtente.hashCode() % colors.size
-            val backgroundColor = Color.parseColor(colors[Math.abs(colorIndex)])
-            avatarContainer.setBackgroundColor(backgroundColor)
+            val colorIndex = Math.abs(item.nomeUtente.hashCode() % colors.size)
+            avatarContainer.setBackgroundColor(Color.parseColor(colors[colorIndex]))
 
-            textNotifica.text = "${item.nomeUtente} ha visitato un rifugio"
+            textNotifica.text = "${item.nomeUtente} ${item.testoAttivita}"
             textTempo.text = item.tempo
 
-            // Dati rifugio (potresti passarli tramite RifugioInfo in FeedAmico)
-            val rifugi = listOf(
-                Triple("Rifugio Laghi Verdi", "Val d'Aosta", 75),
-                Triple("Rifugio Monte Bianco", "Courmayeur", 90),
-                Triple("Capanna Margherita", "Monte Rosa", 120),
-                Triple("Rifugio Torino", "Val Ferret", 65)
-            )
+            // Setup dati rifugio se disponibili
+            item.rifugioInfo?.let { rifugioData ->
+                nomeRifugio.text = rifugioData.nome
+                localitaRifugio.text = rifugioData.localita
+                altitudineRifugio.text = "Altitudine: ${rifugioData.altitudine} m"
+                textPunti.text = "+${rifugioData.puntiGuadagnati} punti"
+                imageRifugio.setImageResource(R.drawable.mountain_background)
 
-            val rifugioData = rifugi[Math.abs(item.nomeUtente.hashCode()) % rifugi.size]
-
-            nomeRifugio.text = rifugioData.first
-            localitaRifugio.text = rifugioData.second
-            altitudineRifugio.text = "Altitudine: ${(1500..2500).random()} m"
-            textPunti.text = "+${rifugioData.third} punti"
-
-            // Immagine rifugio
-            imageRifugio.setImageResource(R.drawable.mountain_background)
+                // Imposta click listener sulla sezione rifugio
+                val clickableContainer = rifugioDetailsContainer ?: itemView
+                clickableContainer.setOnClickListener {
+                    onRifugioClick(rifugioData)
+                }
+                clickableContainer.isClickable = true
+                clickableContainer.isFocusable = true
+            }
         }
 
         private fun getInitials(name: String): String {
             val parts = name.split(" ")
             return when {
                 parts.size >= 2 -> "${parts[0].firstOrNull()?.uppercase()}${parts[1].firstOrNull()?.uppercase()}"
-                parts.size == 1 -> "${parts[0].take(2).uppercase()}"
+                parts.size == 1 -> parts[0].take(2).uppercase()
                 else -> "NA"
             }
         }

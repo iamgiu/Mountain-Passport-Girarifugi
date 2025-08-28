@@ -44,10 +44,10 @@ class SearchCabinAdapter(
 
             // Mostra altitudine e distanza se disponibile
             val distance = getDistance(rifugio)
-            altitudineRifugio.text = if (distance.isNotEmpty()) {
-                "${rifugio.altitudine} m s.l.m. • $distance"
+            altitudineRifugio.text = if (distance != "Posizione non disponibile") {
+                "${rifugio.altitudine} m s.l.m. • 📍 $distance"
             } else {
-                "${rifugio.altitudine} m s.l.m."
+                "${rifugio.altitudine} m s.l.m. • 🔍 Attiva GPS per distanza"
             }
 
             // Imposta l'icona in base al tipo di rifugio

@@ -87,6 +87,7 @@ class MapFragment : Fragment() {
 
         // Inizializzazione Search Cabin Button
         setupSeachCabinButton(view)
+
     }
 
     private fun setupSeachCabinButton(view: View) {

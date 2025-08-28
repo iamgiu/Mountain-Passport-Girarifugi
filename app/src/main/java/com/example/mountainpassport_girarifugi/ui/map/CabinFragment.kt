@@ -13,6 +13,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.FragmentCabinBinding
+import com.example.mountainpassport_girarifugi.data.model.RifugioPoints
+import com.bumptech.glide.Glide
 import android.widget.Button
 import android.widget.EditText
 
@@ -120,6 +122,14 @@ class CabinFragment : Fragment() {
             findNavController().popBackStack()
         }
 
+        // Bottone registra visita
+        binding.fabVisit.setOnClickListener {
+            val rifugio = viewModel.rifugio.value
+            if (rifugio != null) {
+                viewModel.recordVisit()
+            }
+        }
+
         // Bottone salva rifugio
         binding.fabSave.setOnClickListener {
             val currentState = viewModel.isSaved.value ?: false
@@ -155,8 +165,19 @@ class CabinFragment : Fragment() {
             coordinatesTextView.text = "${rifugio.latitudine}\n${rifugio.longitudine}"
             locationTextView.text = rifugio.localita
 
-            // Immagine del rifugio (placeholder)
-            cabinImageView.setImageResource(R.drawable.rifugio_torino)
+            // Immagine del rifugio
+            if (!rifugio.immagineUrl.isNullOrEmpty()) {
+                // Carica l'immagine dall'URL usando Glide
+                Glide.with(requireContext())
+                    .load(rifugio.immagineUrl)
+                    .placeholder(R.drawable.rifugio_torino) // Immagine di fallback
+                    .error(R.drawable.rifugio_torino) // Immagine in caso di errore
+                    .centerCrop()
+                    .into(cabinImageView)
+            } else {
+                // Se non c'è URL, usa l'immagine di default
+                cabinImageView.setImageResource(R.drawable.rifugio_torino)
+            }
 
             // Timbro (placeholder)
             stampView.setImageResource(R.drawable.stamps)
@@ -177,6 +198,14 @@ class CabinFragment : Fragment() {
 
             // Recensioni (usa le funzioni del ViewModel)
             reviewsRatingTextView.text = "⭐ ${viewModel.getAverageRating(rifugio)} (${viewModel.getReviewCount(rifugio)} recensioni)"
+
+            // Punti disponibili per questo rifugio
+            val rifugioPoints = viewModel.getRifugioPoints(rifugio)
+            pointsTextView.text = if (rifugioPoints.isDoublePoints) {
+                "+${rifugioPoints.totalPoints} punti (doppi!)"
+            } else {
+                "+${rifugioPoints.totalPoints} punti"
+            }
         }
     }
 

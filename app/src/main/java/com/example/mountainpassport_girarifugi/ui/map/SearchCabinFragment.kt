@@ -91,6 +91,18 @@ class SearchCabinFragment : Fragment() {
 
             // Aggiungi animazioni
             itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator()
+            
+            // Aggiungi un listener per il layout
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                // Quando il layout cambia, prova a scrollare al top se necessario
+                adapter?.let { safeAdapter ->
+                    if (safeAdapter.itemCount > 0) {
+                        post {
+                            scrollToPosition(0)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -102,11 +114,25 @@ class SearchCabinFragment : Fragment() {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     query?.let { viewModel.searchRifugi(it) }
                     clearFocus()
+                    
+                    // Scroll al top dopo la ricerca
+                    binding.recyclerViewUsers.postDelayed({
+                        binding.recyclerViewUsers.scrollToPosition(0)
+                    }, 100)
+                    
                     return true
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
                     newText?.let { viewModel.searchRifugi(it) }
+                    
+                    // Scroll al top quando cambia il testo
+                    if (!newText.isNullOrEmpty()) {
+                        binding.recyclerViewUsers.postDelayed({
+                            binding.recyclerViewUsers.scrollToPosition(0)
+                        }, 100)
+                    }
+                    
                     return true
                 }
             })
@@ -115,6 +141,11 @@ class SearchCabinFragment : Fragment() {
             setOnCloseListener {
                 viewModel.clearSearch()
                 false
+            }
+
+            // Gestisci anche quando la query viene cancellata manualmente
+            setOnSearchClickListener {
+                // Quando si clicca sulla search view, assicurati che sia visibile
             }
         }
     }
@@ -128,7 +159,35 @@ class SearchCabinFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.filteredRifugi.observe(viewLifecycleOwner) { rifugi ->
+            android.util.Log.d("SearchCabinFragment", "Lista aggiornata con ${rifugi.size} elementi")
+            if (rifugi.isNotEmpty()) {
+                android.util.Log.d("SearchCabinFragment", "Primo elemento: ${rifugi[0].nome}")
+            }
+            
             adapter.submitList(rifugi)
+            
+            // Scroll al primo elemento dopo aver aggiornato la lista
+            if (rifugi.isNotEmpty()) {
+                android.util.Log.d("SearchCabinFragment", "Tentativo di scroll al primo elemento")
+                binding.recyclerViewUsers.postDelayed({
+                    try {
+                        // Forza un layout refresh
+                        binding.recyclerViewUsers.layoutManager?.requestLayout()
+                        
+                        // Prova prima con scroll immediato
+                        binding.recyclerViewUsers.scrollToPosition(0)
+                        android.util.Log.d("SearchCabinFragment", "Scroll immediato eseguito")
+                        
+                        // Se non funziona, prova con smooth scroll
+                        binding.recyclerViewUsers.postDelayed({
+                            binding.recyclerViewUsers.smoothScrollToPosition(0)
+                            android.util.Log.d("SearchCabinFragment", "Smooth scroll eseguito")
+                        }, 50)
+                    } catch (e: Exception) {
+                        android.util.Log.e("SearchCabinFragment", "Errore nello scroll: ${e.message}")
+                    }
+                }, 300) // Aumentato ulteriormente il delay
+            }
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
@@ -158,9 +217,8 @@ class SearchCabinFragment : Fragment() {
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
                 locationResult.lastLocation?.let { location ->
-                    viewModel.setUserLocation(location)
-                    // Ferma gli aggiornamenti dopo aver ottenuto la prima posizione
-                    stopLocationUpdates()
+                    viewModel.updateUserLocation(location)
+                    // Continua ad aggiornare la posizione per mantenere l'ordinamento aggiornato
                 }
             }
         }
@@ -201,6 +259,11 @@ class SearchCabinFragment : Fragment() {
             LOCATION_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     getCurrentLocation()
+                    Toast.makeText(
+                        requireContext(),
+                        "GPS attivato! I rifugi saranno ordinati per distanza.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     Toast.makeText(
                         requireContext(),
@@ -228,7 +291,9 @@ class SearchCabinFragment : Fragment() {
             // Prima prova con l'ultima posizione conosciuta
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
-                    viewModel.setUserLocation(location)
+                    viewModel.updateUserLocation(location)
+                    // Avvia aggiornamenti continui per mantenere la posizione aggiornata
+                    startLocationUpdates()
                 } else {
                     // Se non c'è una posizione conosciuta, richiedi aggiornamenti
                     startLocationUpdates()

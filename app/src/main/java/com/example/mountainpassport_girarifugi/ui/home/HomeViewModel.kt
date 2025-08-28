@@ -66,7 +66,15 @@ class HomeViewModel : ViewModel() {
         val escursione = Escursione(
             nome = "Rifugio Monte Bianco",
             altitudine = "2100 m",
-            distanza = "18 km"
+            distanza = "18 km",
+            id = "monte_bianco",
+            coordinate = "45.8326,6.8652",
+            localita = "Val d'Aosta",
+            servizi = listOf("Acqua calda", "Luce elettrica", "Docce", "Ristorante"),
+            difficolta = "Escursionisti [E]",
+            tempo = "5h 30m",
+            descrizione = "Un rifugio panoramico con vista mozzafiato sul Monte Bianco",
+            immagine = "rifugio_monte_bianco"
         )
         _escursioneProgrammata.value = escursione
     }
@@ -159,31 +167,62 @@ class HomeViewModel : ViewModel() {
     }
 
     private suspend fun loadFeedAmici() {
-        // TODO: Sostituire con chiamata al repository per feed amici
         val feed = listOf(
-            FeedAmico("Mario Rossi", "ic_account_circle_24", "ha visitato un rifugio", "2 ore fa"),
-            FeedAmico("Lucia Bianchi", "ic_account_circle_24", "ha guadagnato un achievement", "5 ore fa"),
-            FeedAmico("Giovanni Verde", "ic_account_circle_24", "ha visitato un rifugio", "1 giorno fa"),
-            FeedAmico("Anna Blu", "ic_account_circle_24", "ha lasciato una recensione", "1 giorno fa"),
-            FeedAmico("Marco Neri", "ic_account_circle_24", "ha completato 5 rifugi", "2 giorni fa"),
-            FeedAmico("Sofia Rosa", "ic_account_circle_24", "ha visitato un rifugio", "3 giorni fa"),
-            FeedAmico("Luca Viola", "ic_account_circle_24", "ha guadagnato 150 punti", "4 giorni fa")
+            // Rifugio visitato
+            FeedAmico(
+                nomeUtente = "Mario Rossi",
+                avatar = "ic_account_circle_24",
+                testoAttivita = "ha visitato un rifugio",
+                tempo = "2 ore fa",
+                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
+                rifugioInfo = RifugioInfo(
+                    nome = "Rifugio Monte Bianco",
+                    localita = "Val d'Aosta",
+                    altitudine = "2100",
+                    puntiGuadagnati = 50,
+                    immagine = "rifugio_monte_bianco"
+                )
+            ),
+            // Achievement
+            FeedAmico(
+                nomeUtente = "Lucia Bianchi",
+                avatar = "ic_account_circle_24",
+                testoAttivita = "ha guadagnato un achievement",
+                tempo = "5 ore fa",
+                tipoAttivita = TipoAttivita.ACHIEVEMENT
+                // rifugioInfo lasciato null
+            ),
+            // Altro rifugio visitato
+            FeedAmico(
+                nomeUtente = "Giovanni Verde",
+                avatar = "ic_account_circle_24",
+                testoAttivita = "ha visitato un rifugio",
+                tempo = "1 giorno fa",
+                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
+                rifugioInfo = RifugioInfo(
+                    nome = "Rifugio Laghi Gemelli",
+                    localita = "Val d'Aosta",
+                    altitudine = "2134",
+                    puntiGuadagnati = 30,
+                    immagine = "rifugio_laghi_gemelli"
+                )
+            ),
+            // Punti guadagnati
+            FeedAmico(
+                nomeUtente = "Luca Viola",
+                avatar = "ic_account_circle_24",
+                testoAttivita = "ha guadagnato 150 punti",
+                tempo = "4 giorni fa",
+                tipoAttivita = TipoAttivita.PUNTI_GUADAGNATI
+            )
         )
         _feedAmici.value = feed
     }
 
+
     // Metodi per azioni utente
     fun refreshData() {
         loadData()
-    }
-
-    fun onRifugioClicked(rifugio: RifugioCard) {
-        // TODO: Logica per navigazione al dettaglio rifugio
-        // Potresti emettere un evento di navigazione
-    }
-
-    fun onFeedItemClicked(feedItem: FeedAmico) {
-        // TODO: Logica per azioni sul feed
     }
 
     fun clearError() {
@@ -202,11 +241,18 @@ class HomeViewModel : ViewModel() {
             .replace("ù", "u")
     }
 
-    // Data classes - potresti spostarle in un file separato
     data class Escursione(
         val nome: String,
         val altitudine: String,
-        val distanza: String
+        val distanza: String,
+        val id: String? = null,
+        val coordinate: String? = null,
+        val localita: String? = null,
+        val servizi: List<String> = emptyList(),
+        val difficolta: String? = null,
+        val tempo: String? = null,
+        val descrizione: String? = null,
+        val immagine: String? = null
     )
 
     data class RifugioCard(
@@ -221,7 +267,7 @@ class HomeViewModel : ViewModel() {
 
     data class FeedAmico(
         val nomeUtente: String,
-        val avatar: String, // Cambiato da Int a String per flessibilità
+        val avatar: String,
         val testoAttivita: String,
         val tempo: String,
         val tipoAttivita: TipoAttivita = TipoAttivita.GENERIC,

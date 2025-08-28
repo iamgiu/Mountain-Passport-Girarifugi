@@ -28,7 +28,6 @@
             android:id="@+id/action_notificationsFragment_to_homeFragment"
             app:destination="@+id/nav_home" />
 
-
     <fragment
         android:id="@+id/nav_map"
         android:name="com.example.mountainpassport_girarifugi.ui.map.MapFragment"
@@ -94,6 +93,17 @@
             app:destination="@+id/nav_leaderboard" />
 
     <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.mountainpassport_girarifugi.ui.ProfileFragment"
+        android:label="Profilo"
+        tools:layout="@layout/fragment_profile_leaderboard" />
+
+        <action
+            android:id="@+id/action_addfriendsFragment_to_profileFragment"
+            app:destination="@id/profileFragment"/>
+
+
+    <fragment
         android:id="@+id/nav_profile"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.ProfileFragment"
         android:label="Mountain Passport"
@@ -106,6 +116,10 @@
         <action
             android:id="@+id/action_profileFragment_to_groupsFragment"
             app:destination="@+id/nav_group" />
+
+    <action
+        android:id="@+id/action_profileFragment_to_friendRequestsFragment"
+        app:destination="@+id/nav_friend_requests" />
 
     <fragment
         android:id="@+id/nav_group"
@@ -141,5 +155,11 @@
         <action
             android:id="@+id/action_settingsFragment_to_profilefragment"
             app:destination="@+id/nav_profile" />
+
+    <fragment
+        android:id="@+id/nav_friend_requests"
+        android:name="com.example.mountainpassport_girarifugi.ui.profile.FriendRequestsFragment"
+        android:label="Richieste di Amicizia"
+        tools:layout="@layout/fragment_friend_request" />
 
 </navigation>

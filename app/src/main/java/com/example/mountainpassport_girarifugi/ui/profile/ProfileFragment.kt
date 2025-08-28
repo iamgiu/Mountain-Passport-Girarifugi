@@ -35,7 +35,9 @@ class ProfileFragment : Fragment() {
     private lateinit var visitedRefugesTextView: TextView
 
     // ViewModel
-    private val viewModel: ProfileViewModel by viewModels()
+    private val viewModel: ProfileViewModel by viewModels {
+        ProfileViewModelFactory(requireContext())
+    }
 
     // Profile image view reference
     private lateinit var profileImageView: ImageView
@@ -130,6 +132,9 @@ class ProfileFragment : Fragment() {
             }
         }
         loadSavedProfileImage()
+
+        // TODO Observer per richieste e lista amici
+
     }
 
     private fun updateProfileUI(profileData: ProfileData) {
@@ -215,6 +220,22 @@ class ProfileFragment : Fragment() {
             // In alternativa, puoi logare l'errore per il debug
             android.util.Log.e("ProfileFragment", "Errore navigazione: ${e.message}")
         }
+    }
+
+    private fun showFriendRequestsNotification(count: Int) {
+        // Add a badge or notification indicator
+        // You could add a badge to your settings FAB or create a separate notification area
+
+        // For now, let's show a toast when there are new requests
+        if (count > 0) {
+            Toast.makeText(requireContext(), "Hai $count nuove richieste di amicizia!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Add method to navigate to friend requests
+    private fun navigateToFriendRequests() {
+        // Navigate to friend requests fragment
+        findNavController().navigate(R.id.action_profileFragment_to_friendRequestsFragment)
     }
 
     override fun onResume() {

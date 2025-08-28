@@ -11,14 +11,9 @@ import com.example.mountainpassport_girarifugi.R
 
 class RifugiHorizontalAdapter(
     private val rifugi: List<HomeViewModel.RifugioCard>,
-    private val showBonusBadge: Boolean = false
+    private val showBonusBadge: Boolean,
+    private val onRifugioClick: (HomeViewModel.RifugioCard) -> Unit // Aggiungi questo callback
 ) : RecyclerView.Adapter<RifugiHorizontalAdapter.RifugioViewHolder>() {
-
-    private var onItemClickListener: ((HomeViewModel.RifugioCard) -> Unit)? = null
-
-    fun setOnItemClickListener(listener: (HomeViewModel.RifugioCard) -> Unit) {
-        onItemClickListener = listener
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RifugioViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -30,8 +25,9 @@ class RifugiHorizontalAdapter(
         val rifugio = rifugi[position]
         holder.bind(rifugio, showBonusBadge)
 
+        // Aggiungi il click listener
         holder.itemView.setOnClickListener {
-            onItemClickListener?.invoke(rifugio)
+            onRifugioClick(rifugio)
         }
     }
 

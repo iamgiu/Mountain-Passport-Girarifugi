@@ -6,11 +6,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.repository.FriendRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // Data class per gli utenti che possono essere aggiunti come amici
 data class AddFriendUser(
     val id: String,
     val name: String,
+    val username: String,
     val points: Int,
     val refugesCount: Int,
     val avatarResource: Int,
@@ -34,40 +38,46 @@ class AddFriendsViewModel : ViewModel() {
 
     // Dati mock per utenti
     private val allUsers = listOf(
-        AddFriendUser("1", "Alessandro Bianchi", 4200, 12, R.drawable.avatar_giovanni),
-        AddFriendUser("2", "Francesca Verde", 3800, 8, R.drawable.avatar_lucia),
-        AddFriendUser("3", "Matteo Rossi", 5200, 15, R.drawable.avatar_mario),
-        AddFriendUser("4", "Sofia Neri", 6800, 22, R.drawable.avatar_sara),
-        AddFriendUser("5", "Lorenzo Blu", 2900, 6, R.drawable.avatar_marco),
-        AddFriendUser("6", "Giulia Gialli", 7200, 28, R.drawable.avatar_lucia),
-        AddFriendUser("7", "Andrea Viola", 1800, 4, R.drawable.avatar_giovanni),
-        AddFriendUser("8", "Chiara Rosa", 8400, 35, R.drawable.avatar_sara),
-        AddFriendUser("9", "Davide Arancione", 3600, 11, R.drawable.avatar_marco),
-        AddFriendUser("10", "Valentina Grigia", 5800, 18, R.drawable.avatar_lucia),
-        AddFriendUser("11", "Simone Marrone", 4100, 13, R.drawable.avatar_giovanni),
-        AddFriendUser("12", "Elena Azzurra", 6200, 20, R.drawable.avatar_sara),
-        AddFriendUser("13", "Filippo Oro", 9100, 42, R.drawable.avatar_mario),
-        AddFriendUser("14", "Martina Argento", 7800, 31, R.drawable.avatar_lucia),
-        AddFriendUser("15", "Riccardo Bronzo", 2400, 5, R.drawable.avatar_marco)
+        AddFriendUser("1", "Alessandro Bianchi", "alessandro_b", 4200, 12, R.drawable.avatar_giovanni),
+        AddFriendUser("2", "Francesca Verde", "francesca_v", 3800, 8, R.drawable.avatar_lucia),
+        AddFriendUser("3", "Matteo Rossi", "matteo_r", 5200, 15, R.drawable.avatar_mario),
+        AddFriendUser("4", "Sofia Neri", "sofia_n", 6800, 22, R.drawable.avatar_sara),
+        AddFriendUser("5", "Lorenzo Blu", "lorenzo_b", 2900, 6, R.drawable.avatar_marco),
+        AddFriendUser("6", "Giulia Gialli", "giulia_g", 7200, 28, R.drawable.avatar_lucia),
+        AddFriendUser("7", "Andrea Viola", "andrea_v", 1800, 4, R.drawable.avatar_giovanni),
+        AddFriendUser("8", "Chiara Rosa", "chiara_r", 8400, 35, R.drawable.avatar_sara),
+        AddFriendUser("9", "Davide Arancione", "davide_a", 3600, 11, R.drawable.avatar_marco),
+        AddFriendUser("10", "Valentina Grigia", "valentina_g", 5800, 18, R.drawable.avatar_lucia),
+        AddFriendUser("11", "Simone Marrone", "simone_m", 4100, 13, R.drawable.avatar_giovanni),
+        AddFriendUser("12", "Elena Azzurra", "elena_a", 6200, 20, R.drawable.avatar_sara),
+        AddFriendUser("13", "Filippo Oro", "filippo_o", 9100, 42, R.drawable.avatar_mario),
+        AddFriendUser("14", "Martina Argento", "martina_a", 7800, 31, R.drawable.avatar_lucia),
+        AddFriendUser("15", "Riccardo Bronzo", "riccardo_b", 2400, 5, R.drawable.avatar_marco)
     )
+
 
     // Dati mock per gruppi
     private val allGroups = listOf(
-        AddFriendUser("g1", "Escursionisti Lombardia", 156789, 89, R.drawable.avatar_mario),
-        AddFriendUser("g2", "Amici della Montagna", 134567, 76, R.drawable.avatar_marco),
-        AddFriendUser("g3", "Trekking Piemonte", 112345, 65, R.drawable.avatar_luca),
-        AddFriendUser("g4", "Alpinisti Uniti", 98765, 54, R.drawable.avatar_giovanni),
-        AddFriendUser("g5", "Rifugi & Sentieri", 87654, 43, R.drawable.avatar_lucia),
-        AddFriendUser("g6", "Camminate nel Verde", 76543, 38, R.drawable.avatar_sara),
-        AddFriendUser("g7", "Outdoor Adventurers", 65432, 32, R.drawable.avatar_mario),
-        AddFriendUser("g8", "Mountain Lovers", 54321, 28, R.drawable.avatar_marco),
-        AddFriendUser("g9", "Vette e Valli", 43210, 24, R.drawable.avatar_luca),
-        AddFriendUser("g10", "Escursioni Domenicali", 32109, 20, R.drawable.avatar_giovanni)
+        AddFriendUser("g1", "Escursionisti Lombardia", "esc_lombardia", 156789, 89, R.drawable.avatar_mario),
+        AddFriendUser("g2", "Amici della Montagna", "amici_montagna", 134567, 76, R.drawable.avatar_marco),
+        AddFriendUser("g3", "Trekking Piemonte", "trek_piemonte", 112345, 65, R.drawable.avatar_luca),
+        AddFriendUser("g4", "Alpinisti Uniti", "alpinisti_uniti", 98765, 54, R.drawable.avatar_giovanni),
+        AddFriendUser("g5", "Rifugi & Sentieri", "rifugi_sentieri", 87654, 43, R.drawable.avatar_lucia),
+        AddFriendUser("g6", "Camminate nel Verde", "camminate_verde", 76543, 38, R.drawable.avatar_sara),
+        AddFriendUser("g7", "Outdoor Adventurers", "outdoor_adventurers", 65432, 32, R.drawable.avatar_mario),
+        AddFriendUser("g8", "Mountain Lovers", "mountain_lovers", 54321, 28, R.drawable.avatar_marco),
+        AddFriendUser("g9", "Vette e Valli", "vette_valli", 43210, 24, R.drawable.avatar_luca),
+        AddFriendUser("g10", "Escursioni Domenicali", "esc_domenicali", 32109, 20, R.drawable.avatar_giovanni)
     )
 
-    // Set per tracciare le richieste inviate
+
+    // Gestione amicizie e gruppi
     private val sentFriendRequests = mutableSetOf<String>()
     private val joinedGroupRequests = mutableSetOf<String>()
+
+    private val friendRepository = FriendRepository()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     init {
         // Carica alcuni utenti di default
@@ -164,23 +174,77 @@ class AddFriendsViewModel : ViewModel() {
 
     fun addFriend(user: AddFriendUser) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                // Simula una chiamata API
-                sentFriendRequests.add(user.id)
+                friendRepository.sendFriendRequest(user.id) { success, error ->
+                    if (success) {
+                        // Segnala richiesta inviata
+                        sentFriendRequests.add(user.id)
 
-                // Aggiorna la lista corrente marcando l'utente come "richiesta inviata"
-                val currentList = _searchResults.value ?: emptyList()
-                val updatedList = currentList.map { currentUser ->
-                    if (currentUser.id == user.id) {
-                        currentUser.copy(isRequestSent = true)
+                        // Aggiorna lista amcici
+                        val currentList = _searchResults.value ?: emptyList()
+                        val updatedList = currentList.map { currentUser ->
+                            if (currentUser.id == user.id) {
+                                currentUser.copy(isRequestSent = true)
+                            } else {
+                                currentUser
+                            }
+                        }
+                        _searchResults.value = updatedList
+                        _error.value = null
                     } else {
-                        currentUser
+                        _error.value = error ?: "Errore nell'invio della richiesta"
                     }
+                    _isLoading.value = false
                 }
-                _searchResults.value = updatedList
-
             } catch (e: Exception) {
                 _error.value = "Errore nell'invio della richiesta di amicizia: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun searchUsersFromFirebase(query: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val currentUserId = auth.currentUser?.uid ?: return@launch
+
+                firestore.collection("users")
+                    .get()
+                    .addOnSuccessListener { documents ->
+                        val users = documents.mapNotNull { doc ->
+                            val user = doc.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
+
+                            // Skip current user and apply search filter
+                            if (doc.id != currentUserId &&
+                                (query.isBlank() ||
+                                        user.nome.contains(query, ignoreCase = true) ||
+                                        user.cognome.contains(query, ignoreCase = true) ||
+                                        user.nickname.contains(query, ignoreCase = true))) {
+
+                                AddFriendUser(
+                                    id = doc.id,
+                                    name = "${user.nome} ${user.cognome}".trim(),
+                                    username = user.nickname,
+                                    points = 0, // You can add points field to User data class later
+                                    refugesCount = 0, // Same for refuges count
+                                    avatarResource = R.drawable.avatar_mario, // Default avatar
+                                    isRequestSent = sentFriendRequests.contains(doc.id)
+                                )
+                            } else null
+                        }
+
+                        _searchResults.value = users
+                        _isLoading.value = false
+                    }
+                    .addOnFailureListener { e ->
+                        _error.value = "Errore nel caricamento utenti: ${e.message}"
+                        _isLoading.value = false
+                    }
+            } catch (e: Exception) {
+                _error.value = "Errore nella ricerca: ${e.message}"
+                _isLoading.value = false
             }
         }
     }

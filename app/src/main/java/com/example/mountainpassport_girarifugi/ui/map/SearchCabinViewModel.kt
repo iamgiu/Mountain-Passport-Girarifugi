@@ -30,6 +30,8 @@ class SearchCabinViewModel(application: Application) : AndroidViewModel(applicat
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+
+
     private var currentUserLocation: Location? = null
     private var allRifugi: List<Rifugio> = emptyList()
 
@@ -45,8 +47,13 @@ class SearchCabinViewModel(application: Application) : AndroidViewModel(applicat
             try {
                 // Carica tutti i rifugi dal JSON
                 allRifugi = repository.getAllRifugi()
-                _rifugi.value = allRifugi
-                _filteredRifugi.value = allRifugi
+                
+                // Ordina i rifugi per distanza se la posizione è disponibile
+                val sortedRifugi = sortRifugiByDistance(allRifugi)
+                allRifugi = sortedRifugi
+                
+                _rifugi.value = sortedRifugi
+                _filteredRifugi.value = sortedRifugi
                 _hasResults.value = allRifugi.isNotEmpty()
                 
                 _error.value = null
@@ -61,25 +68,28 @@ class SearchCabinViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setUserLocation(location: Location) {
         currentUserLocation = location
-        sortRifugiByDistance()
+        // Riordina tutti i rifugi con la nuova posizione
+        val sortedRifugi = sortRifugiByDistance(allRifugi)
+        allRifugi = sortedRifugi
+        _rifugi.value = sortedRifugi
+        
+        // Se c'è una ricerca attiva, riapplica il filtro
+        val currentQuery = _searchQuery.value
+        if (!currentQuery.isNullOrBlank()) {
+            searchRifugi(currentQuery)
+        } else {
+            _filteredRifugi.value = sortedRifugi
+        }
     }
 
-    private fun sortRifugiByDistance() {
-        currentUserLocation?.let { userLoc ->
-            val sortedRifugi = allRifugi.sortedBy { rifugio ->
+
+
+    private fun sortRifugiByDistance(rifugiList: List<Rifugio>): List<Rifugio> {
+        return currentUserLocation?.let { userLoc ->
+            rifugiList.sortedBy { rifugio ->
                 calculateDistance(userLoc, rifugio)
             }
-            allRifugi = sortedRifugi
-            _rifugi.value = sortedRifugi
-
-            // Se c'è una ricerca attiva, riapplica il filtro
-            val currentQuery = _searchQuery.value
-            if (!currentQuery.isNullOrBlank()) {
-                searchRifugi(currentQuery)
-            } else {
-                _filteredRifugi.value = sortedRifugi
-            }
-        }
+        } ?: rifugiList
     }
 
     private fun calculateDistance(userLocation: Location, rifugio: Rifugio): Float {
@@ -98,7 +108,7 @@ class SearchCabinViewModel(application: Application) : AndroidViewModel(applicat
                 else -> "${(distance / 1000).toInt()} km"
             }
         }
-        return ""
+        return "Posizione non disponibile"
     }
 
     private val _searchQuery = MutableLiveData<String>()
@@ -107,7 +117,9 @@ class SearchCabinViewModel(application: Application) : AndroidViewModel(applicat
         _searchQuery.value = query
         
         if (query.isBlank()) {
-            _filteredRifugi.value = allRifugi
+            // Se non c'è query, mostra tutti i rifugi ordinati per distanza
+            val sortedRifugi = sortRifugiByDistance(allRifugi)
+            _filteredRifugi.value = sortedRifugi
             _hasResults.value = allRifugi.isNotEmpty()
             return
         }
@@ -118,17 +130,44 @@ class SearchCabinViewModel(application: Application) : AndroidViewModel(applicat
             (rifugio.regione?.contains(query, ignoreCase = true) == true)
         }
 
-        _filteredRifugi.value = filtered
+        // Ordina i risultati filtrati per distanza
+        val sortedFiltered = sortRifugiByDistance(filtered)
+        _filteredRifugi.value = sortedFiltered
         _hasResults.value = filtered.isNotEmpty()
     }
 
     fun clearSearch() {
         _searchQuery.value = ""
-        _filteredRifugi.value = allRifugi
+        val sortedRifugi = sortRifugiByDistance(allRifugi)
+        _filteredRifugi.value = sortedRifugi
         _hasResults.value = allRifugi.isNotEmpty()
     }
 
     fun clearError() {
         _error.value = null
     }
+
+    /**
+     * Aggiorna la posizione dell'utente e riordina i risultati
+     */
+    fun updateUserLocation(location: Location) {
+        setUserLocation(location)
+    }
+
+    /**
+     * Forza il riordinamento dei risultati attuali per distanza
+     */
+    fun refreshDistanceSorting() {
+        currentUserLocation?.let {
+            val currentQuery = _searchQuery.value
+            if (!currentQuery.isNullOrBlank()) {
+                searchRifugi(currentQuery)
+            } else {
+                val sortedRifugi = sortRifugiByDistance(allRifugi)
+                _filteredRifugi.value = sortedRifugi
+            }
+        }
+    }
+
+
 }

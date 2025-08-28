@@ -1,5 +1,6 @@
 package com.example.mountainpassport_girarifugi.ui.leaderboard
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,6 +32,7 @@ class AddFriendsAdapter(
         private val binding: ItemProfileAddFriendBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        @SuppressLint("ClickableViewAccessibility")
         fun bind(user: AddFriendUser) {
             binding.apply {
                 // Imposta i dati dell'utente

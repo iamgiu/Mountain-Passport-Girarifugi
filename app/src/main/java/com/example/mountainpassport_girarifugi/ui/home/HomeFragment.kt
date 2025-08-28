@@ -14,12 +14,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.mountainpassport_girarifugi.MainActivity
 import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
-import com.example.mountainpassport_girarifugi.ui.notifications.NotificationsFragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import android.content.Intent
 
 class HomeFragment : Fragment() {
 
@@ -111,10 +109,10 @@ class HomeFragment : Fragment() {
 
     private fun setupEscursioneProgrammata(view: View, escursione: HomeViewModel.Escursione) {
         val backgroundImageView = view.findViewById<ImageView>(R.id.backgroundImage)
+        val cardEscursione = view.findViewById<androidx.cardview.widget.CardView>(R.id.cardEscursione)
 
         // Usa il metodo del ViewModel per ottenere il nome della risorsa
         val nomeRisorsa = viewModel.getImageResourceName(escursione.nome)
-
         val resId = resources.getIdentifier(nomeRisorsa, "drawable", requireContext().packageName)
 
         // Se trovata, la imposti come immagine
@@ -129,6 +127,32 @@ class HomeFragment : Fragment() {
         view.findViewById<TextView>(R.id.textNomeRifugio).text = escursione.nome
         view.findViewById<TextView>(R.id.textAltitudine).text = escursione.altitudine
         view.findViewById<TextView>(R.id.textDistanza).text = escursione.distanza
+
+        // Click listener sull'intera card
+        cardEscursione.setOnClickListener {
+            navigateToRifugioDetail(escursione)
+        }
+    }
+
+    // Metodo per navigare ai dettagli del rifugio
+    private fun navigateToRifugioDetail(escursione: HomeViewModel.Escursione) {
+        val bundle = Bundle().apply {
+            putString("RIFUGIO_NOME", escursione.nome)
+            putString("RIFUGIO_ALTITUDINE", escursione.altitudine)
+            putString("RIFUGIO_DISTANZA", escursione.distanza)
+            putString("RIFUGIO_LOCALITA", escursione.localita)
+            putString("RIFUGIO_COORDINATE", escursione.coordinate)
+            putString("RIFUGIO_DIFFICOLTA", escursione.difficolta)
+            putString("RIFUGIO_TEMPO", escursione.tempo)
+            putString("RIFUGIO_DESCRIZIONE", escursione.descrizione)
+
+            // Passa anche la lista dei servizi come stringa
+            if (escursione.servizi.isNotEmpty()) {
+                putString("RIFUGIO_SERVIZI", escursione.servizi.joinToString(","))
+            }
+        }
+
+        findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
     }
 
     private fun setupPunteggio(view: View, punteggio: Int) {
@@ -143,7 +167,13 @@ class HomeFragment : Fragment() {
         val recyclerRifugiBonus = view.findViewById<RecyclerView>(R.id.recyclerRifugiBonus)
         recyclerRifugiBonus.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
-        val adapterRifugiBonus = RifugiHorizontalAdapter(rifugiBonus, true) // true per mostrare badge bonus
+        val adapterRifugiBonus = RifugiHorizontalAdapter(
+            rifugiBonus,
+            true, // mostra badge bonus
+            onRifugioClick = { rifugioCard ->
+                navigateToRifugioFromCard(rifugioCard)
+            }
+        )
         recyclerRifugiBonus.adapter = adapterRifugiBonus
     }
 
@@ -151,15 +181,58 @@ class HomeFragment : Fragment() {
         val recyclerSuggerimenti = view.findViewById<RecyclerView>(R.id.recyclerSuggerimenti)
         recyclerSuggerimenti.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
-        val adapterSuggerimenti = RifugiHorizontalAdapter(suggerimenti, false) // false per nascondere badge bonus
+        val adapterSuggerimenti = RifugiHorizontalAdapter(
+            suggerimenti,
+            false, // nascondi badge bonus
+            onRifugioClick = { rifugioCard ->
+                navigateToRifugioFromCard(rifugioCard)
+            }
+        )
         recyclerSuggerimenti.adapter = adapterSuggerimenti
     }
+
+    // Metodo per navigare dai rifugi delle card orizzontali
+    private fun navigateToRifugioFromCard(rifugioCard: HomeViewModel.RifugioCard) {
+        val bundle = Bundle().apply {
+            putString("RIFUGIO_NOME", rifugioCard.nome)
+            putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
+            putString("RIFUGIO_DISTANZA", rifugioCard.distanza)
+            putString("RIFUGIO_DIFFICOLTA", rifugioCard.difficolta)
+            putString("RIFUGIO_TEMPO", rifugioCard.tempo)
+
+            // Per i dati mancanti, usa valori di default
+            putString("RIFUGIO_LOCALITA", "Località da specificare")
+            putString("RIFUGIO_COORDINATE", "0.0000,0.0000")
+            putString("RIFUGIO_DESCRIZIONE", "Descrizione non disponibile")
+        }
+
+        findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
+    }
+
 
     private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
         val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
         recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
 
-        val adapter = FeedAmiciAdapter(feedAmici)
+        val adapter = FeedAmiciAdapter(feedAmici) { rifugioInfo ->
+            val bundle = Bundle().apply {
+                putString("RIFUGIO_NOME", rifugioInfo.nome)
+                putString("RIFUGIO_ALTITUDINE", "${rifugioInfo.altitudine} m")
+                putString("RIFUGIO_LOCALITA", rifugioInfo.localita)
+
+                // Valori di default per parametri mancanti
+                putString("RIFUGIO_DISTANZA", "N/A")
+                putString("RIFUGIO_COORDINATE", "0.0000,0.0000")
+                putString("RIFUGIO_DIFFICOLTA", "Non specificata")
+                putString("RIFUGIO_TEMPO", "Non specificato")
+                putString("RIFUGIO_DESCRIZIONE", "Rifugio visitato da ${feedAmici.find { it.rifugioInfo == rifugioInfo }?.nomeUtente ?: "un amico"}")
+
+                //rifugioInfo.immagine?.let { putExtra("RIFUGIO_IMMAGINE", it) }
+            }
+
+            findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
+        }
+
         recyclerFeed.adapter = adapter
     }
 

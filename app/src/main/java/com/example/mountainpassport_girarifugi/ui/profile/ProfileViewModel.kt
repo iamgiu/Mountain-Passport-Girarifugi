@@ -7,6 +7,16 @@ import com.example.mountainpassport_girarifugi.user.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.mountainpassport_girarifugi.data.repository.FriendRepository
+import com.example.mountainpassport_girarifugi.data.repository.PointsRepository
+import com.example.mountainpassport_girarifugi.utils.UserManager
+import com.google.firebase.firestore.ListenerRegistration
+import com.example.mountainpassport_girarifugi.ui.profile.FriendRequest
+import android.content.Context
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 // Data class per rappresentare i dati del profilo utente
 data class ProfileData(
@@ -32,10 +42,13 @@ data class Group(
     val description: String = "",
 )
 
-class ProfileViewModel : ViewModel() {
+class ProfileViewModel(private val context: Context) : ViewModel() {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+    private val friendRepository = FriendRepository()
+    private val pointsRepository = PointsRepository(context)
+    private var friendRequestsListener: ListenerRegistration? = null
 
     // LiveData per i dati del profilo
     private val _profileData = MutableLiveData<ProfileData>()
@@ -65,10 +78,20 @@ class ProfileViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
+    // LiveData per le richieste d'amicizia
+    private val _friendRequests = MutableLiveData<List<FriendRequest>>()
+    val friendRequests: LiveData<List<FriendRequest>> = _friendRequests
+
+    // LiveData amici
+    private val _friends = MutableLiveData<List<Friend>>()
+    val friends: LiveData<List<Friend>> = _friends
+
     init {
         loadUserData()
         loadStamps()
         loadGroups()
+        loadFriends()
+        startListeningForFriendRequests()
     }
 
     private fun loadUserData() {
@@ -77,6 +100,7 @@ class ProfileViewModel : ViewModel() {
 
         if (currentUser != null) {
             loadUserProfileFromDatabase(currentUser.uid)
+            loadUserPointsStats(currentUser.uid)
         } else {
             val profileData = ProfileData(
                 fullName = "Utente",
@@ -89,17 +113,39 @@ class ProfileViewModel : ViewModel() {
     }
 
     private fun loadStamps() {
-        val sampleStamps = listOf(
-            Stamp("Rifugio Città di Milano", "15/05/2024", "2581m", "Lombardia"),
-            Stamp("Rifugio Branca", "22/05/2024", "2486m", "Lombardia"),
-            Stamp("Rifugio Carate Brianza", "28/05/2024", "2636m", "Lombardia"),
-            Stamp("Rifugio Pizzini", "05/06/2024", "2706m", "Lombardia"),
-            Stamp("Rifugio Belviso", "12/06/2024", "2234m", "Lombardia"),
-            Stamp("Rifugio Bonetta", "19/06/2024", "2458m", "Piemonte"),
-            Stamp("Rifugio Schiena d'Asino", "26/06/2024", "2445m", "Piemonte"),
-            Stamp("Rifugio Bertacchi", "03/07/2024", "2175m", "Lombardia")
-        )
-        _stamps.value = sampleStamps
+        val currentUserId = UserManager.getCurrentUserId()
+        if (currentUserId != null) {
+            loadUserVisits(currentUserId)
+        } else {
+            // Se non c'è utente autenticato, mostra lista vuota
+            _stamps.value = emptyList()
+        }
+    }
+    
+    /**
+     * Carica le visite dell'utente e le converte in timbri
+     */
+    private fun loadUserVisits(userId: String) {
+        viewModelScope.launch {
+            try {
+                val visits = withContext(Dispatchers.IO) {
+                    pointsRepository.getUserVisits(userId, 50)
+                }
+                
+                val stamps = visits.map { visit ->
+                    Stamp(
+                        refugeName = visit.rifugioName,
+                        date = visit.visitDate.toDate().toString().substring(0, 10), // Formato YYYY-MM-DD
+                        altitude = "Visitato", // Potremmo aggiungere l'altitudine se necessario
+                        region = "Punti: ${visit.pointsEarned}"
+                    )
+                }
+                _stamps.value = stamps
+            } catch (e: Exception) {
+                _stamps.value = emptyList()
+                android.util.Log.e("ProfileViewModel", "Errore nel caricare le visite: ${e.message}")
+            }
+        }
     }
 
     private fun loadGroups() {
@@ -148,6 +194,33 @@ class ProfileViewModel : ViewModel() {
     fun onLogoutEventHandled() {
         _logoutEvent.value = false
     }
+    
+    /**
+     * Carica le statistiche dei punti dell'utente
+     */
+    private fun loadUserPointsStats(userId: String) {
+        viewModelScope.launch {
+            try {
+                val stats = withContext(Dispatchers.IO) {
+                    pointsRepository.getUserPointsStats(userId)
+                }
+                
+                if (stats != null) {
+                    // Aggiorna le statistiche nel profilo
+                    _profileData.value?.let { currentProfile ->
+                        val updatedProfile = currentProfile.copy(
+                            monthlyScore = stats.monthlyPoints.toString(),
+                            visitedRefuges = stats.totalVisits.toString()
+                        )
+                        _profileData.value = updatedProfile
+                    }
+                }
+            } catch (e: Exception) {
+                // In caso di errore, mantieni i valori di default
+                android.util.Log.e("ProfileViewModel", "Errore nel caricare le statistiche: ${e.message}")
+            }
+        }
+    }
 
     fun loadUserProfileFromDatabase(userId: String) {
         _isLoading.value = true
@@ -169,8 +242,8 @@ class ProfileViewModel : ViewModel() {
                             val profileData = ProfileData(
                                 fullName = displayFullName,
                                 username = displayNickname,
-                                monthlyScore = "1,245",
-                                visitedRefuges = "23"
+                                monthlyScore = "0", // Verrà aggiornato da loadUserPointsStats
+                                visitedRefuges = "0"  // Verrà aggiornato da loadUserPointsStats
                             )
                             _profileData.value = profileData
                         } else {
@@ -209,6 +282,50 @@ class ProfileViewModel : ViewModel() {
         if (currentUser != null) {
             loadUserProfileFromDatabase(currentUser.uid)
         }
+    }
+
+    fun startListeningForFriendRequests() {
+        friendRequestsListener = friendRepository.listenForFriendRequests { requests ->
+            _friendRequests.value = requests
+        }
+    }
+
+    fun stopListeningForFriendRequests() {
+        friendRequestsListener?.remove()
+        friendRequestsListener = null
+    }
+
+    fun acceptFriendRequest(requestId: String) {
+        friendRepository.acceptFriendRequest(requestId) { success, error ->
+            if (!success) {
+                _loadingError.value = error ?: "Errore nell'accettare la richiesta"
+            }
+            // Refresh friends list
+            loadFriends()
+        }
+    }
+
+    private fun loadFriends() {
+        val currentUser = firebaseAuth.currentUser ?: return
+
+        firestore.collection("users")
+            .document(currentUser.uid)
+            .collection("friends")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val friendsList = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Friend::class.java)
+                }
+                _friends.value = friendsList
+            }
+            .addOnFailureListener { e ->
+                _loadingError.value = "Errore nel caricamento amici: ${e.message}"
+            }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopListeningForFriendRequests()
     }
 
     // Metodo per caricare i gruppi dal database (da implementare)

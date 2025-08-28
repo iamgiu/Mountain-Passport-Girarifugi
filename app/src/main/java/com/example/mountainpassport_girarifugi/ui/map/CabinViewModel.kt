@@ -9,12 +9,16 @@ import com.example.mountainpassport_girarifugi.data.model.Rifugio
 import com.example.mountainpassport_girarifugi.data.model.Review
 import com.example.mountainpassport_girarifugi.data.model.RifugioStats
 import com.example.mountainpassport_girarifugi.data.model.TipoRifugio
+import com.example.mountainpassport_girarifugi.data.model.RifugioPoints
 import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
+import com.example.mountainpassport_girarifugi.data.repository.PointsRepository
+import com.example.mountainpassport_girarifugi.utils.UserManager
 import kotlinx.coroutines.launch
 
 class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = RifugioRepository(application)
+    private val pointsRepository = PointsRepository(application)
     
     private val _rifugio = MutableLiveData<Rifugio>()
     val rifugio: LiveData<Rifugio> = _rifugio
@@ -37,8 +41,10 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     private val _stats = MutableLiveData<RifugioStats?>()
     val stats: LiveData<RifugioStats?> = _stats
     
-    // Per ora usiamo un ID utente fisso (in una vera app verrebbe dall'autenticazione)
-    private val currentUserId = "user_123"
+    // Ottiene l'ID dell'utente corrente autenticato
+    private fun getCurrentUserId(): String {
+        return UserManager.getCurrentUserIdOrGuest()
+    }
 
     /**
      * Carica i dati del rifugio dall'ID
@@ -86,7 +92,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
             _stats.value = stats
             
             // Verifica se è salvato
-            val isSaved = repository.isRifugioSaved(currentUserId, rifugioId)
+            val isSaved = repository.isRifugioSaved(getCurrentUserId(), rifugioId)
             _isSaved.value = isSaved
         } catch (e: Exception) {
             android.util.Log.e("CabinViewModel", "Errore nel caricamento dati dinamici: ${e.message}")
@@ -105,7 +111,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val rifugioId = _rifugio.value?.id ?: return@launch
-                repository.toggleSaveRifugio(currentUserId, rifugioId, newState)
+                repository.toggleSaveRifugio(getCurrentUserId(), rifugioId, newState)
             } catch (e: Exception) {
                 // Ripristina lo stato precedente in caso di errore
                 _isSaved.value = currentState
@@ -186,27 +192,42 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     fun hasHotWater(rifugio: Rifugio): Boolean {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
-            TipoRifugio.BIVACCO -> false
-            TipoRifugio.CAPANNA -> false
+            TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
+                in 0..1000 -> true  // Bivacchi a bassissima quota possono avere acqua calda
+                else -> false
+            }
+            TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
+                in 0..1500 -> true  // Capanne a bassa quota possono avere acqua calda
+                else -> false
+            }
         }
-        android.util.Log.d("CabinViewModel", "hasHotWater per ${rifugio.nome} (${rifugio.tipo}): $result")
+        android.util.Log.d("CabinViewModel", "hasHotWater per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result")
         return result
     }
 
     fun hasShowers(rifugio: Rifugio): Boolean {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
-            TipoRifugio.BIVACCO -> false
-            TipoRifugio.CAPANNA -> false
+            TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
+                in 0..1000 -> true  // Bivacchi a bassissima quota possono avere docce
+                else -> false
+            }
+            TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
+                in 0..1500 -> true  // Capanne a bassa quota possono avere docce
+                else -> false
+            }
         }
-        android.util.Log.d("CabinViewModel", "hasShowers per ${rifugio.nome} (${rifugio.tipo}): $result")
+        android.util.Log.d("CabinViewModel", "hasShowers per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result")
         return result
     }
 
     fun hasElectricity(rifugio: Rifugio): Boolean {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
-            TipoRifugio.BIVACCO -> false
+            TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
+                in 0..1500 -> true  // Bivacchi a bassa quota possono avere elettricità
+                else -> false
+            }
             TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
                 in 0..2500 -> true
                 else -> false
@@ -219,7 +240,10 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     fun hasRestaurant(rifugio: Rifugio): Boolean {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
-            TipoRifugio.BIVACCO -> false
+            TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
+                in 0..1200 -> true  // Bivacchi a bassa quota possono avere ristorante
+                else -> false
+            }
             TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
                 in 0..2000 -> true
                 else -> false
@@ -240,6 +264,38 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getReviewCount(rifugio: Rifugio): Int {
         return _reviews.value?.size ?: 0
+    }
+
+    /**
+     * Ottieni i punti disponibili per questo rifugio
+     */
+    fun getRifugioPoints(rifugio: Rifugio): RifugioPoints {
+        return pointsRepository.getRifugioPoints(rifugio.id, rifugio.altitudine)
+    }
+
+    /**
+     * Registra una visita al rifugio
+     */
+    fun recordVisit() {
+        viewModelScope.launch {
+            try {
+                val rifugio = _rifugio.value ?: return@launch
+                val result = pointsRepository.recordVisit(getCurrentUserId(), rifugio.id)
+                
+                result.fold(
+                    onSuccess = { userPoints ->
+                        _successMessage.value = "Visita registrata! +${userPoints.pointsEarned} punti guadagnati!"
+                        android.util.Log.d("CabinViewModel", "Visita registrata: ${userPoints.pointsEarned} punti")
+                    },
+                    onFailure = { exception ->
+                        _error.value = "Errore nel registrare la visita: ${exception.message}"
+                        android.util.Log.e("CabinViewModel", "Errore visita: ${exception.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                _error.value = "Errore nel registrare la visita: ${e.message}"
+            }
+        }
     }
 
     /**

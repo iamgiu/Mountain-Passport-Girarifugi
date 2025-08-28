@@ -119,7 +119,7 @@
                 <!-- Quota altitudine -->
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center"
@@ -158,7 +158,7 @@
                 <!-- Coordinate -->
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center"
@@ -198,7 +198,7 @@
                 <!-- Luogo -->
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center"
@@ -682,6 +682,22 @@
         </LinearLayout>
 
     </ScrollView>
+
+    <!-- Floating Action Button per registrare visita -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabVisit"
+        android:contentDescription="Registra Visita"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="180dp"
+        android:src="@drawable/ic_check_circle_24px"
+        app:backgroundTint="@color/blue"
+        app:fabSize="normal"
+        app:tint="@color/white" />
 
     <!-- Floating Action Button per salvare il rifugio -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

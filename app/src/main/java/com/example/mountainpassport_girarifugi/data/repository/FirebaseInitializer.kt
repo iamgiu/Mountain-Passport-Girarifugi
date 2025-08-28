@@ -29,6 +29,7 @@ class FirebaseInitializer(private val context: Context) {
             createSampleReviews()
             createSampleStats()
             createSampleInteractions()
+            createSamplePoints()
             
             Log.d(TAG, "Firebase inizializzato con successo")
         } catch (e: Exception) {
@@ -198,6 +199,70 @@ class FirebaseInitializer(private val context: Context) {
             snapshot.documents.isNotEmpty()
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * Crea dati di esempio per il sistema di punti
+     */
+    private suspend fun createSamplePoints() {
+        try {
+            Log.d(TAG, "Creazione dati di esempio per il sistema di punti...")
+            
+            // Crea alcuni utenti di esempio con punti
+            val sampleUsers = listOf(
+                "user_123" to 1250,
+                "user_456" to 890,
+                "user_789" to 2100
+            )
+            
+            for ((userId, points) in sampleUsers) {
+                val userStats = com.example.mountainpassport_girarifugi.data.model.UserPointsStats(
+                    userId = userId,
+                    totalPoints = points,
+                    totalVisits = points / 25, // Circa 25 punti per visita media
+                    monthlyPoints = points / 3, // Circa 1/3 dei punti del mese corrente
+                    monthlyVisits = (points / 25) / 3,
+                    lastUpdated = com.google.firebase.Timestamp.now()
+                )
+                
+                firestore.collection("user_points_stats")
+                    .document(userId)
+                    .set(userStats)
+                    .await()
+            }
+            
+            // Crea alcune visite di esempio
+            val sampleVisits = listOf(
+                com.example.mountainpassport_girarifugi.data.model.UserPoints(
+                    userId = "user_123",
+                    rifugioId = 1,
+                    rifugioName = "3A 14998",
+                    pointsEarned = 58, // 29 * 2 (punti doppi)
+                    visitDate = com.google.firebase.Timestamp.now(),
+                    visitType = com.example.mountainpassport_girarifugi.data.model.VisitType.VISIT,
+                    isDoublePoints = true
+                ),
+                com.example.mountainpassport_girarifugi.data.model.UserPoints(
+                    userId = "user_456",
+                    rifugioId = 4,
+                    rifugioName = "Accà Lascio",
+                    pointsEarned = 12,
+                    visitDate = com.google.firebase.Timestamp.now(),
+                    visitType = com.example.mountainpassport_girarifugi.data.model.VisitType.VISIT,
+                    isDoublePoints = false
+                )
+            )
+            
+            for (visit in sampleVisits) {
+                firestore.collection("user_points")
+                    .add(visit)
+                    .await()
+            }
+            
+            Log.d(TAG, "Dati di esempio per il sistema di punti creati con successo")
+        } catch (e: Exception) {
+            Log.e(TAG, "Errore nella creazione dati di esempio per i punti: ${e.message}")
         }
     }
 }

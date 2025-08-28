@@ -1,5 +1,6 @@
 package com.example.mountainpassport_girarifugi.ui.leaderboard
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -118,9 +119,18 @@ class AddFriendsFragment : Fragment() {
         }
     }
 
+    // MockUp ricerca amici
+//    private fun performSearch(query: String) {
+//        when (currentTab) {
+//            0 -> viewModel.searchUsers(query)
+//            1 -> viewModel.searchGroups(query)
+//        }
+//    }
+
+    // Ricerca tramite Firebase
     private fun performSearch(query: String) {
         when (currentTab) {
-            0 -> viewModel.searchUsers(query)
+            0 -> viewModel.searchUsersFromFirebase(query)
             1 -> viewModel.searchGroups(query)
         }
     }
@@ -151,51 +161,43 @@ class AddFriendsFragment : Fragment() {
             }
         }
 
-        // Esegui nuovamente la ricerca con la query corrente per il nuovo tab
+        // Ricerca tramite Firebase
         val currentQuery = binding.searchView.query.toString()
         if (currentQuery.isNotEmpty()) {
             performSearch(currentQuery)
         } else {
-            // Se non c'è query, carica i dati di default
             when (currentTab) {
-                0 -> viewModel.loadDefaultUsers()
+                0 -> viewModel.searchUsersFromFirebase("") // Load all users
                 1 -> viewModel.loadDefaultGroups()
             }
         }
+
+//        // MockUp Ricerca
+//        val currentQuery = binding.searchView.query.toString()
+//        if (currentQuery.isNotEmpty()) {
+//            performSearch(currentQuery)
+//        } else {
+//            // Se non c'è query, carica i dati di default
+//            when (currentTab) {
+//                0 -> viewModel.loadDefaultUsers()
+//                1 -> viewModel.loadDefaultGroups()
+//            }
+//        }
     }
 
     private fun onUserProfileClicked(user: AddFriendUser) {
-        // Naviga al profilo dell'utente o del gruppo
-        when (currentTab) {
-            0 -> {
-                // Apri il profilo utente
-                // Qui puoi navigare al fragment del profilo utente
-                Toast.makeText(
-                    requireContext(),
-                    "Apertura profilo di ${user.name}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                // Esempio di navigazione (sostituisci con il tuo sistema di navigazione)
-                // findNavController().navigate(
-                //     AddFriendsFragmentDirections.actionToUserProfile(user.id)
-                // )
-            }
-            1 -> {
-                // Apri il profilo del gruppo
-                Toast.makeText(
-                    requireContext(),
-                    "Apertura gruppo ${user.name}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                // Esempio di navigazione per i gruppi
-                // findNavController().navigate(
-                //     AddFriendsFragmentDirections.actionToGroupProfile(user.id)
-                // )
-            }
+        val bundle = Bundle().apply {
+            putString("TYPE", if (currentTab == 0) "USER" else "GROUP")
+            putString("USER_NAME", user.name)
+            putString("USER_USERNAME", user.username)
+            putInt("USER_POINTS", user.points)
+            putInt("USER_REFUGES", user.refugesCount)
+            putInt("USER_AVATAR", user.avatarResource)
         }
+
+        findNavController().navigate(R.id.action_addfriendsFragment_to_profileFragment, bundle)
     }
+
 
     private fun onAddFriendClicked(user: AddFriendUser) {
         // Gestisce la richiesta di amicizia o di unione al gruppo

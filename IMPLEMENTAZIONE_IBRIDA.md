@@ -506,3 +506,37 @@ hasRestaurant() - RIFUGI sempre, CAPANNE solo sotto 2000m
 
 // to do -> nel json sono tutti BIVACCHI, bisogna cambiare qualcuno
 es Arben Biwak è CAPANNA
+
+
+
+
+Per implementare immagini da url utilizzato Glide
+
+Collegamento account:
+1. Creata Classe UserManager
+File: app/src/main/java/com/example/mountainpassport_girarifugi/utils/UserManager.kt
+2. Modificato CabinViewModel
+Rimosso: ID utente fisso "user_123"
+Aggiunto: Metodo getCurrentUserId() che usa UserManager
+Aggiornato: recordVisit() per usare l'utente autenticato
+3. Modificato CabinFragment
+Semplificato: recordVisit() senza parametri
+Automatico: Usa l'utente autenticato
+4. Modificato ProfileViewModel
+Aggiunto: Context nel costruttore
+Creato: ProfileViewModelFactory per passare il Context
+Implementato: loadUserPointsStats() per caricare statistiche reali
+Implementato: loadUserVisits() per caricare timbri reali
+5. Modificato ProfileFragment
+Aggiornato: Usa ProfileViewModelFactory con Context
+📱 Funzionalità Implementate
+Sincronizzazione Reale
+Statistiche: Caricate dal database Firebase per l'utente autenticato
+Timbri: Basati sulle visite reali dell'utente
+Punti: Aggiornati in tempo reale
+Gestione Utenti
+Autenticato: Mostra dati reali dell'utente
+Non autenticato: Mostra dati di default (0 punti, 0 visite)
+Sicurezza
+ID utente: Sempre sincronizzato con Firebase Auth
+Dati isolati: Ogni utente vede solo i propri dati

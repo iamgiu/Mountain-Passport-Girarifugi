@@ -119,9 +119,18 @@ class AddFriendsFragment : Fragment() {
         }
     }
 
+    // MockUp ricerca amici
+//    private fun performSearch(query: String) {
+//        when (currentTab) {
+//            0 -> viewModel.searchUsers(query)
+//            1 -> viewModel.searchGroups(query)
+//        }
+//    }
+
+    // Ricerca tramite Firebase
     private fun performSearch(query: String) {
         when (currentTab) {
-            0 -> viewModel.searchUsers(query)
+            0 -> viewModel.searchUsersFromFirebase(query)
             1 -> viewModel.searchGroups(query)
         }
     }
@@ -152,17 +161,28 @@ class AddFriendsFragment : Fragment() {
             }
         }
 
-        // Esegui nuovamente la ricerca con la query corrente per il nuovo tab
+        // Ricerca tramite Firebase
         val currentQuery = binding.searchView.query.toString()
         if (currentQuery.isNotEmpty()) {
             performSearch(currentQuery)
         } else {
-            // Se non c'è query, carica i dati di default
             when (currentTab) {
-                0 -> viewModel.loadDefaultUsers()
+                0 -> viewModel.searchUsersFromFirebase("") // Load all users
                 1 -> viewModel.loadDefaultGroups()
             }
         }
+
+//        // MockUp Ricerca
+//        val currentQuery = binding.searchView.query.toString()
+//        if (currentQuery.isNotEmpty()) {
+//            performSearch(currentQuery)
+//        } else {
+//            // Se non c'è query, carica i dati di default
+//            when (currentTab) {
+//                0 -> viewModel.loadDefaultUsers()
+//                1 -> viewModel.loadDefaultGroups()
+//            }
+//        }
     }
 
     private fun onUserProfileClicked(user: AddFriendUser) {

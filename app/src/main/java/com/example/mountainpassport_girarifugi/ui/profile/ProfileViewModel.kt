@@ -7,6 +7,9 @@ import com.example.mountainpassport_girarifugi.user.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.mountainpassport_girarifugi.data.repository.FriendRepository
+import com.google.firebase.firestore.ListenerRegistration
+import com.example.mountainpassport_girarifugi.ui.profile.FriendRequest
 
 // Data class per rappresentare i dati del profilo utente
 data class ProfileData(
@@ -36,6 +39,8 @@ class ProfileViewModel : ViewModel() {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+    private val friendRepository = FriendRepository()
+    private var friendRequestsListener: ListenerRegistration? = null
 
     // LiveData per i dati del profilo
     private val _profileData = MutableLiveData<ProfileData>()
@@ -65,10 +70,20 @@ class ProfileViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
+    // LiveData per le richieste d'amicizia
+    private val _friendRequests = MutableLiveData<List<FriendRequest>>()
+    val friendRequests: LiveData<List<FriendRequest>> = _friendRequests
+
+    // LiveData amici
+    private val _friends = MutableLiveData<List<Friend>>()
+    val friends: LiveData<List<Friend>> = _friends
+
     init {
         loadUserData()
         loadStamps()
         loadGroups()
+        loadFriends()
+        startListeningForFriendRequests()
     }
 
     private fun loadUserData() {
@@ -209,6 +224,50 @@ class ProfileViewModel : ViewModel() {
         if (currentUser != null) {
             loadUserProfileFromDatabase(currentUser.uid)
         }
+    }
+
+    fun startListeningForFriendRequests() {
+        friendRequestsListener = friendRepository.listenForFriendRequests { requests ->
+            _friendRequests.value = requests
+        }
+    }
+
+    fun stopListeningForFriendRequests() {
+        friendRequestsListener?.remove()
+        friendRequestsListener = null
+    }
+
+    fun acceptFriendRequest(requestId: String) {
+        friendRepository.acceptFriendRequest(requestId) { success, error ->
+            if (!success) {
+                _loadingError.value = error ?: "Errore nell'accettare la richiesta"
+            }
+            // Refresh friends list
+            loadFriends()
+        }
+    }
+
+    private fun loadFriends() {
+        val currentUser = firebaseAuth.currentUser ?: return
+
+        firestore.collection("users")
+            .document(currentUser.uid)
+            .collection("friends")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val friendsList = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Friend::class.java)
+                }
+                _friends.value = friendsList
+            }
+            .addOnFailureListener { e ->
+                _loadingError.value = "Errore nel caricamento amici: ${e.message}"
+            }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopListeningForFriendRequests()
     }
 
     // Metodo per caricare i gruppi dal database (da implementare)

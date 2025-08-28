@@ -6,6 +6,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.repository.FriendRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // Data class per gli utenti che possono essere aggiunti come amici
 data class AddFriendUser(
@@ -68,9 +71,13 @@ class AddFriendsViewModel : ViewModel() {
     )
 
 
-    // Set per tracciare le richieste inviate
+    // Gestione amicizie e gruppi
     private val sentFriendRequests = mutableSetOf<String>()
     private val joinedGroupRequests = mutableSetOf<String>()
+
+    private val friendRepository = FriendRepository()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     init {
         // Carica alcuni utenti di default
@@ -167,23 +174,77 @@ class AddFriendsViewModel : ViewModel() {
 
     fun addFriend(user: AddFriendUser) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                // Simula una chiamata API
-                sentFriendRequests.add(user.id)
+                friendRepository.sendFriendRequest(user.id) { success, error ->
+                    if (success) {
+                        // Segnala richiesta inviata
+                        sentFriendRequests.add(user.id)
 
-                // Aggiorna la lista corrente marcando l'utente come "richiesta inviata"
-                val currentList = _searchResults.value ?: emptyList()
-                val updatedList = currentList.map { currentUser ->
-                    if (currentUser.id == user.id) {
-                        currentUser.copy(isRequestSent = true)
+                        // Aggiorna lista amcici
+                        val currentList = _searchResults.value ?: emptyList()
+                        val updatedList = currentList.map { currentUser ->
+                            if (currentUser.id == user.id) {
+                                currentUser.copy(isRequestSent = true)
+                            } else {
+                                currentUser
+                            }
+                        }
+                        _searchResults.value = updatedList
+                        _error.value = null
                     } else {
-                        currentUser
+                        _error.value = error ?: "Errore nell'invio della richiesta"
                     }
+                    _isLoading.value = false
                 }
-                _searchResults.value = updatedList
-
             } catch (e: Exception) {
                 _error.value = "Errore nell'invio della richiesta di amicizia: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun searchUsersFromFirebase(query: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val currentUserId = auth.currentUser?.uid ?: return@launch
+
+                firestore.collection("users")
+                    .get()
+                    .addOnSuccessListener { documents ->
+                        val users = documents.mapNotNull { doc ->
+                            val user = doc.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
+
+                            // Skip current user and apply search filter
+                            if (doc.id != currentUserId &&
+                                (query.isBlank() ||
+                                        user.nome.contains(query, ignoreCase = true) ||
+                                        user.cognome.contains(query, ignoreCase = true) ||
+                                        user.nickname.contains(query, ignoreCase = true))) {
+
+                                AddFriendUser(
+                                    id = doc.id,
+                                    name = "${user.nome} ${user.cognome}".trim(),
+                                    username = user.nickname,
+                                    points = 0, // You can add points field to User data class later
+                                    refugesCount = 0, // Same for refuges count
+                                    avatarResource = R.drawable.avatar_mario, // Default avatar
+                                    isRequestSent = sentFriendRequests.contains(doc.id)
+                                )
+                            } else null
+                        }
+
+                        _searchResults.value = users
+                        _isLoading.value = false
+                    }
+                    .addOnFailureListener { e ->
+                        _error.value = "Errore nel caricamento utenti: ${e.message}"
+                        _isLoading.value = false
+                    }
+            } catch (e: Exception) {
+                _error.value = "Errore nella ricerca: ${e.message}"
+                _isLoading.value = false
             }
         }
     }

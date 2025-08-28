@@ -186,15 +186,16 @@ class AddFriendsFragment : Fragment() {
     }
 
     private fun onUserProfileClicked(user: AddFriendUser) {
-        val intent = Intent(requireContext(), ProfileActivity::class.java)
-        intent.putExtra("USER_ID", user.id)
-        intent.putExtra("USER_NAME", user.name)
-        intent.putExtra("USER_USERNAME", user.username ?: "")
-        intent.putExtra("USER_POINTS", user.points)
-        intent.putExtra("USER_REFUGES", user.refugesCount)
-        intent.putExtra("USER_AVATAR", user.avatarResource)
-        intent.putExtra("TYPE", if (currentTab == 0) "USER" else "GROUP")
-        startActivity(intent)
+        val bundle = Bundle().apply {
+            putString("TYPE", if (currentTab == 0) "USER" else "GROUP")
+            putString("USER_NAME", user.name)
+            putString("USER_USERNAME", user.username)
+            putInt("USER_POINTS", user.points)
+            putInt("USER_REFUGES", user.refugesCount)
+            putInt("USER_AVATAR", user.avatarResource)
+        }
+
+        findNavController().navigate(R.id.action_addfriendsFragment_to_profileFragment, bundle)
     }
 
 

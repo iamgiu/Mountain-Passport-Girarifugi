@@ -17,11 +17,6 @@ class FriendRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val notificationsRepository = NotificationsRepository()
-    private var context: Context? = null
-
-    fun setContext(context: Context) {
-        this.context = context
-    }
 
     fun sendFriendRequest(receiverId: String, callback: (Boolean, String?) -> Unit) {
         val currentUser = auth.currentUser
@@ -76,17 +71,6 @@ class FriendRepository {
                                             senderAvatarUrl = senderUser.profileImageUrl
                                         )
                                     }
-                                    
-                                    // Mostra notifica locale se l'utente è il ricevente
-                                    context?.let { ctx ->
-                                        if (receiverId == currentUser.uid) {
-                                            NotificationHelper.showFriendRequestNotification(
-                                                ctx,
-                                                "${senderUser.nome} ${senderUser.cognome}".trim()
-                                            )
-                                        }
-                                    }
-                                    
                                     callback(true, null)
                                 }
                                 .addOnFailureListener { e ->

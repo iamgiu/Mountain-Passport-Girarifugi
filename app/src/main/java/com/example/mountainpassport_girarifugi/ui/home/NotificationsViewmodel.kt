@@ -4,9 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.mountainpassport_girarifugi.data.repository.NotificationsRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 
 class NotificationsViewModel : ViewModel() {
+
+    private val repository = NotificationsRepository()
 
     // LiveData per l'UI state
     private val _currentFilter = MutableLiveData<String>().apply { value = "tutte" }
@@ -24,14 +29,24 @@ class NotificationsViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    // FIX: Aggiungi messaggi di successo separati dagli errori
+    private val _successMessage = MutableLiveData<String?>()
+    val successMessage: LiveData<String?> = _successMessage
+
     private val _navigationEvent = MutableLiveData<NavigationEvent?>()
     val navigationEvent: LiveData<NavigationEvent?> = _navigationEvent
+
+    private val _azioniPending = MutableLiveData<List<AzioneNotifica>>()
+    val azioniPending: LiveData<List<AzioneNotifica>> = _azioniPending
 
     // Lista completa delle notifiche (per il filtraggio)
     private var allNotifiche: List<Notifica> = emptyList()
 
     init {
+        // Carica le notifiche all'avvio
         loadNotifiche()
+        // Inizia l'osservazione in tempo reale
+        observeNotifications()
     }
 
     fun setActiveFilter(filter: String) {
@@ -39,14 +54,15 @@ class NotificationsViewModel : ViewModel() {
         applyFilter(filter)
     }
 
+    /**
+     * Carica le notifiche dal repository
+     */
     private fun loadNotifiche() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Simula chiamate al repository/database
-                loadAllNotifiche()
+                allNotifiche = repository.getAllNotifications()
                 applyFilter(_currentFilter.value ?: "tutte")
-
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Errore nel caricamento delle notifiche: ${e.message}"
@@ -56,89 +72,20 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
-    private suspend fun loadAllNotifiche() {
-        // TODO: Sostituire con chiamata al repository
-        allNotifiche = listOf(
-            // Notifiche recenti (ultime 24 ore)
-            Notifica(
-                id = "1",
-                titolo = "Nuovo rifugio disponibile!",
-                descrizione = "Il Rifugio Monte Bianco è ora disponibile per la tua prossima escursione",
-                tipo = TipoNotifica.RIFUGIO_NUOVO,
-                tempo = "2 ore fa",
-                isLetta = false,
-                icona = "ic_cabin_24",
-                categoria = "rifugi",
-                rifugioId = "monte_bianco"
-            ),
-            Notifica(
-                id = "2",
-                titolo = "Achievement sbloccato!",
-                descrizione = "Hai raggiunto 1000 punti! Complimenti per il traguardo",
-                tipo = TipoNotifica.ACHIEVEMENT,
-                tempo = "5 ore fa",
-                isLetta = false,
-                icona = "ic_star_24",
-                categoria = "rifugi"
-            ),
-            Notifica(
-                id = "3",
-                titolo = "Mario Rossi ti ha seguito",
-                descrizione = "Ora potete condividere le vostre escursioni",
-                tipo = TipoNotifica.NUOVO_AMICO,
-                tempo = "8 ore fa",
-                isLetta = true,
-                icona = "ic_person_add_24",
-                categoria = "amici",
-                utenteId = "mario_rossi"
-            ),
-
-            // Notifiche precedenti
-            Notifica(
-                id = "5",
-                titolo = "Recensione ricevuta",
-                descrizione = "Lucia Bianchi ha lasciato una recensione sulla tua visita al Rifugio Torino",
-                tipo = TipoNotifica.RECENSIONE,
-                tempo = "2 giorni fa",
-                isLetta = true,
-                icona = "ic_rate_review_24",
-                categoria = "amici",
-                rifugioId = "torino",
-                utenteId = "lucia_bianchi"
-            ),
-            Notifica(
-                id = "6",
-                titolo = "Promemoria escursione",
-                descrizione = "Non dimenticare la tua escursione programmata per domani al Rifugio Elisabetta",
-                tipo = TipoNotifica.PROMEMORIA,
-                tempo = "3 giorni fa",
-                isLetta = true,
-                icona = "ic_schedule_24",
-                categoria = "rifugi",
-                rifugioId = "elisabetta"
-            ),
-            Notifica(
-                id = "7",
-                titolo = "Sfida completata",
-                descrizione = "Hai completato la sfida 'Esploratore delle Alpi' visitando 5 rifugi questo mese",
-                tipo = TipoNotifica.SFIDA,
-                tempo = "4 giorni fa",
-                isLetta = true,
-                icona = "ic_emoji_events_24",
-                categoria = "rifugi"
-            ),
-            Notifica(
-                id = "8",
-                titolo = "Nuovo follower",
-                descrizione = "Giovanni Verde ha iniziato a seguire le tue attività",
-                tipo = TipoNotifica.NUOVO_AMICO,
-                tempo = "5 giorni fa",
-                isLetta = true,
-                icona = "ic_person_add_24",
-                categoria = "amici",
-                utenteId = "giovanni_verde"
-            )
-        )
+    /**
+     * Osserva le notifiche in tempo reale
+     */
+    private fun observeNotifications() {
+        viewModelScope.launch {
+            repository.observeNotifications()
+                .catch { e ->
+                    _error.value = "Errore nell'osservazione delle notifiche: ${e.message}"
+                }
+                .collect { notifiche ->
+                    allNotifiche = notifiche
+                    applyFilter(_currentFilter.value ?: "tutte")
+                }
+        }
     }
 
     private fun applyFilter(filter: String) {
@@ -150,10 +97,14 @@ class NotificationsViewModel : ViewModel() {
 
         // Separa notifiche recenti (ultime 24 ore) e precedenti
         val recenti = filteredNotifiche.filter {
-            it.tempo.contains("ore fa") || it.tempo == "Ora"
+            it.tempo.contains("ore fa") ||
+                    it.tempo.contains("minuti fa") ||
+                    it.tempo == "Ora"
         }
         val precedenti = filteredNotifiche.filter {
-            it.tempo.contains("giorno") || it.tempo.contains("giorni")
+            it.tempo.contains("giorno") ||
+                    it.tempo.contains("giorni") ||
+                    it.tempo.contains("mesi fa")
         }
 
         _notificheRecenti.value = recenti
@@ -173,12 +124,12 @@ class NotificationsViewModel : ViewModel() {
 
         // Naviga in base al tipo di notifica
         val navigationEvent = when (notifica.tipo) {
-            TipoNotifica.RIFUGIO_NUOVO, TipoNotifica.PROMEMORIA -> {
+            TipoNotifica.NUOVO_MEMBRO_GRUPPO -> {
                 notifica.rifugioId?.let {
                     NavigationEvent.OpenRifugioDetail(it)
                 } ?: NavigationEvent.OpenNotificationDetail(notifica.id)
             }
-            TipoNotifica.NUOVO_AMICO -> {
+            TipoNotifica.RICHIESTA_AMICIZIA -> {
                 notifica.utenteId?.let {
                     NavigationEvent.OpenUserProfile(it)
                 } ?: NavigationEvent.OpenNotificationDetail(notifica.id)
@@ -196,21 +147,11 @@ class NotificationsViewModel : ViewModel() {
     fun markAsRead(notificaId: String) {
         viewModelScope.launch {
             try {
-                // TODO: Chiamata al repository per segnare come letta
-                // repository.markNotificationAsRead(notificaId)
-
-                // Aggiorna la lista locale
-                allNotifiche = allNotifiche.map { notifica ->
-                    if (notifica.id == notificaId) {
-                        notifica.copy(isLetta = true)
-                    } else {
-                        notifica
-                    }
+                val success = repository.markAsRead(notificaId)
+                if (!success) {
+                    _error.value = "Errore nell'aggiornamento della notifica"
                 }
-
-                // Riapplica il filtro corrente
-                applyFilter(_currentFilter.value ?: "tutte")
-
+                // L'aggiornamento della UI avverrà automaticamente tramite l'observer
             } catch (e: Exception) {
                 _error.value = "Errore nell'aggiornamento della notifica: ${e.message}"
             }
@@ -220,15 +161,11 @@ class NotificationsViewModel : ViewModel() {
     fun markAllAsRead() {
         viewModelScope.launch {
             try {
-                // TODO: Chiamata al repository per segnare tutte come lette
-                // repository.markAllNotificationsAsRead()
-
-                // Aggiorna la lista locale
-                allNotifiche = allNotifiche.map { it.copy(isLetta = true) }
-
-                // Riapplica il filtro corrente
-                applyFilter(_currentFilter.value ?: "tutte")
-
+                val success = repository.markAllAsRead()
+                if (!success) {
+                    _error.value = "Errore nell'aggiornamento delle notifiche"
+                }
+                // L'aggiornamento della UI avverrà automaticamente tramite l'observer
             } catch (e: Exception) {
                 _error.value = "Errore nell'aggiornamento delle notifiche: ${e.message}"
             }
@@ -238,23 +175,75 @@ class NotificationsViewModel : ViewModel() {
     fun deleteNotifica(notificaId: String) {
         viewModelScope.launch {
             try {
-                // TODO: Chiamata al repository per eliminare la notifica
-                // repository.deleteNotification(notificaId)
-
-                // Rimuovi dalla lista locale
-                allNotifiche = allNotifiche.filter { it.id != notificaId }
-
-                // Riapplica il filtro corrente
-                applyFilter(_currentFilter.value ?: "tutte")
-
+                val success = repository.deleteNotification(notificaId)
+                if (!success) {
+                    _error.value = "Errore nell'eliminazione della notifica"
+                }
+                // L'aggiornamento della UI avverrà automaticamente tramite l'observer
             } catch (e: Exception) {
                 _error.value = "Errore nell'eliminazione della notifica: ${e.message}"
             }
         }
     }
 
+    fun accettaRichiestaAmicizia(senderId: String, notificaId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val friendRepository = com.example.mountainpassport_girarifugi.data.repository.FriendRepository()
+
+                friendRepository.acceptFriendRequestByUserId(senderId) { success, error ->
+                    viewModelScope.launch {
+                        if (success) {
+                            // Elimina la notifica dopo aver accettato
+                            deleteNotifica(notificaId)
+                            _successMessage.value = "Richiesta di amicizia accettata!"
+                            _error.value = null
+                        } else {
+                            _error.value = error ?: "Errore nell'accettare la richiesta"
+                        }
+                        _isLoading.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = "Errore nell'accettare la richiesta: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun rifiutaRichiestaAmicizia(senderId: String, notificaId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val friendRepository = com.example.mountainpassport_girarifugi.data.repository.FriendRepository()
+
+                friendRepository.declineFriendRequestByUserId(senderId) { success, error ->
+                    viewModelScope.launch {
+                        if (success) {
+                            // Elimina la notifica dopo aver rifiutato
+                            deleteNotifica(notificaId)
+                            _successMessage.value = "Richiesta di amicizia rifiutata"
+                            _error.value = null
+                        } else {
+                            _error.value = error ?: "Errore nel rifiutare la richiesta"
+                        }
+                        _isLoading.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = "Errore nel rifiutare la richiesta: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun clearError() {
         _error.value = null
+    }
+
+    fun clearSuccessMessage() {
+        _successMessage.value = null
     }
 
     fun clearNavigationEvent() {
@@ -270,23 +259,37 @@ class NotificationsViewModel : ViewModel() {
         val tempo: String,
         val isLetta: Boolean,
         val icona: String,
-        val categoria: String, // "rifugi" o "amici"
+        val categoria: String, // "rifugi", "amici", "punti", etc.
         val rifugioId: String? = null,
         val utenteId: String? = null,
         val achievementId: String? = null,
-        val puntiGuadagnati: Int? = null
+        val puntiGuadagnati: Int? = null,
+        val friendRequestId: String? = null
     )
 
     enum class TipoNotifica {
-        RIFUGIO_NUOVO,
-        RIFUGIO_VISITATO,
-        ACHIEVEMENT,
-        SFIDA,
-        NUOVO_AMICO,
-        RECENSIONE,
-        PROMEMORIA,
-        PUNTI_GUADAGNATI,
+        RICHIESTA_AMICIZIA,
+        NUOVO_MEMBRO_GRUPPO,
+        NUOVA_SFIDA_MESE,
+        DOPPIO_PUNTI_RIFUGI,
+        SFIDA_COMPLETATA,
+        PUNTI_OTTENUTI,
+        TIMBRO_OTTENUTO,
         SISTEMA
+    }
+
+    data class NotificaRichiestaAmicizia(
+        val notifica: Notifica,
+        val richiedenteId: String,
+        val richiedenteNome: String
+    )
+
+    sealed class AzioneNotifica {
+        data class AccettaAmicizia(val richiedenteId: String) : AzioneNotifica()
+        data class RifiutaAmicizia(val richiedenteId: String) : AzioneNotifica()
+        data class VediSfida(val sfidaId: String) : AzioneNotifica()
+        data class VediRifugi(val categoria: String) : AzioneNotifica()
+        data class VediGruppo(val gruppoId: String) : AzioneNotifica()
     }
 
     sealed class NavigationEvent {

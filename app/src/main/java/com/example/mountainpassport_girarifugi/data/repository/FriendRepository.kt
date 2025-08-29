@@ -6,11 +6,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class FriendRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val notificationsRepository = NotificationsRepository()
 
     fun sendFriendRequest(receiverId: String, callback: (Boolean, String?) -> Unit) {
         val currentUser = auth.currentUser
@@ -21,21 +25,18 @@ class FriendRepository {
 
         val senderId = currentUser.uid
 
-        // Check if users are already friends
         checkIfAlreadyFriends(senderId, receiverId) { alreadyFriends ->
             if (alreadyFriends) {
                 callback(false, "Gia' amici")
                 return@checkIfAlreadyFriends
             }
 
-            // Check if request already exists
             checkIfRequestExists(senderId, receiverId) { requestExists ->
                 if (requestExists) {
                     callback(false, "Richiesta gia' inviata")
                     return@checkIfRequestExists
                 }
 
-                // Get sender info
                 firestore.collection("users")
                     .document(senderId)
                     .get()
@@ -50,6 +51,7 @@ class FriendRepository {
                                 receiverId = receiverId,
                                 senderName = "${senderUser.nome} ${senderUser.cognome}".trim(),
                                 senderNickname = senderUser.nickname,
+                                senderAvatarUrl = senderUser.profileImageUrl,
                                 status = "pending",
                                 timestamp = System.currentTimeMillis()
                             )
@@ -58,6 +60,15 @@ class FriendRepository {
                                 .document(requestId)
                                 .set(friendRequest)
                                 .addOnSuccessListener {
+                                    // Create the notification
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        notificationsRepository.createFriendRequestNotification(
+                                            receiverId = receiverId,
+                                            senderId = senderId,
+                                            senderName = "${senderUser.nome} ${senderUser.cognome}".trim(),
+                                            senderAvatarUrl = senderUser.profileImageUrl
+                                        )
+                                    }
                                     callback(true, null)
                                 }
                                 .addOnFailureListener { e ->
@@ -96,39 +107,82 @@ class FriendRepository {
     }
 
     fun acceptFriendRequest(requestId: String, callback: (Boolean, String?) -> Unit) {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            callback(false, "Utente non autenticato")
-            return
-        }
+        val currentUser = auth.currentUser ?: return callback(false, "Utente non autenticato")
 
-        // Get the friend request
         firestore.collection("friendRequests")
             .document(requestId)
             .get()
-            .addOnSuccessListener { requestDoc ->
-                val request = requestDoc.toObject(FriendRequest::class.java)
-                if (request == null) {
-                    callback(false, "Richiesta non trovata")
-                    return@addOnSuccessListener
-                }
+            .addOnSuccessListener { doc ->
+                val request = doc.toObject(FriendRequest::class.java)
+                if (request != null && request.receiverId == currentUser.uid) {
+                    val batch = firestore.batch()
 
-                // Update request status to accepted
-                firestore.collection("friendRequests")
-                    .document(requestId)
-                    .update("status", "accepted")
-                    .addOnSuccessListener {
-                        // Add to both users' friends collections
-                        addFriendshipConnection(request.senderId, request.receiverId, request) { success ->
-                            callback(success, if (success) null else "Errore nell'aggiungere l'amicizia")
+                    val senderFriendRef = firestore.collection("friends")
+                        .document("${request.senderId}_${request.receiverId}")
+                    val receiverFriendRef = firestore.collection("friends")
+                        .document("${request.receiverId}_${request.senderId}")
+
+                    val friendData = mapOf(
+                        "user1" to request.senderId,
+                        "user2" to request.receiverId,
+                        "since" to System.currentTimeMillis()
+                    )
+
+                    batch.set(senderFriendRef, friendData)
+                    batch.set(receiverFriendRef, friendData)
+                    batch.update(doc.reference, "status", "accepted")
+
+                    batch.commit()
+                        .addOnSuccessListener {
+                            firestore.collection("users")
+                                .document(currentUser.uid)
+                                .get()
+                                .addOnSuccessListener { accepterDoc ->
+                                    val accepterUser = accepterDoc.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
+                                    if (accepterUser != null) {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            notificationsRepository.createFriendAcceptedNotification(
+                                                receiverId = request.senderId,
+                                                accepterName = "${accepterUser.nome} ${accepterUser.cognome}".trim(),
+                                                accepterId = currentUser.uid
+                                            )
+                                        }
+                                    }
+                                }
+                            callback(true, null)
                         }
-                    }
-                    .addOnFailureListener { e ->
-                        callback(false, "Errore nell'accettare la richiesta: ${e.message}")
-                    }
+                        .addOnFailureListener { e ->
+                            callback(false, "Errore: ${e.message}")
+                        }
+                } else {
+                    callback(false, "Richiesta non valida")
+                }
             }
             .addOnFailureListener { e ->
-                callback(false, "Errore nel recuperare la richiesta: ${e.message}")
+                callback(false, "Errore nel recupero: ${e.message}")
+            }
+    }
+
+    fun acceptFriendRequestByUserId(senderId: String, callback: (Boolean, String?) -> Unit) {
+        val currentUser = auth.currentUser ?: return callback(false, "Utente non autenticato")
+
+        // Trova la richiesta pendente
+        firestore.collection("friendRequests")
+            .whereEqualTo("senderId", senderId)
+            .whereEqualTo("receiverId", currentUser.uid)
+            .whereEqualTo("status", "pending")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val request = snapshot.documents.firstOrNull()
+                if (request != null) {
+                    // Usa il metodo esistente con l'ID trovato
+                    acceptFriendRequest(request.id, callback)
+                } else {
+                    callback(false, "Richiesta non trovata")
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(false, "Errore nella ricerca: ${e.message}")
             }
     }
 
@@ -141,6 +195,30 @@ class FriendRepository {
             }
             .addOnFailureListener { e ->
                 callback(false, "Errore nel rifiutare la richiesta: ${e.message}")
+            }
+    }
+
+    // NUOVO METODO MANCANTE: Rifiuta richiesta per User ID
+    fun declineFriendRequestByUserId(senderId: String, callback: (Boolean, String?) -> Unit) {
+        val currentUser = auth.currentUser ?: return callback(false, "Utente non autenticato")
+
+        // Trova la richiesta pendente
+        firestore.collection("friendRequests")
+            .whereEqualTo("senderId", senderId)
+            .whereEqualTo("receiverId", currentUser.uid)
+            .whereEqualTo("status", "pending")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val request = snapshot.documents.firstOrNull()
+                if (request != null) {
+                    // Usa il metodo esistente con l'ID trovato
+                    declineFriendRequest(request.id, callback)
+                } else {
+                    callback(false, "Richiesta non trovata")
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(false, "Errore nella ricerca: ${e.message}")
             }
     }
 

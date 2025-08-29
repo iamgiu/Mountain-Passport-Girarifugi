@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.data.model.Rifugio
 import com.example.mountainpassport_girarifugi.data.model.TipoRifugio
@@ -42,7 +43,6 @@ class SearchCabinAdapter(
             nomeRifugio.text = rifugio.nome
             localitaRifugio.text = rifugio.localita
 
-            // Mostra altitudine e distanza se disponibile
             val distance = getDistance(rifugio)
             altitudineRifugio.text = if (distance != "Posizione non disponibile") {
                 "${rifugio.altitudine} m s.l.m. • 📍 $distance"
@@ -50,32 +50,17 @@ class SearchCabinAdapter(
                 "${rifugio.altitudine} m s.l.m. • 🔍 Attiva GPS per distanza"
             }
 
-            // Imposta l'icona in base al tipo di rifugio
-            setRifugioIcon(rifugio.tipo)
+            // Carica immagine dal database
+            rifugio.immagineUrl?.let { url ->
+                Glide.with(itemView.context)
+                    .load(url)
+                    .placeholder(R.drawable.rifugio_torino)
+                    .into(imageRifugio)
+            } ?: imageRifugio.setImageResource(R.drawable.rifugio_torino)
 
-            // Gestisce il click
-            cardView.setOnClickListener {
-                onRifugioClick(rifugio)
-            }
-
-            // Animazione di click
-            cardView.setOnTouchListener { _, _ ->
-                // Aggiunge un effetto visivo al tocco
-                false
-            }
+            cardView.setOnClickListener { onRifugioClick(rifugio) }
         }
 
-        private fun setRifugioIcon(tipo: TipoRifugio) {
-            val (imageRes, colorRes) = when (tipo) {
-                TipoRifugio.RIFUGIO -> Pair(R.drawable.rifugio_torino, R.color.brown)
-                TipoRifugio.BIVACCO -> Pair(R.drawable.rifugio_torino, R.color.blue_black)
-                TipoRifugio.CAPANNA -> Pair(R.drawable.rifugio_torino, R.color.green)
-            }
-
-            imageRifugio.setImageResource(imageRes)
-            // Se vuoi colorare l'immagine:
-            // imageRifugio.setColorFilter(ContextCompat.getColor(itemView.context, colorRes))
-        }
     }
 
     class RifugioDiffCallback : DiffUtil.ItemCallback<Rifugio>() {

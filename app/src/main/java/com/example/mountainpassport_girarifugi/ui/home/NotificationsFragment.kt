@@ -47,7 +47,6 @@ class NotificationsFragment : Fragment() {
         val filterTutte = view.findViewById<TextView>(R.id.filter_tutte)
         val filterRifugi = view.findViewById<TextView>(R.id.filter_rifugi)
         val filterAmici = view.findViewById<TextView>(R.id.filter_amici)
-        val btnImpostazioni = view.findViewById<MaterialButton>(R.id.btnImpostazioni)
 
         // Setup filtri
         filterTutte.setOnClickListener {
@@ -58,11 +57,6 @@ class NotificationsFragment : Fragment() {
         }
         filterAmici.setOnClickListener {
             viewModel.setActiveFilter("amici")
-        }
-
-        // Setup pulsante impostazioni
-        btnImpostazioni.setOnClickListener {
-            viewModel.onImpostazioniClicked()
         }
 
         // Inizializza con il filtro "tutte" attivo
@@ -96,8 +90,7 @@ class NotificationsFragment : Fragment() {
         // Osserva gli errori
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             errorMessage?.let {
-                // Mostra errore (puoi usare Toast, Snackbar, etc.)
-                // Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                // Mostra errore
                 viewModel.clearError()
             }
         }
@@ -120,9 +113,18 @@ class NotificationsFragment : Fragment() {
         val recyclerRecent = view.findViewById<RecyclerView>(R.id.recyclerNotificationsRecent)
         recyclerRecent.layoutManager = LinearLayoutManager(context)
 
-        val adapter = NotificationAdapter(notifiche) { notifica ->
-            viewModel.onNotificaClicked(notifica)
-        }
+        val adapter = NotificationAdapter(
+            notifiche = notifiche,
+            onNotificaClick = { notifica ->
+                viewModel.onNotificaClicked(notifica)
+            },
+            onAcceptFriendRequest = { userId, notificationId ->
+                viewModel.accettaRichiestaAmicizia(userId, notificationId)
+            },
+            onDeclineFriendRequest = { userId, notificationId ->
+                viewModel.rifiutaRichiestaAmicizia(userId, notificationId)
+            }
+        )
         recyclerRecent.adapter = adapter
     }
 
@@ -130,9 +132,18 @@ class NotificationsFragment : Fragment() {
         val recyclerPrevious = view.findViewById<RecyclerView>(R.id.recyclerNotificationsPrevious)
         recyclerPrevious.layoutManager = LinearLayoutManager(context)
 
-        val adapter = NotificationAdapter(notifiche) { notifica ->
-            viewModel.onNotificaClicked(notifica)
-        }
+        val adapter = NotificationAdapter(
+            notifiche = notifiche,
+            onNotificaClick = { notifica ->
+                viewModel.onNotificaClicked(notifica)
+            },
+            onAcceptFriendRequest = { userId, notificationId ->
+                viewModel.accettaRichiestaAmicizia(userId, notificationId)
+            },
+            onDeclineFriendRequest = { userId, notificationId ->
+                viewModel.rifiutaRichiestaAmicizia(userId, notificationId)
+            }
+        )
         recyclerPrevious.adapter = adapter
     }
 

@@ -7,5 +7,6 @@ data class FriendRequest(
     val senderName: String = "",
     val senderNickname: String = "",
     val status: String = "pending", // "pending", "accepted", "declined"
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val senderAvatarUrl: Any
 )

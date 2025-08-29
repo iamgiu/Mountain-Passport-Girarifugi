@@ -8,6 +8,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
+import com.bumptech.glide.Glide
 
 class RifugiHorizontalAdapter(
     private val rifugi: List<HomeViewModel.RifugioCard>,
@@ -51,15 +52,26 @@ class RifugiHorizontalAdapter(
             textTempo.text = rifugio.tempo
 
             // Gestione immagine rifugio
-            val context = itemView.context
-            val nomeRisorsa = rifugio.immagine.lowercase()
-            val resId = context.resources.getIdentifier(nomeRisorsa, "drawable", context.packageName)
-
-            if (resId != 0) {
-                imageRifugio.setImageResource(resId)
+            if (rifugio.immagine.startsWith("http")) {
+                // Carica immagine dall'URL usando Glide
+                Glide.with(itemView.context)
+                    .load(rifugio.immagine)
+                    .placeholder(R.drawable.mountain_background)
+                    .error(R.drawable.mountain_background)
+                    .centerCrop()
+                    .into(imageRifugio)
             } else {
-                // Immagine di fallback se non esiste
-                imageRifugio.setImageResource(R.drawable.mountain_background)
+                // Fallback per immagini locali
+                val context = itemView.context
+                val nomeRisorsa = rifugio.immagine.lowercase()
+                val resId = context.resources.getIdentifier(nomeRisorsa, "drawable", context.packageName)
+
+                if (resId != 0) {
+                    imageRifugio.setImageResource(resId)
+                } else {
+                    // Immagine di fallback se non esiste
+                    imageRifugio.setImageResource(R.drawable.mountain_background)
+                }
             }
 
             // Gestione badge bonus punti

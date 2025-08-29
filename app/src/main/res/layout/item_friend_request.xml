@@ -5,7 +5,9 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardElevation="4dp"
+    android:clickable="true"
+    android:focusable="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,15 +16,15 @@
         android:padding="16dp"
         android:gravity="center_vertical">
 
-        <!-- Profile Image Placeholder -->
+        <!-- Profile Image -->
         <ImageView
             android:id="@+id/imageViewSenderAvatar"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/circle_background"
-            android:src="@drawable/ic_person_24"
-            android:scaleType="centerCrop" />
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_person_24" />
 
         <!-- User Info -->
         <LinearLayout
@@ -44,7 +46,7 @@
                 android:id="@+id/textViewSenderNickname"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@nickname"
+                android:text="username"
                 android:textSize="14sp"
                 android:textColor="@color/gray" />
 
@@ -56,26 +58,30 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonDecline"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:text="Rifiuta"
                 android:textSize="12sp"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
                 android:minWidth="80dp"
-                android:minHeight="36dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                android:minHeight="36dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonAccept"
+                style="@style/Widget.Material3.Button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Accetta"
                 android:textSize="12sp"
+                android:backgroundTint="@color/green_black"
+                android:textColor="@color/white"
                 android:minWidth="80dp"
-                android:minHeight="36dp"
-                style="@style/Widget.Material3.Button" />
+                android:minHeight="36dp" />
 
         </LinearLayout>
 

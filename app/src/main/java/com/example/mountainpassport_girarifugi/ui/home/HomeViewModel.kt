@@ -5,8 +5,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
+import android.content.Context
 
 class HomeViewModel : ViewModel() {
+
+    private var rifugioRepository: RifugioRepository? = null
 
     // LiveData per l'UI state
     private val _currentTab = MutableLiveData<String>().apply { value = "rifugi" }
@@ -34,6 +38,11 @@ class HomeViewModel : ViewModel() {
     val error: LiveData<String?> = _error
 
     init {
+        // loadData() verrà chiamato dopo aver impostato il repository
+    }
+    
+    fun setRepository(context: Context) {
+        rifugioRepository = RifugioRepository(context)
         loadData()
     }
 
@@ -62,21 +71,44 @@ class HomeViewModel : ViewModel() {
     }
 
     private suspend fun loadEscursioneProgrammata() {
-        // TODO: Sostituire con chiamata al repository
-        val escursione = Escursione(
-            nome = "Rifugio Monte Bianco",
-            altitudine = "2100 m",
-            distanza = "18 km",
-            id = "monte_bianco",
-            coordinate = "45.8326,6.8652",
-            localita = "Val d'Aosta",
-            servizi = listOf("Acqua calda", "Luce elettrica", "Docce", "Ristorante"),
-            difficolta = "Escursionisti [E]",
-            tempo = "5h 30m",
-            descrizione = "Un rifugio panoramico con vista mozzafiato sul Monte Bianco",
-            immagine = "rifugio_monte_bianco"
-        )
-        _escursioneProgrammata.value = escursione
+        try {
+            val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
+            if (rifugi.isNotEmpty()) {
+                // Seleziona un rifugio casuale per l'escursione programmata
+                val rifugioCasuale = rifugi.random()
+                
+                val escursione = Escursione(
+                    nome = rifugioCasuale.nome,
+                    altitudine = "${rifugioCasuale.altitudine} m",
+                    distanza = "${(5..25).random()} km", // Distanza casuale
+                    id = rifugioCasuale.id.toString(),
+                    coordinate = "${rifugioCasuale.latitudine},${rifugioCasuale.longitudine}",
+                    localita = rifugioCasuale.localita,
+                    servizi = listOf("Acqua calda", "Luce elettrica", "Docce", "Ristorante"),
+                    difficolta = "Escursionisti [E]",
+                    tempo = "${(2..8).random()}h ${(0..59).random()}m",
+                    descrizione = rifugioCasuale.descrizione,
+                    immagine = rifugioCasuale.immagineUrl // Usa l'URL dal JSON
+                )
+                _escursioneProgrammata.value = escursione
+            }
+        } catch (e: Exception) {
+            // Fallback con dati di default
+            val escursione = Escursione(
+                nome = "Rifugio Monte Bianco",
+                altitudine = "2100 m",
+                distanza = "18 km",
+                id = "monte_bianco",
+                coordinate = "45.8326,6.8652",
+                localita = "Val d'Aosta",
+                servizi = listOf("Acqua calda", "Luce elettrica", "Docce", "Ristorante"),
+                difficolta = "Escursionisti [E]",
+                tempo = "5h 30m",
+                descrizione = "Un rifugio panoramico con vista mozzafiato sul Monte Bianco",
+                immagine = "rifugio_monte_bianco"
+            )
+            _escursioneProgrammata.value = escursione
+        }
     }
 
     private suspend fun loadPunteggio() {
@@ -85,85 +117,127 @@ class HomeViewModel : ViewModel() {
     }
 
     private suspend fun loadRifugiBonus() {
-        // TODO: Sostituire con chiamata al repository
-        val rifugi = listOf(
-            RifugioCard(
-                nome = "Rifugio Laghi Gemelli",
-                distanza = "3.2 km",
-                altitudine = "2134 m",
-                difficolta = "Medio",
-                tempo = "2h 15m",
-                immagine = "rifugio_laghi_gemelli",
-                bonusPunti = 75
-            ),
-            RifugioCard(
-                nome = "Capanna Margherita",
-                distanza = "4.8 km",
-                altitudine = "4554 m",
-                difficolta = "Difficile",
-                tempo = "6h 30m",
-                immagine = "capanna_margherita",
-                bonusPunti = 150
-            ),
-            RifugioCard(
-                nome = "Rifugio Città di Milano",
-                distanza = "2.1 km",
-                altitudine = "1890 m",
-                difficolta = "Facile",
-                tempo = "1h 45m",
-                immagine = "rifugio_citta_di_milano",
-                bonusPunti = 50
-            ),
-            RifugioCard(
-                nome = "Rifugio Gnifetti",
-                distanza = "5.5 km",
-                altitudine = "3647 m",
-                difficolta = "Difficile",
-                tempo = "4h 20m",
-                immagine = "rifugio_gnifetti",
-                bonusPunti = 120
+        try {
+            val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
+            if (rifugi.isNotEmpty()) {
+                // Seleziona 4 rifugi casuali per i rifugi bonus
+                val rifugiCasuali = rifugi.shuffled().take(4)
+                
+                val rifugiBonus = rifugiCasuali.map { rifugio ->
+                    RifugioCard(
+                        nome = rifugio.nome,
+                        distanza = "${(1..10).random()}.${(0..9).random()} km",
+                        altitudine = "${rifugio.altitudine} m",
+                        difficolta = listOf("Facile", "Medio", "Difficile", "Molto Difficile").random(),
+                        tempo = "${(1..8).random()}h ${(0..59).random()}m",
+                        immagine = rifugio.immagineUrl ?: "mountain_background", // Usa l'URL dal JSON o fallback
+                        bonusPunti = (50..200).random()
+                    )
+                }
+                _rifugiBonus.value = rifugiBonus
+            }
+        } catch (e: Exception) {
+            // Fallback con dati di default
+            val rifugi = listOf(
+                RifugioCard(
+                    nome = "Rifugio Laghi Gemelli",
+                    distanza = "3.2 km",
+                    altitudine = "2134 m",
+                    difficolta = "Medio",
+                    tempo = "2h 15m",
+                    immagine = "rifugio_laghi_gemelli",
+                    bonusPunti = 75
+                ),
+                RifugioCard(
+                    nome = "Capanna Margherita",
+                    distanza = "4.8 km",
+                    altitudine = "4554 m",
+                    difficolta = "Difficile",
+                    tempo = "6h 30m",
+                    immagine = "capanna_margherita",
+                    bonusPunti = 150
+                ),
+                RifugioCard(
+                    nome = "Rifugio Città di Milano",
+                    distanza = "2.1 km",
+                    altitudine = "1890 m",
+                    difficolta = "Facile",
+                    tempo = "1h 45m",
+                    immagine = "rifugio_citta_di_milano",
+                    bonusPunti = 50
+                ),
+                RifugioCard(
+                    nome = "Rifugio Gnifetti",
+                    distanza = "5.5 km",
+                    altitudine = "3647 m",
+                    difficolta = "Difficile",
+                    tempo = "4h 20m",
+                    immagine = "rifugio_gnifetti",
+                    bonusPunti = 120
+                )
             )
-        )
-        _rifugiBonus.value = rifugi
+            _rifugiBonus.value = rifugi
+        }
     }
 
     private suspend fun loadSuggerimentiPersonalizzati() {
-        // TODO: Sostituire con logica per suggerimenti personalizzati basata su preferenze utente
-        val suggerimenti = listOf(
-            RifugioCard(
-                nome = "Rifugio Torino",
-                distanza = "1.8 km",
-                altitudine = "3375 m",
-                difficolta = "Medio",
-                tempo = "3h 10m",
-                immagine = "rifugio_torino"
-            ),
-            RifugioCard(
-                nome = "Rifugio Elisabetta",
-                distanza = "2.7 km",
-                altitudine = "2195 m",
-                difficolta = "Facile",
-                tempo = "1h 50m",
-                immagine = "rifugio_elisabetta"
-            ),
-            RifugioCard(
-                nome = "Rifugio Vittorio Sella",
-                distanza = "3.9 km",
-                altitudine = "2584 m",
-                difficolta = "Medio",
-                tempo = "2h 45m",
-                immagine = "rifugio_vittorio_sella"
-            ),
-            RifugioCard(
-                nome = "Capanna Regina Margherita",
-                distanza = "6.2 km",
-                altitudine = "4554 m",
-                difficolta = "Molto Difficile",
-                tempo = "7h 00m",
-                immagine = "capanna_regina_margherita"
+        try {
+            val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
+            if (rifugi.isNotEmpty()) {
+                // Seleziona 4 rifugi casuali diversi dai rifugi bonus per i suggerimenti
+                val rifugiBonus = _rifugiBonus.value?.map { it.nome } ?: emptyList()
+                val rifugiSuggerimenti = rifugi.filter { !rifugiBonus.contains(it.nome) }.shuffled().take(4)
+                
+                val suggerimenti = rifugiSuggerimenti.map { rifugio ->
+                    RifugioCard(
+                        nome = rifugio.nome,
+                        distanza = "${(1..15).random()}.${(0..9).random()} km",
+                        altitudine = "${rifugio.altitudine} m",
+                        difficolta = listOf("Facile", "Medio", "Difficile", "Molto Difficile").random(),
+                        tempo = "${(1..10).random()}h ${(0..59).random()}m",
+                        immagine = rifugio.immagineUrl ?: "mountain_background" // Usa l'URL dal JSON o fallback
+                    )
+                }
+                _suggerimentiPersonalizzati.value = suggerimenti
+            }
+        } catch (e: Exception) {
+            // Fallback con dati di default
+            val suggerimenti = listOf(
+                RifugioCard(
+                    nome = "Rifugio Torino",
+                    distanza = "1.8 km",
+                    altitudine = "3375 m",
+                    difficolta = "Medio",
+                    tempo = "3h 10m",
+                    immagine = "rifugio_torino"
+                ),
+                RifugioCard(
+                    nome = "Rifugio Elisabetta",
+                    distanza = "2.7 km",
+                    altitudine = "2195 m",
+                    difficolta = "Facile",
+                    tempo = "1h 50m",
+                    immagine = "rifugio_elisabetta"
+                ),
+                RifugioCard(
+                    nome = "Rifugio Vittorio Sella",
+                    distanza = "3.9 km",
+                    altitudine = "2584 m",
+                    difficolta = "Medio",
+                    tempo = "2h 45m",
+                    immagine = "rifugio_vittorio_sella"
+                ),
+                RifugioCard(
+                    nome = "Capanna Regina Margherita",
+                    distanza = "6.2 km",
+                    altitudine = "4554 m",
+                    difficolta = "Molto Difficile",
+                    tempo = "7h 00m",
+                    immagine = "capanna_regina_margherita"
+                )
             )
-        )
-        _suggerimentiPersonalizzati.value = suggerimenti
+            _suggerimentiPersonalizzati.value = suggerimenti
+        }
     }
 
     private suspend fun loadFeedAmici() {
@@ -224,9 +298,31 @@ class HomeViewModel : ViewModel() {
     fun refreshData() {
         loadData()
     }
+    
+    fun refreshRandomData() {
+        // Ricarica solo i dati casuali (escursione, rifugi bonus, suggerimenti)
+        viewModelScope.launch {
+            try {
+                loadEscursioneProgrammata()
+                loadRifugiBonus()
+                loadSuggerimentiPersonalizzati()
+            } catch (e: Exception) {
+                _error.value = "Errore nel ricaricamento: ${e.message}"
+            }
+        }
+    }
 
     fun clearError() {
         _error.value = null
+    }
+    
+    suspend fun findRifugioByName(nome: String): com.example.mountainpassport_girarifugi.data.model.Rifugio? {
+        return try {
+            val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
+            rifugi.find { it.nome == nome }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // Utility methods

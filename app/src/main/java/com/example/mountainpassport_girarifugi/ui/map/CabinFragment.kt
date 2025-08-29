@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.FragmentCabinBinding
 import com.example.mountainpassport_girarifugi.data.model.RifugioPoints
+import com.example.mountainpassport_girarifugi.utils.NotificationHelper
 import com.bumptech.glide.Glide
 import android.widget.Button
 import android.widget.EditText
@@ -155,6 +156,8 @@ class CabinFragment : Fragment() {
         binding.addReviewButton.setOnClickListener {
             showAddReviewDialog()
         }
+        
+
     }
 
     private fun populateUI(rifugio: com.example.mountainpassport_girarifugi.data.model.Rifugio) {
@@ -308,4 +311,6 @@ class CabinFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+    
+
 }

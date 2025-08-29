@@ -3,6 +3,8 @@ package com.example.mountainpassport_girarifugi.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.mountainpassport_girarifugi.data.model.*
+import com.example.mountainpassport_girarifugi.utils.NotificationHelper
+import com.example.mountainpassport_girarifugi.data.repository.NotificationsRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -60,12 +62,114 @@ class PointsRepository(private val context: Context) {
             // Aggiorna le statistiche del rifugio
             updateRifugioStats(rifugioId)
             
+            // Invia notifica per punti guadagnati
+            try {
+                Log.d(TAG, "Tentativo di invio notifica per ${pointsEarned} punti - Rifugio: ${rifugio.nome}")
+                
+                // 1. Notifica locale del sistema
+                NotificationHelper.showPointsEarnedNotification(
+                    context = context,
+                    points = pointsEarned,
+                    rifugioName = rifugio.nome
+                )
+                
+                // 2. Notifica in-app nel database
+                val notificationsRepository = NotificationsRepository()
+                notificationsRepository.createPointsEarnedNotification(
+                    userId = userId,
+                    punti = pointsEarned,
+                    rifugioName = rifugio.nome,
+                    rifugioId = rifugioId
+                )
+                
+                Log.d(TAG, "Notifica locale e in-app inviate con successo")
+            } catch (e: Exception) {
+                Log.e(TAG, "Errore nell'invio della notifica: ${e.message}")
+            }
+            
             Log.d(TAG, "Visita registrata: ${userPoints.rifugioName} - ${userPoints.pointsEarned} punti")
             
             Result.success(userPoints.copy(id = docRef.id))
         } catch (e: Exception) {
             Log.e(TAG, "Errore nel registrare la visita: ${e.message}")
             Result.failure(e)
+        }
+    }
+    
+    /**
+     * Registra una visita a un rifugio e assegna i punti (overload con oggetto Rifugio)
+     */
+    suspend fun recordVisitWithRifugio(
+        userId: String,
+        rifugioId: Int,
+        rifugio: Rifugio?
+    ): Int {
+        return try {
+            // Ottieni i dati del rifugio
+            val rifugioData = rifugio ?: rifugioRepository.getRifugioById(rifugioId)
+            if (rifugioData == null) {
+                return 0
+            }
+            
+            // Calcola i punti
+            val pointsEarned = PointsCalculator.calculateVisitPoints(
+                rifugioId, 
+                rifugioData.altitudine
+            )
+            
+            // Crea il record della visita
+            val userPoints = UserPoints(
+                userId = userId,
+                rifugioId = rifugioId,
+                rifugioName = rifugioData.nome,
+                pointsEarned = pointsEarned,
+                visitDate = Timestamp.now(),
+                visitType = VisitType.VISIT,
+                isDoublePoints = PointsCalculator.isDoublePointsRifugio(rifugioId)
+            )
+            
+            // Salva in Firebase
+            val docRef = firestore.collection("user_points")
+                .add(userPoints)
+                .await()
+            
+            // Aggiorna le statistiche dell'utente
+            updateUserStats(userId, pointsEarned)
+            
+            // Aggiorna le statistiche del rifugio
+            updateRifugioStats(rifugioId)
+            
+            // Invia notifica per punti guadagnati
+            try {
+                Log.d(TAG, "Tentativo di invio notifica per ${pointsEarned} punti - Rifugio: ${rifugioData.nome}")
+                
+                // 1. Notifica locale del sistema
+                NotificationHelper.showPointsEarnedNotification(
+                    context = context,
+                    points = pointsEarned,
+                    rifugioName = rifugioData.nome
+                )
+                
+                // 2. Notifica in-app nel database
+                val notificationsRepository = NotificationsRepository()
+                notificationsRepository.createPointsEarnedNotification(
+                    userId = userId,
+                    punti = pointsEarned,
+                    rifugioName = rifugioData.nome,
+                    rifugioId = rifugioId
+                )
+                
+                Log.d(TAG, "Notifica locale e in-app inviate con successo")
+            } catch (e: Exception) {
+                Log.e(TAG, "Errore nell'invio della notifica: ${e.message}")
+            }
+            
+            Log.d(TAG, "Visita registrata: ${userPoints.rifugioName} - ${userPoints.pointsEarned} punti")
+            
+            pointsEarned
+        } catch (e: Exception) {
+            Log.e(TAG, "Errore nel registrare la visita: ${e.message}")
+            0
         }
     }
     
@@ -104,25 +208,6 @@ class PointsRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Errore nel caricare le visite utente: ${e.message}")
             emptyList()
-        }
-    }
-    
-    /**
-     * Verifica se un utente ha già visitato un rifugio
-     */
-    suspend fun hasUserVisitedRifugio(userId: String, rifugioId: Int): Boolean {
-        return try {
-            val snapshot = firestore.collection("user_points")
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("rifugioId", rifugioId)
-                .limit(1)
-                .get()
-                .await()
-            
-            !snapshot.isEmpty
-        } catch (e: Exception) {
-            Log.e(TAG, "Errore nel verificare la visita: ${e.message}")
-            false
         }
     }
     
@@ -231,6 +316,25 @@ class PointsRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Errore nel caricare la classifica mensile: ${e.message}")
             emptyList()
+        }
+    }
+    
+    /**
+     * Verifica se l'utente ha già visitato un rifugio
+     */
+    suspend fun hasUserVisitedRifugio(userId: String, rifugioId: Int): Boolean {
+        return try {
+            val snapshot = firestore.collection("user_points")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("rifugioId", rifugioId)
+                .limit(1)
+                .get()
+                .await()
+            
+            !snapshot.isEmpty
+        } catch (e: Exception) {
+            Log.e(TAG, "Errore nel verificare se l'utente ha visitato il rifugio: ${e.message}")
+            false
         }
     }
 }

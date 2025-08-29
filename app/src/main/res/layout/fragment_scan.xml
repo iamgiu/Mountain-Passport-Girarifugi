@@ -18,17 +18,27 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:gravity="center_vertical">
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Torna indietro"
+            android:src="@drawable/ic_reply_24"
+            app:backgroundTint="@color/green"
+            app:fabSize="normal"
+            app:tint="@color/green_light" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
         <ImageView
             android:id="@+id/appLogo"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:contentDescription="App Logo"
             android:src="@drawable/ic_launcher_foreground" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
 
     </LinearLayout>
 
@@ -128,5 +138,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:tint="@color/white" />
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

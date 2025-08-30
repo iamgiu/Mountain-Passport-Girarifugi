@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.graphics.Paint
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.core.content.ContextCompat
@@ -90,14 +91,23 @@ class NotificationsFragment : Fragment() {
         // Osserva gli errori
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             errorMessage?.let {
-                // Mostra errore
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
                 viewModel.clearError()
+            }
+        }
+
+        // AGGIUNTO: Osserva i messaggi di successo
+        viewModel.successMessage.observe(viewLifecycleOwner) { successMessage ->
+            successMessage?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                viewModel.clearSuccessMessage()
             }
         }
 
         // Osserva lo stato di loading
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             // Mostra/nascondi loading indicator se necessario
+            // Puoi aggiungere una ProgressBar se vuoi
         }
 
         // Osserva eventi di navigazione

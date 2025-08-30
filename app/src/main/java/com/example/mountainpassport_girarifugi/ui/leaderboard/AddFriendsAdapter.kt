@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.ItemProfileAddFriendBinding
 
@@ -39,21 +40,54 @@ class AddFriendsAdapter(
                 textViewFriendName.text = user.name
                 textViewRefuges.text = "${user.refugesCount} rifugi"
                 textViewPoints.text = "${user.points} pt"
-                imageSecondPlace.setImageResource(user.avatarResource)
 
-                // Gestisce lo stato del bottone
-                if (user.isRequestSent) {
-                    btnAddFriend.text = "Inviata"
-                    btnAddFriend.isEnabled = false
-                    btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                        itemView.context.getColor(com.example.mountainpassport_girarifugi.R.color.blue)
-                    )
+                // AGGIORNATO: Carica l'immagine profilo reale se disponibile
+                if (!user.profileImageUrl.isNullOrBlank()) {
+                    Glide.with(itemView.context)
+                        .load(user.profileImageUrl)
+                        .placeholder(user.avatarResource)
+                        .error(user.avatarResource)
+                        .circleCrop()
+                        .into(imageSecondPlace)
                 } else {
-                    btnAddFriend.text = if (user.id.startsWith("g")) "Unisciti" else "Aggiungi"
-                    btnAddFriend.isEnabled = true
-                    btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                        itemView.context.getColor(com.example.mountainpassport_girarifugi.R.color.blue_black)
-                    )
+                    imageSecondPlace.setImageResource(user.avatarResource)
+                }
+
+                // AGGIORNATO: Gestisce lo stato del bottone in base alle tre condizioni
+                when {
+                    user.isAlreadyFriend -> {
+                        // Caso 1: Sono già amici
+                        btnAddFriend.text = "Già Amici"
+                        btnAddFriend.isEnabled = false
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                            itemView.context.getColor(R.color.gray_light)
+                        )
+                        btnAddFriend.setTextColor(
+                            itemView.context.getColor(R.color.gray)
+                        )
+                    }
+                    user.isRequestSent -> {
+                        // Caso 2: Richiesta già inviata
+                        btnAddFriend.text = "Inviata"
+                        btnAddFriend.isEnabled = false
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                            itemView.context.getColor(R.color.blue)
+                        )
+                        btnAddFriend.setTextColor(
+                            itemView.context.getColor(R.color.white)
+                        )
+                    }
+                    else -> {
+                        // Caso 3: Può inviare richiesta
+                        btnAddFriend.text = if (user.id.startsWith("g")) "Unisciti" else "Aggiungi"
+                        btnAddFriend.isEnabled = true
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                            itemView.context.getColor(R.color.green)
+                        )
+                        btnAddFriend.setTextColor(
+                            itemView.context.getColor(R.color.white)
+                        )
+                    }
                 }
 
                 // Click listener per la card (apre il profilo)
@@ -61,9 +95,9 @@ class AddFriendsAdapter(
                     onUserClick(user)
                 }
 
-                // Click listener per il bottone (invia richiesta)
+                // Click listener per il bottone (invia richiesta solo se abilitato)
                 btnAddFriend.setOnClickListener {
-                    if (!user.isRequestSent) {
+                    if (!user.isAlreadyFriend && !user.isRequestSent) {
                         onAddFriendClick(user)
                     }
                 }
@@ -71,9 +105,6 @@ class AddFriendsAdapter(
                 // Animazione di click per la card
                 cardViewFriend.setOnTouchListener { view, motionEvent ->
                     when (motionEvent.action) {
-                        android.view.MotionEvent.ACTION_DOWN -> {
-                            view.animate().scaleX(0.98f).scaleY(0.98f).duration = 100
-                        }
                         android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                             view.animate().scaleX(1.0f).scaleY(1.0f).duration = 100
                         }
@@ -81,9 +112,9 @@ class AddFriendsAdapter(
                     false
                 }
 
-                // Animazione di click per il bottone
+                // Animazione di click per il bottone (solo se abilitato)
                 btnAddFriend.setOnTouchListener { view, motionEvent ->
-                    if (!user.isRequestSent) {
+                    if (!user.isAlreadyFriend && !user.isRequestSent) {
                         when (motionEvent.action) {
                             android.view.MotionEvent.ACTION_DOWN -> {
                                 view.animate().scaleX(0.95f).scaleY(0.95f).duration = 80

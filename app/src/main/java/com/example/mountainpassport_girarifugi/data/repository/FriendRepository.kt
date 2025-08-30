@@ -54,7 +54,7 @@ class FriendRepository {
                                 receiverId = receiverId,
                                 senderName = "${senderUser.nome} ${senderUser.cognome}".trim(),
                                 senderNickname = senderUser.nickname,
-                                senderAvatarUrl = senderUser.profileImageUrl,
+                                senderAvatarUrl = senderUser.profileImageUrl ?: "",
                                 status = "pending",
                                 timestamp = System.currentTimeMillis()
                             )
@@ -69,7 +69,7 @@ class FriendRepository {
                                             receiverId = receiverId,
                                             senderId = senderId,
                                             senderName = "${senderUser.nome} ${senderUser.cognome}".trim(),
-                                            senderAvatarUrl = senderUser.profileImageUrl
+                                            senderAvatarUrl = senderUser.profileImageUrl ?: ""
                                         )
                                     }
                                     callback(true, null)
@@ -437,7 +437,7 @@ class FriendRepository {
             userId = userId,
             fullName = fullName,
             nickname = nickname,
-            profileImageUrl = profileImageUrl.toString(),
+            profileImageUrl = profileImageUrl ?: "",
             addedTimestamp = System.currentTimeMillis()
         )
     }
@@ -658,7 +658,7 @@ class FriendRepository {
                                 userId = userId1,
                                 fullName = "${user1.nome ?: ""} ${user1.cognome ?: ""}".trim().takeIf { it.isNotBlank() } ?: "Utente",
                                 nickname = user1.nickname ?: "",
-                                profileImageUrl = user1.profileImageUrl,
+                                profileImageUrl = user1.profileImageUrl ?: "",
                                 addedTimestamp = System.currentTimeMillis()
                             )
 
@@ -666,7 +666,7 @@ class FriendRepository {
                                 userId = userId2,
                                 fullName = "${user2.nome ?: ""} ${user2.cognome ?: ""}".trim().takeIf { it.isNotBlank() } ?: "Utente",
                                 nickname = user2.nickname ?: "",
-                                profileImageUrl = user2.profileImageUrl,
+                                profileImageUrl = user2.profileImageUrl ?: "",
                                 addedTimestamp = System.currentTimeMillis()
                             )
 

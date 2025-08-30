@@ -195,26 +195,27 @@ class AddFriendsViewModel : ViewModel() {
                             for (doc in documents) {
                                 val user = doc.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
 
-                                // Skip current user and apply search filter
                                 if (doc.id != currentUserId &&
                                     (query.isBlank() ||
                                             user.nome.contains(query, ignoreCase = true) ||
                                             user.cognome.contains(query, ignoreCase = true) ||
                                             user.nickname.contains(query, ignoreCase = true))) {
 
-                                    // CONTROLLA LO STATO DELL'AMICIZIA
                                     val (isAlreadyFriend, isRequestSent) = checkFriendshipStatus(doc.id, currentUserId)
+
+                                    // OTTIENI LE STATISTICHE REALI DAL POINTSREPOSITORY
+                                    val userStats = getUserStatsFromPoints(doc.id)
 
                                     val addFriendUser = AddFriendUser(
                                         id = doc.id,
                                         name = "${user.nome} ${user.cognome}".trim(),
                                         username = user.nickname,
-                                        points = 0, // You can add points field to User data class later
-                                        refugesCount = 0, // Same for refuges count
-                                        avatarResource = R.drawable.avatar_mario, // Default avatar
+                                        points = userStats.first, // PUNTI REALI
+                                        refugesCount = userStats.second, // RIFUGI REALI
+                                        avatarResource = R.drawable.avatar_mario,
                                         isAlreadyFriend = isAlreadyFriend,
                                         isRequestSent = isRequestSent,
-                                        profileImageUrl = user.profileImageUrl // AGGIUNTO per immagine profilo reale
+                                        profileImageUrl = user.profileImageUrl
                                     )
 
                                     users.add(addFriendUser)
@@ -226,13 +227,37 @@ class AddFriendsViewModel : ViewModel() {
                         }
                     }
                     .addOnFailureListener { e ->
+                        android.util.Log.e("AddFriendsVM", "Error loading users", e)
                         _error.value = "Errore nel caricamento utenti: ${e.message}"
                         _isLoading.value = false
                     }
             } catch (e: Exception) {
+                android.util.Log.e("AddFriendsVM", "Exception in searchUsersFromFirebase", e)
                 _error.value = "Errore nella ricerca: ${e.message}"
                 _isLoading.value = false
             }
+        }
+    }
+
+    // AGGIUNGI QUESTO METODO
+    private suspend fun getUserStatsFromPoints(userId: String): Pair<Int, Int> {
+        return try {
+            // Ottieni le statistiche dal sistema punti
+            val userStatsDoc = firestore.collection("user_points_stats")
+                .document(userId)
+                .get()
+                .await()
+
+            val userStats = userStatsDoc.toObject(com.example.mountainpassport_girarifugi.data.model.UserPointsStats::class.java)
+
+            if (userStats != null) {
+                Pair(userStats.totalPoints, userStats.totalVisits)
+            } else {
+                Pair(0, 0)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AddFriendsVM", "Error getting user stats", e)
+            Pair(0, 0)
         }
     }
 

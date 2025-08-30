@@ -50,13 +50,13 @@ class GroupsLeaderboardFragment : Fragment() {
         })
     }
 
-    private fun showErrorMessage(message: String) {
+    /*private fun showErrorMessage(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
             .setAction("Riprova") {
                 viewModel.loadGroupsLeaderboard()
             }
             .show()
-    }
+    }*/
 
     override fun onDestroyView() {
         super.onDestroyView()

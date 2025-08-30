@@ -119,14 +119,6 @@ class AddFriendsFragment : Fragment() {
         }
     }
 
-    // MockUp ricerca amici
-//    private fun performSearch(query: String) {
-//        when (currentTab) {
-//            0 -> viewModel.searchUsers(query)
-//            1 -> viewModel.searchGroups(query)
-//        }
-//    }
-
     // Ricerca tramite Firebase
     private fun performSearch(query: String) {
         when (currentTab) {
@@ -172,17 +164,6 @@ class AddFriendsFragment : Fragment() {
             }
         }
 
-//        // MockUp Ricerca
-//        val currentQuery = binding.searchView.query.toString()
-//        if (currentQuery.isNotEmpty()) {
-//            performSearch(currentQuery)
-//        } else {
-//            // Se non c'è query, carica i dati di default
-//            when (currentTab) {
-//                0 -> viewModel.loadDefaultUsers()
-//                1 -> viewModel.loadDefaultGroups()
-//            }
-//        }
     }
 
     private fun onUserProfileClicked(user: AddFriendUser) {
@@ -193,6 +174,7 @@ class AddFriendsFragment : Fragment() {
             putInt("USER_POINTS", user.points)
             putInt("USER_REFUGES", user.refugesCount)
             putInt("USER_AVATAR", user.avatarResource)
+            putString("USER_PROFILE_IMAGE_URL", user.profileImageUrl)
         }
 
         findNavController().navigate(R.id.action_addfriendsFragment_to_profileFragment, bundle)

@@ -237,7 +237,8 @@ class NotificationsRepository {
         rifugioId: String? = null,
         utenteId: String? = null,
         achievementId: String? = null,
-        puntiGuadagnati: Int? = null
+        puntiGuadagnati: Int? = null,
+        senderAvatarUrl: String? = null
     ): Boolean {
         return try {
             val docRef = firestore.collection(COLLECTION_NOTIFICATIONS).document()
@@ -253,7 +254,8 @@ class NotificationsRepository {
                 rifugioId = rifugioId,
                 utenteId = utenteId,
                 achievementId = achievementId,
-                puntiGuadagnati = puntiGuadagnati
+                puntiGuadagnati = puntiGuadagnati,
+                avatarUrl = senderAvatarUrl
             )
 
             docRef.set(notifica).await()

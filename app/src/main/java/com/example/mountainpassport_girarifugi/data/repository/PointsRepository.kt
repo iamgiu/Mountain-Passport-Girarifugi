@@ -227,17 +227,14 @@ class PointsRepository(private val context: Context) {
             val calendar = Calendar.getInstance()
             val currentMonth = calendar.get(Calendar.MONTH)
             val currentYear = calendar.get(Calendar.YEAR)
-            
-            // Ottieni le statistiche attuali
+
             val currentStats = getUserPointsStats(userId) ?: UserPointsStats(userId = userId)
-            
-            // Calcola il mese corrente
+
             val visitCalendar = Calendar.getInstance()
             visitCalendar.time = now.toDate()
-            val isCurrentMonth = visitCalendar.get(Calendar.MONTH) == currentMonth && 
-                               visitCalendar.get(Calendar.YEAR) == currentYear
-            
-            // Aggiorna le statistiche
+            val isCurrentMonth = visitCalendar.get(Calendar.MONTH) == currentMonth &&
+                    visitCalendar.get(Calendar.YEAR) == currentYear
+
             val updatedStats = currentStats.copy(
                 totalPoints = currentStats.totalPoints + pointsEarned,
                 totalVisits = currentStats.totalVisits + 1,
@@ -245,19 +242,32 @@ class PointsRepository(private val context: Context) {
                 monthlyVisits = if (isCurrentMonth) currentStats.monthlyVisits + 1 else 1,
                 lastUpdated = now
             )
-            
-            // Salva in Firebase
+
+            // Aggiorna user_points_stats (leaderboard)
             firestore.collection("user_points_stats")
                 .document(userId)
                 .set(updatedStats)
                 .await()
-                
-            Log.d(TAG, "Statistiche utente aggiornate: ${updatedStats.totalPoints} punti totali")
+
+            // Aggiorna anche users/collection se vuoi mantenere sincronizzati i punti
+            val userDoc = firestore.collection("users").document(userId)
+            firestore.runTransaction { transaction ->
+                val userSnapshot = transaction.get(userDoc)
+                val currentPoints = userSnapshot.getLong("points") ?: 0
+                val currentRefuges = userSnapshot.getLong("refugesCount") ?: 0
+
+                transaction.update(userDoc, mapOf(
+                    "points" to currentPoints + pointsEarned,
+                    "refugesCount" to currentRefuges + 1
+                ))
+            }.await()
+
         } catch (e: Exception) {
             Log.e(TAG, "Errore nell'aggiornare le statistiche utente: ${e.message}")
         }
     }
-    
+
+
     /**
      * Aggiorna le statistiche del rifugio
      */

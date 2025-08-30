@@ -9,7 +9,7 @@ import android.content.Context
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import android.animation.ObjectAnimator
@@ -18,13 +18,21 @@ import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.FragmentLeaderboardBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import android.util.Log
 
 class LeaderboardFragment : Fragment() {
 
     private var _binding: FragmentLeaderboardBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: LeaderboardViewModel by viewModels()
+
+    // IMPORTANTE: Usa activityViewModels per condividere il ViewModel con i fragment figli
+    private val viewModel: LeaderboardViewModel by activityViewModels()
+
     private var isSearchVisible = false
+
+    companion object {
+        private const val TAG = "LeaderboardFragment"
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,6 +57,11 @@ class LeaderboardFragment : Fragment() {
         fabAddFriend.setOnClickListener {
             findNavController().navigate(R.id.action_leaderboardfragment_to_addfriendsFragment)
         }
+
+        // Debug: Carica subito i dati
+        Log.d(TAG, "Fragment creato, caricando dati...")
+        viewModel.refreshFriendsLeaderboard()
+        viewModel.refreshGlobalLeaderboard()
     }
 
     private fun setupViewPager() {
@@ -60,6 +73,7 @@ class LeaderboardFragment : Fragment() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 selectTab(position)
+                Log.d(TAG, "Tab selezionato: $position")
             }
         })
     }
@@ -119,7 +133,7 @@ class LeaderboardFragment : Fragment() {
         binding.searchView.requestFocus()
         isSearchVisible = true
 
-        // Animazione di entrata - slide da destra verso sinistra
+        // Animazione di entrata
         val slideIn = ObjectAnimator.ofFloat(binding.searchContainer, "translationX", 300f, 0f)
         val fadeIn = ObjectAnimator.ofFloat(binding.searchContainer, "alpha", 0f, 1f)
         val scaleX = ObjectAnimator.ofFloat(binding.searchContainer, "scaleX", 0.8f, 1f)
@@ -139,7 +153,6 @@ class LeaderboardFragment : Fragment() {
     }
 
     private fun hideSearchBar() {
-        // Animazione di uscita - slide verso destra
         val slideOut = ObjectAnimator.ofFloat(binding.searchContainer, "translationX", 0f, 300f)
         val fadeOut = ObjectAnimator.ofFloat(binding.searchContainer, "alpha", 1f, 0f)
         val scaleX = ObjectAnimator.ofFloat(binding.searchContainer, "scaleX", 1f, 0.8f)
@@ -153,7 +166,6 @@ class LeaderboardFragment : Fragment() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
                 binding.searchContainer.visibility = View.GONE
                 binding.searchView.setQuery("", false)
-                // Reset delle trasformazioni
                 binding.searchContainer.translationX = 0f
                 binding.searchContainer.alpha = 1f
                 binding.searchContainer.scaleX = 1f
@@ -164,19 +176,15 @@ class LeaderboardFragment : Fragment() {
 
         isSearchVisible = false
 
-        // Nascondi la tastiera
         val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
 
-        // Ripristina l'icona del FAB
         binding.fabSearch.setImageResource(R.drawable.ic_search_24)
-
-        // Reset della ricerca
         clearSearch()
     }
 
     private fun performSearch(query: String) {
-        // Comunica la query di ricerca al ViewModel
+        Log.d(TAG, "Performing search: $query")
         when (binding.viewPagerLeaderboard.currentItem) {
             0 -> viewModel.searchInGroups(query)
             1 -> viewModel.searchInFriends(query)
@@ -185,12 +193,10 @@ class LeaderboardFragment : Fragment() {
     }
 
     private fun clearSearch() {
-        // Resetta i risultati di ricerca
         viewModel.clearSearch()
     }
 
     private fun selectTab(position: Int) {
-        // Reset all tabs
         resetAllTabs()
 
         when (position) {
@@ -238,7 +244,6 @@ class LeaderboardFragment : Fragment() {
         binding.btnTabGlobal.scaleY = 1.0f
     }
 
-    // Gestisce il tasto indietro quando la ricerca è aperta
     fun onBackPressed(): Boolean {
         return if (isSearchVisible) {
             hideSearchBar()
@@ -253,7 +258,6 @@ class LeaderboardFragment : Fragment() {
         _binding = null
     }
 
-    // Adapter per il ViewPager2
     private inner class LeaderboardPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
         override fun getItemCount(): Int = 3
 

@@ -12,51 +12,56 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- Profile Image -->
-        <ImageView
-            android:id="@+id/imageViewSenderAvatar"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="16dp"
-            android:background="@drawable/circle_background"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_person_24" />
-
-        <!-- User Info -->
+        <!-- Prima riga: immagine + info -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/textViewSenderName"
-                android:layout_width="wrap_content"
+            <ImageView
+                android:id="@+id/imageViewSenderAvatar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/circle_background"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_person_24" />
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Nome Utente"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/black" />
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/textViewSenderNickname"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="username"
-                android:textSize="14sp"
-                android:textColor="@color/gray" />
+                <TextView
+                    android:id="@+id/textViewSenderName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nome Utente"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black" />
 
+                <TextView
+                    android:id="@+id/textViewSenderNickname"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="username"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray" />
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- Action Buttons -->
+        <!-- Seconda riga: bottoni -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonDecline"
@@ -82,6 +87,30 @@
                 android:textColor="@color/white"
                 android:minWidth="80dp"
                 android:minHeight="36dp" />
+        </LinearLayout>
+
+        <!-- Terza riga: orario e badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/textTempo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2 ore fa"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp"
+                android:fontFamily="@font/montserrat_medium" />
+
+            <View
+                android:id="@+id/badgeNonLetto"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/gradient_green_card"
+                android:visibility="visible"/>
 
         </LinearLayout>
 

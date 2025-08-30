@@ -1,13 +1,13 @@
 package com.example.mountainpassport_girarifugi.ui.leaderboard
 
 import android.annotation.SuppressLint
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.mountainpassport_girarifugi.R
 import com.example.mountainpassport_girarifugi.databinding.ItemProfileAddFriendBinding
 
@@ -36,73 +36,79 @@ class AddFriendsAdapter(
         @SuppressLint("ClickableViewAccessibility")
         fun bind(user: AddFriendUser) {
             binding.apply {
-                // Imposta i dati dell'utente
                 textViewFriendName.text = user.name
                 textViewRefuges.text = "${user.refugesCount} rifugi"
                 textViewPoints.text = "${user.points} pt"
 
-                // AGGIORNATO: Carica l'immagine profilo reale se disponibile
-                if (!user.profileImageUrl.isNullOrBlank()) {
-                    Glide.with(itemView.context)
-                        .load(user.profileImageUrl)
-                        .placeholder(user.avatarResource)
-                        .error(user.avatarResource)
-                        .circleCrop()
-                        .into(imageSecondPlace)
+                val profileImageView = binding.imageViewProfile
+
+                // --- Gestione immagine profilo ---
+                val profileData = user.profileImageUrl
+                if (!profileData.isNullOrBlank()) {
+                    try {
+                        val base64Data = if (profileData.startsWith("data:image")) {
+                            // Ha il prefisso MIME completo
+                            profileData.substringAfter("base64,")
+                        } else if (profileData.startsWith("/9j/") || profileData.startsWith("iVBORw0KGgo")) {
+                            // È già Base64 puro (JPEG inizia con /9j/, PNG con iVBORw0KGgo)
+                            profileData
+                        } else {
+                            // Caso URL remoto o altro formato
+                            null
+                        }
+
+                        if (base64Data != null) {
+                            val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                            val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                            if (bitmap != null) {
+                                profileImageView.setImageBitmap(bitmap)
+                            } else {
+                                profileImageView.setImageResource(user.avatarResource)
+                            }
+                        } else {
+                            // URL remoto - qui potresti usare Glide se necessario
+                            profileImageView.setImageResource(user.avatarResource)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        profileImageView.setImageResource(user.avatarResource)
+                    }
                 } else {
-                    imageSecondPlace.setImageResource(user.avatarResource)
+                    // Nessuna immagine, usa avatar locale
+                    profileImageView.setImageResource(user.avatarResource)
                 }
 
-                // AGGIORNATO: Gestisce lo stato del bottone in base alle tre condizioni
+                // --- Bottone aggiungi amico ---
                 when {
                     user.isAlreadyFriend -> {
-                        // Caso 1: Sono già amici
                         btnAddFriend.text = "Già Amici"
                         btnAddFriend.isEnabled = false
-                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                            itemView.context.getColor(R.color.gray_light)
-                        )
-                        btnAddFriend.setTextColor(
-                            itemView.context.getColor(R.color.gray)
-                        )
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(itemView.context.getColor(R.color.gray_light))
+                        btnAddFriend.setTextColor(itemView.context.getColor(R.color.gray))
                     }
                     user.isRequestSent -> {
-                        // Caso 2: Richiesta già inviata
                         btnAddFriend.text = "Inviata"
                         btnAddFriend.isEnabled = false
-                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                            itemView.context.getColor(R.color.blue)
-                        )
-                        btnAddFriend.setTextColor(
-                            itemView.context.getColor(R.color.white)
-                        )
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(itemView.context.getColor(R.color.blue))
+                        btnAddFriend.setTextColor(itemView.context.getColor(R.color.white))
                     }
                     else -> {
-                        // Caso 3: Può inviare richiesta
                         btnAddFriend.text = if (user.id.startsWith("g")) "Unisciti" else "Aggiungi"
                         btnAddFriend.isEnabled = true
-                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                            itemView.context.getColor(R.color.green)
-                        )
-                        btnAddFriend.setTextColor(
-                            itemView.context.getColor(R.color.white)
-                        )
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(itemView.context.getColor(R.color.green))
+                        btnAddFriend.setTextColor(itemView.context.getColor(R.color.white))
                     }
                 }
 
-                // Click listener per la card (apre il profilo)
-                cardViewFriend.setOnClickListener {
-                    onUserClick(user)
-                }
-
-                // Click listener per il bottone (invia richiesta solo se abilitato)
+                // --- Click listener ---
+                cardViewFriend.setOnClickListener { onUserClick(user) }
                 btnAddFriend.setOnClickListener {
                     if (!user.isAlreadyFriend && !user.isRequestSent) {
                         onAddFriendClick(user)
                     }
                 }
 
-                // Animazione di click per la card
+                // --- Animazioni touch ---
                 cardViewFriend.setOnTouchListener { view, motionEvent ->
                     when (motionEvent.action) {
                         android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
@@ -112,16 +118,11 @@ class AddFriendsAdapter(
                     false
                 }
 
-                // Animazione di click per il bottone (solo se abilitato)
                 btnAddFriend.setOnTouchListener { view, motionEvent ->
                     if (!user.isAlreadyFriend && !user.isRequestSent) {
                         when (motionEvent.action) {
-                            android.view.MotionEvent.ACTION_DOWN -> {
-                                view.animate().scaleX(0.95f).scaleY(0.95f).duration = 80
-                            }
-                            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                                view.animate().scaleX(1.0f).scaleY(1.0f).duration = 80
-                            }
+                            android.view.MotionEvent.ACTION_DOWN -> view.animate().scaleX(0.95f).scaleY(0.95f).duration = 80
+                            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> view.animate().scaleX(1.0f).scaleY(1.0f).duration = 80
                         }
                     }
                     false

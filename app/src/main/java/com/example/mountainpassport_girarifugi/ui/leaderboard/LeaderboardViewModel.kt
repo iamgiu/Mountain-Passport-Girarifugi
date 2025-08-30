@@ -6,203 +6,297 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.example.mountainpassport_girarifugi.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+import android.util.Log
 
-// Data class per i dati degli utenti della leaderboard
 data class LeaderboardUser(
+    val id: String,
     val name: String,
     val points: Int,
+    val refugesCount: Int,
     val avatarResource: Int,
-    val position: Int,
-    val refugesCount: Int = 0
-)
+    val position: Int = 0,
+    val profileImageUrl: String? = null
+) {
+    companion object {
+        fun empty() = LeaderboardUser(
+            id = "",
+            name = "",
+            points = 0,
+            refugesCount = 0,
+            avatarResource = R.drawable.avatar_mario
+        )
+    }
+}
 
 class LeaderboardViewModel : ViewModel() {
 
-    // LiveData per i dati originali
-    private val _originalFriendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
-    private val _originalGlobalLeaderboard = MutableLiveData<List<LeaderboardUser>>()
-    private val _originalGroupsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    // LiveData per i dati filtrati (visibili nell'UI)
-    private val _friendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
-    val friendsLeaderboard: LiveData<List<LeaderboardUser>> = _friendsLeaderboard
-
+    // LiveData per la classifica generale
     private val _globalLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val globalLeaderboard: LiveData<List<LeaderboardUser>> = _globalLeaderboard
 
+    // LiveData per la classifica degli amici
+    private val _friendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
+    val friendsLeaderboard: LiveData<List<LeaderboardUser>> = _friendsLeaderboard
+
+    // LiveData per i gruppi (se necessario)
     private val _groupsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val groupsLeaderboard: LiveData<List<LeaderboardUser>> = _groupsLeaderboard
 
-    // LiveData per gestire gli stati di caricamento
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    // Liste originali per la ricerca
+    private var originalFriendsList: List<LeaderboardUser> = emptyList()
+    private var originalGlobalList: List<LeaderboardUser> = emptyList()
+    private var originalGroupsList: List<LeaderboardUser> = emptyList()
 
-    // LiveData per gestire gli errori
+    // Stati di caricamento
+    private val _isLoadingGlobal = MutableLiveData<Boolean>()
+    val isLoadingGlobal: LiveData<Boolean> = _isLoadingGlobal
+
+    private val _isLoadingFriends = MutableLiveData<Boolean>()
+    val isLoadingFriends: LiveData<Boolean> = _isLoadingFriends
+
+    // Errori
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    // Query di ricerca corrente
-    private var currentSearchQuery: String = ""
+    companion object {
+        private const val TAG = "LeaderboardViewModel"
+    }
 
     init {
-        loadFriendsLeaderboard()
         loadGlobalLeaderboard()
-        loadGroupsLeaderboard()
+        loadFriendsLeaderboard()
     }
 
-    fun loadFriendsLeaderboard() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val friends = getFriendsMockData()
-                _originalFriendsLeaderboard.value = friends
-                _friendsLeaderboard.value = friends
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = "Errore nel caricamento degli amici: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
+    /**
+     * Carica la classifica globale da tutti gli utenti
+     */
     fun loadGlobalLeaderboard() {
         viewModelScope.launch {
-            _isLoading.value = true
+            _isLoadingGlobal.value = true
             try {
-                val globalData = getGlobalMockData()
-                _originalGlobalLeaderboard.value = globalData
-                _globalLeaderboard.value = globalData
-                _error.value = null
+                Log.d(TAG, "Caricando classifica globale...")
+
+                val snapshot = firestore.collection("users")
+                    .orderBy("points", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .limit(100)
+                    .get()
+                    .await()
+
+                val users = mutableListOf<LeaderboardUser>()
+
+                snapshot.documents.forEachIndexed { index, doc ->
+                    val userData = doc.data
+                    if (userData != null) {
+                        val user = createLeaderboardUser(doc.id, userData, index + 1)
+                        users.add(user)
+                    }
+                }
+
+                originalGlobalList = users
+                _globalLeaderboard.value = users
+                Log.d(TAG, "Classifica globale caricata: ${users.size} utenti")
+
             } catch (e: Exception) {
-                _error.value = "Errore nel caricamento della classifica globale: ${e.message}"
+                Log.e(TAG, "Errore nel caricamento classifica globale: ${e.message}")
+                _error.value = "Errore nel caricamento della classifica: ${e.message}"
             } finally {
-                _isLoading.value = false
+                _isLoadingGlobal.value = false
             }
         }
     }
 
-    fun loadGroupsLeaderboard() {
+    /**
+     * Carica la classifica degli amici dell'utente corrente
+     */
+    fun loadFriendsLeaderboard() {
         viewModelScope.launch {
-            _isLoading.value = true
+            _isLoadingFriends.value = true
             try {
-                val groupsData = getGroupsMockData()
-                _originalGroupsLeaderboard.value = groupsData
-                _groupsLeaderboard.value = groupsData
-                _error.value = null
+                val currentUserId = auth.currentUser?.uid
+                if (currentUserId == null) {
+                    Log.w(TAG, "Utente non autenticato")
+                    _friendsLeaderboard.value = emptyList()
+                    originalFriendsList = emptyList()
+                    return@launch
+                }
+
+                Log.d(TAG, "Caricando classifica amici per utente: $currentUserId")
+
+                // Carica prima l'utente corrente per debug
+                val currentUserDoc = firestore.collection("users")
+                    .document(currentUserId)
+                    .get()
+                    .await()
+
+                Log.d(TAG, "Documento utente corrente exists: ${currentUserDoc.exists()}")
+                if (currentUserDoc.exists()) {
+                    val data = currentUserDoc.data
+                    Log.d(TAG, "Dati utente corrente: $data")
+                }
+
+                // 1. Carica la lista degli amici
+                val friendsSnapshot = firestore.collection("users")
+                    .document(currentUserId)
+                    .collection("friends")
+                    .get()
+                    .await()
+
+                Log.d(TAG, "Trovati ${friendsSnapshot.documents.size} amici")
+
+                val friendsUsers = mutableListOf<LeaderboardUser>()
+
+                // Aggiungi l'utente corrente
+                if (currentUserDoc.exists()) {
+                    val currentUserData = currentUserDoc.data!!
+                    val currentUser = createLeaderboardUser(currentUserId, currentUserData, 0)
+                    Log.d(TAG, "Utente corrente: ${currentUser.name}, Punti: ${currentUser.points}")
+                    friendsUsers.add(currentUser)
+                }
+
+                // Carica i dati di ogni amico
+                val friendIds = friendsSnapshot.documents.map { it.id }
+                Log.d(TAG, "ID amici: $friendIds")
+
+                for (friendId in friendIds) {
+                    try {
+                        val friendDoc = firestore.collection("users")
+                            .document(friendId)
+                            .get()
+                            .await()
+
+                        if (friendDoc.exists()) {
+                            val friendData = friendDoc.data!!
+                            val friendUser = createLeaderboardUser(friendId, friendData, 0)
+                            Log.d(TAG, "Amico caricato: ${friendUser.name}, Punti: ${friendUser.points}")
+                            friendsUsers.add(friendUser)
+                        } else {
+                            Log.w(TAG, "Documento amico $friendId non esiste")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Errore nel caricare amico $friendId: ${e.message}")
+                    }
+                }
+
+                // Ordina per punti e assegna le posizioni
+                val sortedFriends = friendsUsers.sortedByDescending { it.points }
+                val friendsWithPositions = sortedFriends.mapIndexed { index, user ->
+                    user.copy(position = index + 1)
+                }
+
+                Log.d(TAG, "Lista finale ordinata:")
+                friendsWithPositions.forEach { user ->
+                    Log.d(TAG, "  ${user.position}. ${user.name}: ${user.points} punti")
+                }
+
+                originalFriendsList = friendsWithPositions
+                _friendsLeaderboard.value = friendsWithPositions
+                Log.d(TAG, "Classifica amici caricata: ${friendsWithPositions.size} utenti")
+
             } catch (e: Exception) {
-                _error.value = "Errore nel caricamento dei gruppi: ${e.message}"
+                Log.e(TAG, "Errore nel caricamento classifica amici: ${e.message}")
+                e.printStackTrace()
+                _error.value = "Errore nel caricamento della classifica amici: ${e.message}"
             } finally {
-                _isLoading.value = false
+                _isLoadingFriends.value = false
             }
         }
     }
 
-    // Funzioni di ricerca
+    /**
+     * Helper per creare un LeaderboardUser da dati Firebase
+     */
+    private fun createLeaderboardUser(
+        userId: String,
+        userData: Map<String, Any>,
+        position: Int
+    ): LeaderboardUser {
+        val nome = userData["nome"] as? String ?: ""
+        val cognome = userData["cognome"] as? String ?: ""
+        val nickname = userData["nickname"] as? String ?: ""
+        val points = (userData["points"] as? Long)?.toInt() ?: 0
+        val refugesCount = (userData["refugesCount"] as? Long)?.toInt() ?: 0
+        val profileImageUrl = userData["profileImageUrl"] as? String
+
+        val displayName = if (nickname.isNotBlank()) {
+            nickname
+        } else {
+            "$nome $cognome".trim().takeIf { it.isNotBlank() } ?: "Utente"
+        }
+
+        return LeaderboardUser(
+            id = userId,
+            name = displayName,
+            points = points,
+            refugesCount = refugesCount,
+            position = position,
+            avatarResource = R.drawable.avatar_mario,
+            profileImageUrl = profileImageUrl
+        )
+    }
+
+    /**
+     * Funzioni di ricerca
+     */
     fun searchInFriends(query: String) {
-        currentSearchQuery = query
-        val originalList = _originalFriendsLeaderboard.value ?: emptyList()
-        val filteredList = filterUsers(originalList, query)
-        _friendsLeaderboard.value = filteredList
+        if (query.isBlank()) {
+            _friendsLeaderboard.value = originalFriendsList
+        } else {
+            val filteredFriends = originalFriendsList.filter { user ->
+                user.name.contains(query, ignoreCase = true)
+            }
+            _friendsLeaderboard.value = filteredFriends
+        }
     }
 
     fun searchInGlobal(query: String) {
-        currentSearchQuery = query
-        val originalList = _originalGlobalLeaderboard.value ?: emptyList()
-        val filteredList = filterUsers(originalList, query)
-        _globalLeaderboard.value = filteredList
-    }
-
-    fun searchInGroups(query: String) {
-        currentSearchQuery = query
-        val originalList = _originalGroupsLeaderboard.value ?: emptyList()
-        val filteredList = filterUsers(originalList, query)
-        _groupsLeaderboard.value = filteredList
-    }
-
-    fun clearSearch() {
-        currentSearchQuery = ""
-        // Ripristina le liste originali
-        _friendsLeaderboard.value = _originalFriendsLeaderboard.value
-        _globalLeaderboard.value = _originalGlobalLeaderboard.value
-        _groupsLeaderboard.value = _originalGroupsLeaderboard.value
-    }
-
-    private fun filterUsers(users: List<LeaderboardUser>, query: String): List<LeaderboardUser> {
-        return if (query.isBlank()) {
-            users
+        if (query.isBlank()) {
+            _globalLeaderboard.value = originalGlobalList
         } else {
-            val lowerCaseQuery = query.lowercase().trim()
-            users.filter { user ->
-                user.name.lowercase().contains(lowerCaseQuery)
-            }.mapIndexed { index, user ->
-                user.copy(position = index + 1)
+            val filteredUsers = originalGlobalList.filter { user ->
+                user.name.contains(query, ignoreCase = true)
             }
+            _globalLeaderboard.value = filteredUsers
         }
     }
 
-    fun refreshAllData() {
+    fun searchInGroups(query: String) {
+        if (query.isBlank()) {
+            _groupsLeaderboard.value = originalGroupsList
+        } else {
+            val filteredGroups = originalGroupsList.filter { user ->
+                user.name.contains(query, ignoreCase = true)
+            }
+            _groupsLeaderboard.value = filteredGroups
+        }
+    }
+
+    fun clearSearch() {
+        _friendsLeaderboard.value = originalFriendsList
+        _globalLeaderboard.value = originalGlobalList
+        _groupsLeaderboard.value = originalGroupsList
+    }
+
+    /**
+     * Aggiorna solo la classifica degli amici
+     */
+    fun refreshFriendsLeaderboard() {
         loadFriendsLeaderboard()
+    }
+
+    /**
+     * Aggiorna solo la classifica globale
+     */
+    fun refreshGlobalLeaderboard() {
         loadGlobalLeaderboard()
-        loadGroupsLeaderboard()
     }
 
-    // Mock data - sostituisci con chiamate al repository
-    private fun getFriendsMockData(): List<LeaderboardUser> {
-        return listOf(
-            LeaderboardUser("Mario", 34897, R.drawable.avatar_mario, 1, 25),
-            LeaderboardUser("Marco", 25567, R.drawable.avatar_marco, 2, 20),
-            LeaderboardUser("Luca", 19508, R.drawable.avatar_luca, 3, 18),
-            LeaderboardUser("Giovanni", 8900, R.drawable.avatar_giovanni, 4, 15),
-            LeaderboardUser("Lucia", 8900, R.drawable.avatar_lucia, 5, 12),
-            LeaderboardUser("Sara", 8900, R.drawable.avatar_sara, 6, 10),
-            LeaderboardUser("Anna", 7500, R.drawable.avatar_sara, 7, 8),
-            LeaderboardUser("Paolo", 6200, R.drawable.avatar_sara, 8, 6),
-            LeaderboardUser("Marta", 5800, R.drawable.avatar_sara, 9, 5),
-            LeaderboardUser("Federico", 4900, R.drawable.avatar_sara, 10, 4),
-            LeaderboardUser("Alessandro", 4200, R.drawable.avatar_sara, 11, 3),
-            LeaderboardUser("Francesca", 3800, R.drawable.avatar_sara, 12, 2),
-            LeaderboardUser("Matteo", 3200, R.drawable.avatar_sara, 13, 1)
-        )
-    }
-
-    private fun getGlobalMockData(): List<LeaderboardUser> {
-        return listOf(
-            LeaderboardUser("Alex_Mountain", 89453, R.drawable.avatar_mario, 1, 67),
-            LeaderboardUser("Peak_Hunter", 78234, R.drawable.avatar_marco, 2, 58),
-            LeaderboardUser("Summit_King", 65421, R.drawable.avatar_luca, 3, 52),
-            LeaderboardUser("Alpine_Pro", 54123, R.drawable.avatar_giovanni, 4, 45),
-            LeaderboardUser("Trail_Master", 43876, R.drawable.avatar_lucia, 5, 38),
-            LeaderboardUser("Mountain_Explorer", 38954, R.drawable.avatar_sara, 6, 32),
-            LeaderboardUser("Ridge_Walker", 32567, R.drawable.avatar_sara, 7, 28),
-            LeaderboardUser("Peak_Seeker", 28943, R.drawable.avatar_sara, 8, 24),
-            LeaderboardUser("Alpine_Climber", 25432, R.drawable.avatar_sara, 9, 20),
-            LeaderboardUser("Summit_Explorer", 22876, R.drawable.avatar_sara, 10, 18)
-        )
-    }
-
-    private fun getGroupsMockData(): List<LeaderboardUser> {
-        return listOf(
-            LeaderboardUser("Team Alps", 156789, R.drawable.avatar_mario, 1, 89),
-            LeaderboardUser("Mountain Crew", 134567, R.drawable.avatar_marco, 2, 76),
-            LeaderboardUser("Peak Seekers", 112345, R.drawable.avatar_luca, 3, 65),
-            LeaderboardUser("Summit Squad", 98765, R.drawable.avatar_giovanni, 4, 54),
-            LeaderboardUser("Trail Blazers", 87654, R.drawable.avatar_lucia, 5, 43),
-            LeaderboardUser("Alpine Warriors", 76543, R.drawable.avatar_sara, 6, 38),
-            LeaderboardUser("Mountain Tigers", 65432, R.drawable.avatar_sara, 7, 32),
-            LeaderboardUser("Peak Legends", 54321, R.drawable.avatar_sara, 8, 28),
-            LeaderboardUser("Summit Heroes", 43210, R.drawable.avatar_sara, 9, 24),
-            LeaderboardUser("Trail Masters", 32109, R.drawable.avatar_sara, 10, 20)
-        )
-    }
-
-    fun sortByPoints(users: List<LeaderboardUser>): List<LeaderboardUser> {
-        return users.sortedByDescending { it.points }
-            .mapIndexed { index, user -> user.copy(position = index + 1) }
-    }
-
-    fun sortByRefuges(users: List<LeaderboardUser>): List<LeaderboardUser> {
-        return users.sortedByDescending { it.refugesCount }
-            .mapIndexed { index, user -> user.copy(position = index + 1) }
+    fun clearError() {
+        _error.value = null
     }
 }

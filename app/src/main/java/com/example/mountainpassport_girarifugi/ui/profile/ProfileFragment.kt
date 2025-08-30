@@ -133,8 +133,6 @@ class ProfileFragment : Fragment() {
         }
         loadSavedProfileImage()
 
-        // TODO Observer per richieste e lista amici
-
     }
 
     private fun updateProfileUI(profileData: ProfileData) {
@@ -179,8 +177,10 @@ class ProfileFragment : Fragment() {
                 if (document.exists()) {
                     val user = document.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
                     user?.let {
-                        if (it.profileImageUrl.isNotEmpty()) {
-                            loadImageFromBase64(it.profileImageUrl)
+                        it.profileImageUrl?.let { url ->
+                            if (url.isNotEmpty()) {
+                                loadImageFromBase64(url)
+                            }
                         }
                     }
                 }

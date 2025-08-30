@@ -19,6 +19,10 @@
             android:id="@+id/action_homeFragment_to_notificationsFragment"
             app:destination="@+id/nav_notifications" />
 
+        <action
+            android:id="@+id/action_homeFragment_to_scanFragment"
+            app:destination="@+id/nav_scan" />
+
     <fragment
         android:id="@+id/nav_notifications"
         android:name="com.example.mountainpassport_girarifugi.ui.notifications.NotificationsFragment"

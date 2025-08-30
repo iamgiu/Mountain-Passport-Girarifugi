@@ -109,23 +109,11 @@ class AddFriendsAdapter(
                 }
 
                 // --- Animazioni touch ---
-                cardViewFriend.setOnTouchListener { view, motionEvent ->
-                    when (motionEvent.action) {
-                        android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                            view.animate().scaleX(1.0f).scaleY(1.0f).duration = 100
-                        }
-                    }
-                    false
-                }
-
-                btnAddFriend.setOnTouchListener { view, motionEvent ->
+                cardViewFriend.setOnClickListener { onUserClick(user) }
+                btnAddFriend.setOnClickListener {
                     if (!user.isAlreadyFriend && !user.isRequestSent) {
-                        when (motionEvent.action) {
-                            android.view.MotionEvent.ACTION_DOWN -> view.animate().scaleX(0.95f).scaleY(0.95f).duration = 80
-                            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> view.animate().scaleX(1.0f).scaleY(1.0f).duration = 80
-                        }
+                        onAddFriendClick(user)
                     }
-                    false
                 }
             }
         }

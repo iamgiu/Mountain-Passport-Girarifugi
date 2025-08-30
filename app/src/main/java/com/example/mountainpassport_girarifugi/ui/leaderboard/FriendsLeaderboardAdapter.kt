@@ -73,16 +73,17 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
 
 
     override fun getItemViewType(position: Int): Int {
-        return if (position == 0 && friends.size >= 3) VIEW_TYPE_TOP3 else VIEW_TYPE_ROW
+        // La prima cella è sempre il podio (anche se ci sono meno di 3 utenti)
+        return if (position == 0) VIEW_TYPE_TOP3 else VIEW_TYPE_ROW
     }
+
 
     override fun getItemCount(): Int {
         return if (friends.isEmpty()) {
             0
-        } else if (friends.size >= 3) {
-            1 + (friends.size - 3) // 1 per top3 + resto
         } else {
-            1 // Mostra comunque un “top” anche se ci sono meno di 3 utenti
+            1 + maxOf(0, friends.size - 3)
+            // 1 per il podio + eventuali righe extra se ci sono più di 3 utenti
         }
     }
 
@@ -123,12 +124,7 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
             }
 
             is RowViewHolder -> {
-                val userIndex = if (friends.size >= 3) {
-                    position + 3 // Skip dei primi 3 per il podio
-                } else {
-                    position // Se meno di 3 utenti, usa la posizione direttamente
-                }
-
+                val userIndex = position + 2 // Il podio occupa position 0, quindi position 1 = 4° posto (index 3)
                 if (userIndex < friends.size) {
                     holder.bind(friends[userIndex])
                 }

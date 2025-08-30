@@ -214,15 +214,13 @@ class CabinFragment : Fragment() {
 
     private fun updateSaveButtonIcon(isSaved: Boolean) {
         val iconRes = if (isSaved) {
-            R.drawable.ic_bookmark_24px // Icona piena (puoi creare ic_bookmark_filled_24px)
+            R.drawable.ic_bookmark_added_24px
         } else {
-            R.drawable.ic_bookmark_24px // Icona vuota
+            R.drawable.ic_bookmark_add_24px
         }
 
         binding.fabSave.setImageResource(iconRes)
-        
-        // Non mostrare toast qui, solo aggiornare l'icona
-        // Il toast verrà mostrato solo quando l'utente clicca il bottone
+
     }
 
     private fun setupReviewsRecyclerView() {

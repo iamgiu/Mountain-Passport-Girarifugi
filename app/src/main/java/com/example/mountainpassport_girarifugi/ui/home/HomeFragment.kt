@@ -22,6 +22,8 @@ import com.example.mountainpassport_girarifugi.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import android.content.Intent
 import com.bumptech.glide.Glide
+import com.google.android.material.button.MaterialButton
+import com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus
 
 class HomeFragment : Fragment() {
 
@@ -40,23 +42,22 @@ class HomeFragment : Fragment() {
 
         // Inizializza il ViewModel
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
-        
+
         // Imposta il repository per caricare dati dal JSON
         viewModel.setRepository(requireContext())
 
         setupUI(view)
         observeViewModel(view)
+        setupEventBusObserver() // AGGIUNTO: Observer per eventi di salvataggio rifugi
 
         val fabNotifications = view.findViewById<FloatingActionButton>(R.id.fabNotifications)
         fabNotifications.setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_notificationsFragment)
         }
-        
-        // Bottone refresh per cambiare i rifugi casuali
-        val refreshButton = view.findViewById<ImageView>(R.id.refreshButton)
-        refreshButton.setOnClickListener {
-            viewModel.refreshRandomData()
-            Toast.makeText(requireContext(), "Rifugi aggiornati!", Toast.LENGTH_SHORT).show()
+
+        val fabScan = view.findViewById<MaterialButton>(R.id.scanButton)
+        fabScan.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_scanFragment)
         }
     }
 
@@ -75,20 +76,29 @@ class HomeFragment : Fragment() {
         viewModel.setActiveTab("rifugi")
     }
 
+    /**
+     * AGGIUNTO: Observer per l'evento di salvataggio rifugi
+     */
+    private fun setupEventBusObserver() {
+        RifugioSavedEventBus.rifugioSavedEvent.observe(viewLifecycleOwner) {
+            // Quando un rifugio viene salvato/rimosso, aggiorna la lista dei rifugi salvati
+            viewModel.refreshRifugiSalvati()
+        }
+    }
+
     private fun observeViewModel(view: View) {
         // Osserva il tab attivo
         viewModel.currentTab.observe(viewLifecycleOwner) { activeTab ->
             highlightActiveButton(activeTab)
         }
 
-        // Osserva l'escursione programmata
-        viewModel.escursioneProgrammata.observe(viewLifecycleOwner) { escursione ->
-            setupEscursioneProgrammata(view, escursione)
-        }
-
         // Osserva il punteggio
         viewModel.punteggio.observe(viewLifecycleOwner) { punteggio ->
             setupPunteggio(view, punteggio)
+        }
+
+        viewModel.rifugiSalvati.observe(viewLifecycleOwner) { rifugiSalvati ->
+            setupRifugiSalvati(view, rifugiSalvati)
         }
 
         // Osserva i rifugi bonus
@@ -121,40 +131,25 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun setupEscursioneProgrammata(view: View, escursione: HomeViewModel.Escursione) {
-        val backgroundImageView = view.findViewById<ImageView>(R.id.backgroundImage)
-        val cardEscursione = view.findViewById<androidx.cardview.widget.CardView>(R.id.cardEscursione)
+    private fun setupRifugiSalvati(view: View, rifugiSalvati: List<HomeViewModel.RifugioCard>) {
+        val recycler = view.findViewById<RecyclerView>(R.id.recyclerRifugiSalvati)
+        val emptyMessage = view.findViewById<TextView>(R.id.emptyRifugiSalvatiTextView)
 
-        // Carica l'immagine dall'URL se disponibile
-        if (!escursione.immagine.isNullOrEmpty() && escursione.immagine.startsWith("http")) {
-            // Carica immagine dall'URL usando Glide
-            Glide.with(requireContext())
-                .load(escursione.immagine)
-                .placeholder(R.drawable.mountain_background)
-                .error(R.drawable.mountain_background)
-                .centerCrop()
-                .into(backgroundImageView)
+        if (rifugiSalvati.isEmpty()) {
+            // Mostra il messaggio quando non ci sono rifugi salvati
+            recycler.visibility = View.GONE
+            emptyMessage.visibility = View.VISIBLE
+            emptyMessage.text = "Inizia ad esplorare!"
         } else {
-            // Fallback per immagini locali
-            val nomeRisorsa = viewModel.getImageResourceName(escursione.nome)
-            val resId = resources.getIdentifier(nomeRisorsa, "drawable", requireContext().packageName)
+            // Mostra la lista quando ci sono rifugi salvati
+            recycler.visibility = View.VISIBLE
+            emptyMessage.visibility = View.GONE
 
-            if (resId != 0) {
-                backgroundImageView.setImageResource(resId)
-            } else {
-                // Immagine di fallback se non esiste
-                backgroundImageView.setImageResource(R.drawable.mountain_background)
+            recycler.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            val adapter = RifugiSalvatiAdapter(rifugiSalvati) { rifugioCard ->
+                navigateToRifugioFromCard(rifugioCard)
             }
-        }
-
-        // UI dinamico - escursione
-        view.findViewById<TextView>(R.id.textNomeRifugio).text = escursione.nome
-        view.findViewById<TextView>(R.id.textAltitudine).text = escursione.altitudine
-        view.findViewById<TextView>(R.id.textDistanza).text = escursione.distanza
-
-        // Click listener sull'intera card
-        cardEscursione.setOnClickListener {
-            navigateToRifugioDetail(escursione)
+            recycler.adapter = adapter
         }
     }
 
@@ -223,7 +218,7 @@ class HomeFragment : Fragment() {
             try {
                 // Trova il rifugio nel repository per ottenere l'ID
                 val rifugio = viewModel.findRifugioByName(rifugioCard.nome)
-                
+
                 val bundle = Bundle().apply {
                     putInt("rifugioId", rifugio?.id ?: 1) // Passa l'ID del rifugio
                     putString("RIFUGIO_NOME", rifugioCard.nome)
@@ -257,7 +252,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-
     private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
         val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
         recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
@@ -274,8 +268,6 @@ class HomeFragment : Fragment() {
                 putString("RIFUGIO_DIFFICOLTA", "Non specificata")
                 putString("RIFUGIO_TEMPO", "Non specificato")
                 putString("RIFUGIO_DESCRIZIONE", "Rifugio visitato da ${feedAmici.find { it.rifugioInfo == rifugioInfo }?.nomeUtente ?: "un amico"}")
-
-                //rifugioInfo.immagine?.let { putExtra("RIFUGIO_IMMAGINE", it) }
             }
 
             findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)

@@ -710,7 +710,7 @@
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="120dp"
-        android:src="@drawable/ic_bookmark_24px"
+        android:src="@drawable/ic_bookmark_add_24px"
         app:backgroundTint="@color/green_black"
         app:fabSize="normal"
         app:tint="@color/light_green" />

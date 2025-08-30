@@ -13,13 +13,25 @@ import com.example.mountainpassport_girarifugi.data.model.RifugioPoints
 import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import com.example.mountainpassport_girarifugi.data.repository.PointsRepository
 import com.example.mountainpassport_girarifugi.utils.UserManager
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+// Aggiungi questa classe per la comunicazione tra Fragment
+object RifugioSavedEventBus {
+    private val _rifugioSavedEvent = MutableLiveData<Unit>()
+    val rifugioSavedEvent: LiveData<Unit> = _rifugioSavedEvent
+
+    fun notifyRifugioSaved() {
+        _rifugioSavedEvent.value = Unit
+    }
+}
 
 class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = RifugioRepository(application)
     private val pointsRepository = PointsRepository(application)
-    
+
     private val _rifugio = MutableLiveData<Rifugio>()
     val rifugio: LiveData<Rifugio> = _rifugio
 
@@ -28,19 +40,19 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
-    
+
     private val _successMessage = MutableLiveData<String?>()
     val successMessage: LiveData<String?> = _successMessage
 
     private val _isSaved = MutableLiveData<Boolean>()
     val isSaved: LiveData<Boolean> = _isSaved
-    
+
     private val _reviews = MutableLiveData<List<Review>>()
     val reviews: LiveData<List<Review>> = _reviews
-    
+
     private val _stats = MutableLiveData<RifugioStats?>()
     val stats: LiveData<RifugioStats?> = _stats
-    
+
     // Ottiene l'ID dell'utente corrente autenticato
     private fun getCurrentUserId(): String {
         return UserManager.getCurrentUserIdOrGuest()
@@ -50,75 +62,80 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
      * Carica i dati del rifugio dall'ID
      */
     fun loadRifugio(rifugioId: Int) {
-        _isLoading.value = true
-        _error.value = null
-
         viewModelScope.launch {
             try {
-                // Carica i dati statici del rifugio dal JSON
-                val foundRifugio = repository.getRifugioById(rifugioId)
-                
-                if (foundRifugio != null) {
-                    _rifugio.value = foundRifugio
-                    
-                    // Carica i dati dinamici in parallelo
-                    loadDynamicData(rifugioId)
-                } else {
-                    _error.value = "Rifugio non trovato"
-                }
+                _isLoading.value = true
+                val rifugioData = repository.getRifugioById(rifugioId)
+                _rifugio.value = rifugioData
+
+                val userId = UserManager.getCurrentUserIdOrGuest()
+                val doc = FirebaseFirestore.getInstance()
+                    .collection("saved_rifugi")
+                    .document(userId)
+                    .get()
+                    .await()
+
+                val savedIds = doc.get("rifugi") as? List<Long> ?: emptyList()
+                _isSaved.value = savedIds.contains(rifugioId.toLong())
+
+                _isLoading.value = false
             } catch (e: Exception) {
-                _error.value = "Errore nel caricamento dei dati: ${e.message}"
-            } finally {
+                _error.value = "Errore caricamento rifugio: ${e.message}"
                 _isLoading.value = false
             }
         }
     }
-    
+
+
     /**
      * Carica i dati dinamici (recensioni, statistiche, stato salvato)
      */
     private suspend fun loadDynamicData(rifugioId: Int) {
         try {
             android.util.Log.d("CabinViewModel", "Caricando dati dinamici per rifugio ID: $rifugioId")
-            
-            // Carica recensioni
+
+            // Carica recensioni (se usi Firebase)
             val reviews = repository.getReviewsForRifugio(rifugioId)
-            android.util.Log.d("CabinViewModel", "Recensioni caricate nel ViewModel: ${reviews.size}")
             _reviews.value = reviews
-            
-            // Carica statistiche
+
+            // Carica statistiche (se usi Firebase)
             val stats = repository.getRifugioStats(rifugioId)
-            android.util.Log.d("CabinViewModel", "Statistiche caricate: ${stats?.totalReviews ?: 0} recensioni totali")
             _stats.value = stats
-            
-            // Verifica se è salvato
-            val isSaved = repository.isRifugioSaved(getCurrentUserId(), rifugioId)
+
+            // CAMBIATO: Verifica se è salvato usando direttamente UserManager
+            val isSaved = UserManager.isRifugioSaved(rifugioId)
+            android.util.Log.d("CabinViewModel", "Rifugio $rifugioId salvato: $isSaved")
             _isSaved.value = isSaved
+
         } catch (e: Exception) {
             android.util.Log.e("CabinViewModel", "Errore nel caricamento dati dinamici: ${e.message}")
-            // Ignora errori nei dati dinamici, l'app funziona comunque
         }
     }
 
     /**
-     * Alterna lo stato di salvataggio del rifugio
+     * Alterna lo stato di salvataggio del rifugio - MODIFICATO
      */
     fun toggleSaveRifugio() {
-        val currentState = _isSaved.value ?: false
-        val newState = !currentState
-        _isSaved.value = newState
-
         viewModelScope.launch {
             try {
                 val rifugioId = _rifugio.value?.id ?: return@launch
-                repository.toggleSaveRifugio(getCurrentUserId(), rifugioId, newState)
+                val userId = UserManager.getCurrentUserIdOrGuest()
+
+                val currentlySaved = _isSaved.value ?: false
+                val newState = !currentlySaved
+
+                // salva su Firebase
+                repository.toggleSaveRifugio(userId, rifugioId, newState)
+
+                // aggiorna lo stato locale
+                _isSaved.value = newState
+                RifugioSavedEventBus.notifyRifugioSaved()
             } catch (e: Exception) {
-                // Ripristina lo stato precedente in caso di errore
-                _isSaved.value = currentState
-                _error.value = "Errore nel salvataggio: ${e.message}"
+                _error.value = "Errore salvataggio: ${e.message}"
             }
         }
     }
+
 
     /**
      * Funzioni per generare dati di esempio basati sul rifugio
@@ -193,15 +210,19 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
             TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
-                in 0..1000 -> true  // Bivacchi a bassissima quota possono avere acqua calda
+                in 0..1000 -> true
                 else -> false
             }
+
             TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
-                in 0..1500 -> true  // Capanne a bassa quota possono avere acqua calda
+                in 0..1500 -> true
                 else -> false
             }
         }
-        android.util.Log.d("CabinViewModel", "hasHotWater per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result")
+        android.util.Log.d(
+            "CabinViewModel",
+            "hasHotWater per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result"
+        )
         return result
     }
 
@@ -209,15 +230,19 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
             TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
-                in 0..1000 -> true  // Bivacchi a bassissima quota possono avere docce
+                in 0..1000 -> true
                 else -> false
             }
+
             TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
-                in 0..1500 -> true  // Capanne a bassa quota possono avere docce
+                in 0..1500 -> true
                 else -> false
             }
         }
-        android.util.Log.d("CabinViewModel", "hasShowers per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result")
+        android.util.Log.d(
+            "CabinViewModel",
+            "hasShowers per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result"
+        )
         return result
     }
 
@@ -225,15 +250,19 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
             TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
-                in 0..1500 -> true  // Bivacchi a bassa quota possono avere elettricità
+                in 0..1500 -> true
                 else -> false
             }
+
             TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
                 in 0..2500 -> true
                 else -> false
             }
         }
-        android.util.Log.d("CabinViewModel", "hasElectricity per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result")
+        android.util.Log.d(
+            "CabinViewModel",
+            "hasElectricity per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result"
+        )
         return result
     }
 
@@ -241,15 +270,19 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         val result = when (rifugio.tipo) {
             TipoRifugio.RIFUGIO -> true
             TipoRifugio.BIVACCO -> when (rifugio.altitudine) {
-                in 0..1200 -> true  // Bivacchi a bassa quota possono avere ristorante
+                in 0..1200 -> true
                 else -> false
             }
+
             TipoRifugio.CAPANNA -> when (rifugio.altitudine) {
                 in 0..2000 -> true
                 else -> false
             }
         }
-        android.util.Log.d("CabinViewModel", "hasRestaurant per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result")
+        android.util.Log.d(
+            "CabinViewModel",
+            "hasRestaurant per ${rifugio.nome} (${rifugio.tipo}, ${rifugio.altitudine}m): $result"
+        )
         return result
     }
 
@@ -281,11 +314,15 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val rifugio = _rifugio.value ?: return@launch
                 val result = pointsRepository.recordVisit(getCurrentUserId(), rifugio.id)
-                
+
                 result.fold(
                     onSuccess = { userPoints ->
-                        _successMessage.value = "Visita registrata! +${userPoints.pointsEarned} punti guadagnati!"
-                        android.util.Log.d("CabinViewModel", "Visita registrata: ${userPoints.pointsEarned} punti")
+                        _successMessage.value =
+                            "Visita registrata! +${userPoints.pointsEarned} punti guadagnati!"
+                        android.util.Log.d(
+                            "CabinViewModel",
+                            "Visita registrata: ${userPoints.pointsEarned} punti"
+                        )
                     },
                     onFailure = { exception ->
                         _error.value = "Errore nel registrare la visita: ${exception.message}"
@@ -306,22 +343,28 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val rifugioId = _rifugio.value?.id ?: return@launch
-                android.util.Log.d("CabinViewModel", "Aggiungendo recensioni per rifugio ID: $rifugioId")
+                android.util.Log.d(
+                    "CabinViewModel",
+                    "Aggiungendo recensioni per rifugio ID: $rifugioId"
+                )
                 repository.addTestReviews(rifugioId)
-                
+
                 // Aspetta un momento per assicurarsi che i dati siano salvati
                 kotlinx.coroutines.delay(1000)
-                
+
                 // Ricarica i dati dinamici
                 loadDynamicData(rifugioId)
                 android.util.Log.d("CabinViewModel", "Recensioni di test aggiunte con successo")
-                
+
                 // Forza l'aggiornamento dell'UI
                 _reviews.value?.let { reviews ->
                     android.util.Log.d("CabinViewModel", "Recensioni aggiornate: ${reviews.size}")
                 }
             } catch (e: Exception) {
-                android.util.Log.e("CabinViewModel", "Errore nell'aggiunta delle recensioni: ${e.message}")
+                android.util.Log.e(
+                    "CabinViewModel",
+                    "Errore nell'aggiunta delle recensioni: ${e.message}"
+                )
                 _error.value = "Errore nell'aggiunta delle recensioni di test: ${e.message}"
             }
         }
@@ -331,13 +374,17 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
      * Aggiunge una recensione dell'utente
      */
     fun addUserReview(rating: Float, comment: String) {
-        android.util.Log.d("CabinViewModel", "addUserReview() chiamato - Rating: $rating, Comment: $comment")
+        android.util.Log.d(
+            "CabinViewModel",
+            "addUserReview() chiamato - Rating: $rating, Comment: $comment"
+        )
         viewModelScope.launch {
             try {
                 val rifugioId = _rifugio.value?.id ?: return@launch
                 val userId = "user_${System.currentTimeMillis()}" // ID temporaneo per demo
-                val userName = "Utente ${System.currentTimeMillis() % 1000}" // Nome temporaneo per demo
-                
+                val userName =
+                    "Utente ${System.currentTimeMillis() % 1000}" // Nome temporaneo per demo
+
                 val review = Review(
                     rifugioId = rifugioId,
                     userId = userId,
@@ -346,32 +393,38 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
                     comment = comment,
                     timestamp = com.google.firebase.Timestamp.now()
                 )
-                
-                android.util.Log.d("CabinViewModel", "Aggiungendo recensione utente per rifugio ID: $rifugioId")
+
+                android.util.Log.d(
+                    "CabinViewModel",
+                    "Aggiungendo recensione utente per rifugio ID: $rifugioId"
+                )
                 repository.addReview(review)
-                
+
                 // Aspetta un momento per assicurarsi che i dati siano salvati
                 kotlinx.coroutines.delay(1000)
-                
+
                 // Ricarica i dati dinamici
                 loadDynamicData(rifugioId)
                 android.util.Log.d("CabinViewModel", "Recensione utente aggiunta con successo")
-                
+
                 _successMessage.value = "Recensione aggiunta con successo!"
             } catch (e: Exception) {
-                android.util.Log.e("CabinViewModel", "Errore nell'aggiunta della recensione: ${e.message}")
+                android.util.Log.e(
+                    "CabinViewModel",
+                    "Errore nell'aggiunta della recensione: ${e.message}"
+                )
                 _error.value = "Errore nell'aggiunta della recensione: ${e.message}"
             }
         }
     }
-    
+
     /**
      * Pulisce i messaggi di errore
      */
     fun clearError() {
         _error.value = null
     }
-    
+
     /**
      * Pulisce i messaggi di successo
      */

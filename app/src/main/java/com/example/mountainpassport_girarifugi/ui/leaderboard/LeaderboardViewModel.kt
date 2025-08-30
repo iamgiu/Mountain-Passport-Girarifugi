@@ -83,24 +83,53 @@ class LeaderboardViewModel : ViewModel() {
                 Log.d(TAG, "Caricando classifica globale...")
 
                 val snapshot = firestore.collection("users")
-                    .orderBy("points", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                    .limit(100)
+                    .limit(500)
                     .get()
                     .await()
 
                 val users = mutableListOf<LeaderboardUser>()
 
-                snapshot.documents.forEachIndexed { index, doc ->
+                // Carica tutti gli utenti con i loro dati reali
+                for (doc in snapshot.documents) {
                     val userData = doc.data
                     if (userData != null) {
-                        val user = createLeaderboardUser(doc.id, userData, index + 1)
+                        // MODIFICA: Carica i dati reali dai punti come fai per gli amici
+                        val (realPoints, realRefuges) = getUserStatsFromPoints(doc.id)
+
+                        val nome = userData["nome"] as? String ?: ""
+                        val cognome = userData["cognome"] as? String ?: ""
+                        val nickname = userData["nickname"] as? String ?: ""
+                        val profileImageUrl = userData["profileImageUrl"] as? String
+
+                        val displayName = if (nickname.isNotBlank()) {
+                            nickname
+                        } else {
+                            "$nome $cognome".trim().takeIf { it.isNotBlank() } ?: "Utente"
+                        }
+
+                        val user = LeaderboardUser(
+                            id = doc.id,
+                            name = displayName,
+                            points = realPoints,  // USA I DATI REALI
+                            refugesCount = realRefuges,  // USA I DATI REALI
+                            position = 0, // Verrà aggiornato dopo l'ordinamento
+                            avatarResource = R.drawable.avatar_mario,
+                            profileImageUrl = profileImageUrl
+                        )
+
                         users.add(user)
                     }
                 }
 
-                originalGlobalList = users
-                _globalLeaderboard.value = users
-                Log.d(TAG, "Classifica globale caricata: ${users.size} utenti")
+                // Ordina per punti e assegna le posizioni
+                val sortedUsers = users.sortedByDescending { it.points }
+                val usersWithPositions = sortedUsers.mapIndexed { index, user ->
+                    user.copy(position = index + 1)
+                }
+
+                originalGlobalList = usersWithPositions
+                _globalLeaderboard.value = usersWithPositions
+                Log.d(TAG, "Classifica globale caricata: ${usersWithPositions.size} utenti")
 
             } catch (e: Exception) {
                 Log.e(TAG, "Errore nel caricamento classifica globale: ${e.message}")
@@ -108,6 +137,26 @@ class LeaderboardViewModel : ViewModel() {
             } finally {
                 _isLoadingGlobal.value = false
             }
+        }
+    }
+
+    private suspend fun getUserStatsFromPoints(userId: String): Pair<Int, Int> {
+        return try {
+            val userStatsDoc = firestore.collection("user_points_stats")
+                .document(userId)
+                .get()
+                .await()
+
+            val userStats = userStatsDoc.toObject(com.example.mountainpassport_girarifugi.data.model.UserPointsStats::class.java)
+
+            if (userStats != null) {
+                Pair(userStats.totalPoints, userStats.totalVisits)
+            } else {
+                Pair(0, 0)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting user stats for $userId", e)
+            Pair(0, 0)
         }
     }
 

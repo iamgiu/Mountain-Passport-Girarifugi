@@ -12,6 +12,8 @@ import com.example.mountainpassport_girarifugi.data.repository.ActivityType
 import android.content.Context
 import com.example.mountainpassport_girarifugi.data.model.Rifugio
 import com.example.mountainpassport_girarifugi.utils.UserManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 class HomeViewModel : ViewModel() {
@@ -252,14 +254,15 @@ class HomeViewModel : ViewModel() {
     // Resto dei metodi esistenti rimane uguale...
     private suspend fun loadRifugiSalvati() {
         try {
-            val userId = UserManager.getCurrentUserIdOrGuest()
-            val doc = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
+            val doc = FirebaseFirestore.getInstance()
                 .collection("saved_rifugi")
                 .document(userId)
                 .get()
                 .await()
 
             val savedIds = doc.get("rifugi") as? List<Long> ?: emptyList()
+
             val allRifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
             val rifugiSalvati = allRifugi.filter { savedIds.contains(it.id.toLong()) }
 
@@ -274,10 +277,12 @@ class HomeViewModel : ViewModel() {
                 )
             }
         } catch (e: Exception) {
+            // se c’è un errore, svuoto la lista
             _rifugiSalvati.value = emptyList()
             _error.value = "Errore caricamento rifugi salvati: ${e.message}"
         }
     }
+
 
     fun refreshRifugiSalvati() {
         android.util.Log.d("HomeViewModel", "refreshRifugiSalvati() chiamato")

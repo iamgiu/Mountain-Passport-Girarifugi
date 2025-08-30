@@ -13,6 +13,7 @@ import com.example.mountainpassport_girarifugi.data.model.RifugioPoints
 import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import com.example.mountainpassport_girarifugi.data.repository.PointsRepository
 import com.example.mountainpassport_girarifugi.utils.UserManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -68,7 +69,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
                 val rifugioData = repository.getRifugioById(rifugioId)
                 _rifugio.value = rifugioData
 
-                val userId = UserManager.getCurrentUserIdOrGuest()
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
                 val doc = FirebaseFirestore.getInstance()
                     .collection("saved_rifugi")
                     .document(userId)
@@ -119,12 +120,12 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val rifugioId = _rifugio.value?.id ?: return@launch
-                val userId = UserManager.getCurrentUserIdOrGuest()
 
                 val currentlySaved = _isSaved.value ?: false
                 val newState = !currentlySaved
 
                 // salva su Firebase
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
                 repository.toggleSaveRifugio(userId, rifugioId, newState)
 
                 // aggiorna lo stato locale

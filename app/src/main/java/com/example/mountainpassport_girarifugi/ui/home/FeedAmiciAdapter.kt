@@ -116,7 +116,12 @@ class FeedAmiciAdapter(
                 localitaRifugio.text = rifugioData.localita
                 altitudineRifugio.text = "Altitudine: ${rifugioData.altitudine} m"
                 textPunti.text = "+${rifugioData.puntiGuadagnati} punti"
-                imageRifugio.setImageResource(R.drawable.mountain_background)
+
+                val resId = rifugioData.immagine?.let { name ->
+                    val id = itemView.context.resources.getIdentifier(name, "drawable", itemView.context.packageName)
+                    if (id != 0) id else R.drawable.mountain_background
+                } ?: R.drawable.mountain_background
+                imageRifugio.setImageResource(resId)
 
                 // Imposta click listener sulla sezione rifugio
                 val clickableContainer = rifugioDetailsContainer ?: itemView

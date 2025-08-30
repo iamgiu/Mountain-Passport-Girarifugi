@@ -8,7 +8,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.graphics.Paint
 import android.widget.TextView
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -20,8 +19,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import android.content.Intent
-import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus
 
@@ -70,6 +67,7 @@ class HomeFragment : Fragment() {
         }
         tabAmici.setOnClickListener {
             viewModel.setActiveTab("amici")
+            viewModel.refreshFeedAmici()
         }
 
         // Inizializza con il tab rifugi attivo
@@ -153,27 +151,96 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Metodo per navigare ai dettagli del rifugio
-    private fun navigateToRifugioDetail(escursione: HomeViewModel.Escursione) {
-        val bundle = Bundle().apply {
-            putInt("rifugioId", escursione.id?.toIntOrNull() ?: 1) // Passa l'ID del rifugio
-            putString("RIFUGIO_NOME", escursione.nome)
-            putString("RIFUGIO_ALTITUDINE", escursione.altitudine)
-            putString("RIFUGIO_DISTANZA", escursione.distanza)
-            putString("RIFUGIO_LOCALITA", escursione.localita)
-            putString("RIFUGIO_COORDINATE", escursione.coordinate)
-            putString("RIFUGIO_DIFFICOLTA", escursione.difficolta)
-            putString("RIFUGIO_TEMPO", escursione.tempo)
-            putString("RIFUGIO_DESCRIZIONE", escursione.descrizione)
+    // Metodo per navigare dai rifugi delle card orizzontali - AGGIORNATO
+    private fun navigateToRifugioFromCard(rifugioCard: HomeViewModel.RifugioCard) {
+        lifecycleScope.launch {
+            try {
+                val rifugio = viewModel.findRifugioByName(rifugioCard.nome)
 
-            // Passa anche la lista dei servizi come stringa
-            if (escursione.servizi.isNotEmpty()) {
-                putString("RIFUGIO_SERVIZI", escursione.servizi.joinToString(","))
+                val bundle = Bundle().apply {
+                    if (rifugio != null) {
+                        // OPZIONE 1: Se trovato nel JSON, passa l'ID (navigazione moderna)
+                        putInt("rifugioId", rifugio.id)
+                    } else {
+                        // OPZIONE 2: Se non trovato nel JSON, passa tutti i dati (navigazione legacy)
+                        putString("RIFUGIO_NOME", rifugioCard.nome)
+                        putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
+                        putString("RIFUGIO_DISTANZA", rifugioCard.distanza)
+                        putString("RIFUGIO_LOCALITA", "Località da specificare")
+                        putString("RIFUGIO_COORDINATE", "0.0000,0.0000")
+                        putString("RIFUGIO_DIFFICOLTA", rifugioCard.difficolta)
+                        putString("RIFUGIO_TEMPO", rifugioCard.tempo)
+                        putString("RIFUGIO_DESCRIZIONE", "Descrizione non disponibile")
+                    }
+                }
+
+                findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
+
+            } catch (e: Exception) {
+                android.util.Log.e("HomeFragment", "Errore navigazione: ${e.message}")
+
+                // Fallback: passa sempre i dati della card
+                val bundle = Bundle().apply {
+                    putString("RIFUGIO_NOME", rifugioCard.nome)
+                    putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
+                    putString("RIFUGIO_DISTANZA", rifugioCard.distanza)
+                    putString("RIFUGIO_LOCALITA", "Località da specificare")
+                    putString("RIFUGIO_COORDINATE", "0.0000,0.0000")
+                    putString("RIFUGIO_DIFFICOLTA", rifugioCard.difficolta)
+                    putString("RIFUGIO_TEMPO", rifugioCard.tempo)
+                    putString("RIFUGIO_DESCRIZIONE", "Descrizione non disponibile")
+                }
+                findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
             }
         }
-
-        findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
     }
+
+    // Metodo per navigare dai feed amici - AGGIORNATO
+    private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
+        val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
+        val emptyFeedLayout = view.findViewById<View>(R.id.emptyFeedLayout)
+
+        if (feedAmici.isEmpty()) {
+            recyclerFeed.visibility = View.GONE
+            emptyFeedLayout.visibility = View.VISIBLE
+        } else {
+            recyclerFeed.visibility = View.VISIBLE
+            emptyFeedLayout.visibility = View.GONE
+
+            recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+            val adapter = FeedAmiciAdapter(feedAmici) { rifugioInfo ->
+                // AGGIORNATO: Cerca il rifugio nel database e usa l'ID
+                lifecycleScope.launch {
+                    try {
+                        val rifugio = viewModel.findRifugioByName(rifugioInfo.nome)
+
+                        if (rifugio != null) {
+                            // Usa l'ID del rifugio trovato
+                            val bundle = Bundle().apply {
+                                putInt("rifugioId", rifugio.id)
+                            }
+                            findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
+                        } else {
+                            // Fallback: crea un messaggio di errore
+                            Toast.makeText(
+                                requireContext(),
+                                "Rifugio non trovato: ${rifugioInfo.nome}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Errore nell'apertura del rifugio",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            recyclerFeed.adapter = adapter
+        }
+    }
+
 
     private fun setupPunteggio(view: View, punteggio: Int) {
         val progress = view.findViewById<ProgressBar>(R.id.progressScore)
@@ -211,70 +278,7 @@ class HomeFragment : Fragment() {
         recyclerSuggerimenti.adapter = adapterSuggerimenti
     }
 
-    // Metodo per navigare dai rifugi delle card orizzontali
-    private fun navigateToRifugioFromCard(rifugioCard: HomeViewModel.RifugioCard) {
-        // Usa lifecycleScope per chiamare la funzione suspend
-        lifecycleScope.launch {
-            try {
-                // Trova il rifugio nel repository per ottenere l'ID
-                val rifugio = viewModel.findRifugioByName(rifugioCard.nome)
 
-                val bundle = Bundle().apply {
-                    putInt("rifugioId", rifugio?.id ?: 1) // Passa l'ID del rifugio
-                    putString("RIFUGIO_NOME", rifugioCard.nome)
-                    putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
-                    putString("RIFUGIO_DISTANZA", rifugioCard.distanza)
-                    putString("RIFUGIO_DIFFICOLTA", rifugioCard.difficolta)
-                    putString("RIFUGIO_TEMPO", rifugioCard.tempo)
-
-                    // Per i dati mancanti, usa valori di default
-                    putString("RIFUGIO_LOCALITA", rifugio?.localita ?: "Località da specificare")
-                    putString("RIFUGIO_COORDINATE", "${rifugio?.latitudine ?: 0.0},${rifugio?.longitudine ?: 0.0}")
-                    putString("RIFUGIO_DESCRIZIONE", rifugio?.descrizione ?: "Descrizione non disponibile")
-                }
-
-                findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
-            } catch (e: Exception) {
-                // Fallback se c'è un errore
-                val bundle = Bundle().apply {
-                    putInt("rifugioId", 1)
-                    putString("RIFUGIO_NOME", rifugioCard.nome)
-                    putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
-                    putString("RIFUGIO_DISTANZA", rifugioCard.distanza)
-                    putString("RIFUGIO_DIFFICOLTA", rifugioCard.difficolta)
-                    putString("RIFUGIO_TEMPO", rifugioCard.tempo)
-                    putString("RIFUGIO_LOCALITA", "Località da specificare")
-                    putString("RIFUGIO_COORDINATE", "0.0,0.0")
-                    putString("RIFUGIO_DESCRIZIONE", "Descrizione non disponibile")
-                }
-                findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
-            }
-        }
-    }
-
-    private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
-        val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
-        recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
-
-        val adapter = FeedAmiciAdapter(feedAmici) { rifugioInfo ->
-            val bundle = Bundle().apply {
-                putString("RIFUGIO_NOME", rifugioInfo.nome)
-                putString("RIFUGIO_ALTITUDINE", "${rifugioInfo.altitudine} m")
-                putString("RIFUGIO_LOCALITA", rifugioInfo.localita)
-
-                // Valori di default per parametri mancanti
-                putString("RIFUGIO_DISTANZA", "N/A")
-                putString("RIFUGIO_COORDINATE", "0.0000,0.0000")
-                putString("RIFUGIO_DIFFICOLTA", "Non specificata")
-                putString("RIFUGIO_TEMPO", "Non specificato")
-                putString("RIFUGIO_DESCRIZIONE", "Rifugio visitato da ${feedAmici.find { it.rifugioInfo == rifugioInfo }?.nomeUtente ?: "un amico"}")
-            }
-
-            findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
-        }
-
-        recyclerFeed.adapter = adapter
-    }
 
     private fun highlightActiveButton(activeButton: String) {
         val tabPerTe = view?.findViewById<TextView>(R.id.tab_per_te)

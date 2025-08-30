@@ -2,6 +2,7 @@ package com.example.mountainpassport_girarifugi.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.google.firebase.auth.FirebaseAuth
 
 object UserManager {
     private const val PREFS_NAME = "mountain_passport_prefs"
@@ -14,14 +15,45 @@ object UserManager {
     fun initialize(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        // Genera un ID utente unico se non esiste
-        if (getCurrentUserId().isEmpty()) {
+        // NUOVO: Sincronizza con Firebase Auth se l'utente è loggato
+        syncWithFirebaseAuth()
+
+        // Genera un ID utente locale solo se non esiste e non è loggato con Firebase
+        if (getCurrentUserId().isEmpty() && !isFirebaseUserLoggedIn()) {
             val newUserId = "user_${System.currentTimeMillis()}"
             setCurrentUserId(newUserId)
         }
     }
 
+    /**
+     * NUOVO: Sincronizza l'ID utente con Firebase Auth
+     */
+    private fun syncWithFirebaseAuth() {
+        val firebaseUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (firebaseUserId != null) {
+            // Se l'utente è loggato con Firebase, usa quell'ID
+            setCurrentUserId(firebaseUserId)
+        }
+    }
+
+    /**
+     * NUOVO: Controlla se l'utente è loggato con Firebase
+     */
+    fun isFirebaseUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    /**
+     * MODIFICATO: Ora considera Firebase Auth come priorità
+     */
     fun getCurrentUserId(): String {
+        // Prima controlla Firebase Auth
+        val firebaseUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (firebaseUserId != null) {
+            return firebaseUserId
+        }
+
+        // Fallback alle SharedPreferences
         return sharedPreferences?.getString(KEY_USER_ID, "") ?: ""
     }
 
@@ -34,11 +66,22 @@ object UserManager {
         sharedPreferences?.edit()?.putString(KEY_USER_ID, userId)?.apply()
     }
 
+    /**
+     * NUOVO: Chiamare quando l'utente fa login con Firebase
+     */
+    fun onFirebaseLogin() {
+        syncWithFirebaseAuth()
+    }
+
+    /**
+     * MODIFICATO: Ora pulisce anche Firebase Auth
+     */
     fun clearUser() {
+        FirebaseAuth.getInstance().signOut()
         sharedPreferences?.edit()?.remove(KEY_USER_ID)?.apply()
     }
 
-    // Nuovi metodi per gestire i rifugi salvati
+    // Resto dei metodi per rifugi salvati rimane uguale
     fun getSavedRifugiIds(): Set<Int> {
         val savedString = sharedPreferences?.getString(KEY_SAVED_RIFUGI, "") ?: ""
         return if (savedString.isEmpty()) {
@@ -71,7 +114,7 @@ object UserManager {
         } else {
             saveRifugio(rifugioId)
         }
-        return !isCurrentlySaved // Ritorna il nuovo stato
+        return !isCurrentlySaved
     }
 
     private fun saveSavedRifugiIds(rifugiIds: Set<Int>) {

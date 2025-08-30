@@ -17,7 +17,6 @@ import android.widget.ImageView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import android.graphics.BitmapFactory
 import android.util.Base64
-import java.io.File
 
 class ProfileFragment : Fragment() {
 

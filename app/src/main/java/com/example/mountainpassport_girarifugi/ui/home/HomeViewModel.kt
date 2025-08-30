@@ -11,6 +11,7 @@ import com.example.mountainpassport_girarifugi.data.repository.FriendActivity
 import com.example.mountainpassport_girarifugi.data.repository.ActivityType
 import android.content.Context
 import com.example.mountainpassport_girarifugi.data.model.Rifugio
+import com.example.mountainpassport_girarifugi.data.repository.FeedResult
 import com.example.mountainpassport_girarifugi.utils.UserManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -76,104 +77,76 @@ class HomeViewModel : ViewModel() {
     }
 
     /**
-     * NUOVO: Carica il feed reale degli amici dalle attività
+     *  Carica il feed reale degli amici dalle attività
      */
     private suspend fun loadRealFeedAmici() {
         try {
-            val friendsActivities = activityRepository.getFriendsFeed(20)
-
-            val feedItems = friendsActivities.map { activity ->
-                when (activity.activityType) {
-                    ActivityType.RIFUGIO_VISITATO -> {
-                        FeedAmico(
-                            nomeUtente = activity.username,
-                            avatar = "ic_account_circle_24",
-                            testoAttivita = "ha visitato un rifugio",
-                            tempo = activity.timeAgo,
-                            tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
-                            rifugioInfo = RifugioInfo(
-                                nome = activity.rifugioName ?: "Rifugio",
-                                localita = activity.rifugioLocation ?: "Località sconosciuta",
-                                altitudine = activity.rifugioAltitude ?: "0",
-                                puntiGuadagnati = activity.pointsEarned,
-                                immagine = activity.rifugioName?.let { getImageResourceName(it) } ?: "mountain_background"
+            when (val result = activityRepository.getFriendsFeed(20)) {
+                is FeedResult.Success -> {
+                    val feedItems = result.activities.map { activity ->
+                        when (activity.activityType) {
+                            ActivityType.RIFUGIO_VISITATO -> FeedAmico(
+                                nomeUtente = activity.username,
+                                avatar = "ic_account_circle_24",
+                                testoAttivita = "ha visitato un rifugio",
+                                tempo = activity.timeAgo,
+                                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
+                                rifugioInfo = RifugioInfo(
+                                    nome = activity.rifugioName ?: "Rifugio",
+                                    localita = activity.rifugioLocation ?: "Località sconosciuta",
+                                    altitudine = activity.rifugioAltitude ?: "0",
+                                    puntiGuadagnati = activity.pointsEarned,
+                                    immagine = activity.rifugioName?.let { getImageResourceName(it) } ?: "mountain_background"
+                                )
                             )
-                        )
+                            ActivityType.ACHIEVEMENT -> FeedAmico(
+                                nomeUtente = activity.username,
+                                avatar = "ic_account_circle_24",
+                                testoAttivita = "ha ottenuto un achievement",
+                                tempo = activity.timeAgo,
+                                tipoAttivita = TipoAttivita.ACHIEVEMENT
+                            )
+                            ActivityType.PUNTI_GUADAGNATI -> FeedAmico(
+                                nomeUtente = activity.username,
+                                avatar = "ic_account_circle_24",
+                                testoAttivita = "ha guadagnato ${activity.pointsEarned} punti",
+                                tempo = activity.timeAgo,
+                                tipoAttivita = TipoAttivita.PUNTI_GUADAGNATI
+                            )
+                            else -> FeedAmico(
+                                nomeUtente = activity.username,
+                                avatar = "ic_account_circle_24",
+                                testoAttivita = activity.title,
+                                tempo = activity.timeAgo,
+                                tipoAttivita = TipoAttivita.GENERIC
+                            )
+                        }
                     }
-                    ActivityType.ACHIEVEMENT -> {
-                        FeedAmico(
-                            nomeUtente = activity.username,
-                            avatar = "ic_account_circle_24",
-                            testoAttivita = "ha ottenuto un achievement",
-                            tempo = activity.timeAgo,
-                            tipoAttivita = TipoAttivita.ACHIEVEMENT
-                        )
-                    }
-                    ActivityType.PUNTI_GUADAGNATI -> {
-                        FeedAmico(
-                            nomeUtente = activity.username,
-                            avatar = "ic_account_circle_24",
-                            testoAttivita = "ha guadagnato ${activity.pointsEarned} punti",
-                            tempo = activity.timeAgo,
-                            tipoAttivita = TipoAttivita.PUNTI_GUADAGNATI
-                        )
-                    }
-                    ActivityType.BADGE_EARNED -> {
-                        FeedAmico(
-                            nomeUtente = activity.username,
-                            avatar = "ic_account_circle_24",
-                            testoAttivita = "ha ottenuto un badge",
-                            tempo = activity.timeAgo,
-                            tipoAttivita = TipoAttivita.ACHIEVEMENT
-                        )
-                    }
-                    else -> {
-                        FeedAmico(
-                            nomeUtente = activity.username,
-                            avatar = "ic_account_circle_24",
-                            testoAttivita = activity.title,
-                            tempo = activity.timeAgo,
-                            tipoAttivita = TipoAttivita.GENERIC
-                        )
-                    }
+                    _feedAmici.value = feedItems
+                }
+                is FeedResult.NoFriends -> {
+                    _feedAmici.value = emptyList()
+                    _error.value = "Non hai ancora amici da seguire."
+                }
+                is FeedResult.NoActivities -> {
+                    _feedAmici.value = emptyList()
+                    _error.value = "I tuoi ${result.friendsCount} amici non hanno ancora attività recenti."
+                }
+                is FeedResult.Error -> {
+                    _feedAmici.value = emptyList()
+                    _error.value = "Errore nel feed: ${result.message}"
                 }
             }
-
-            _feedAmici.value = feedItems
-
         } catch (e: Exception) {
             android.util.Log.e("HomeViewModel", "Errore caricamento feed amici", e)
-            // Fallback ai dati di esempio se c'è un errore
+            // fallback dimostrativo
             loadFallbackFeedAmici()
         }
     }
 
-    /**
-     * NUOVO: Metodo per registrare la visita a un rifugio
-     */
-    suspend fun logRifugioVisit(
-        rifugioId: String,
-        rifugioName: String,
-        rifugioLocation: String,
-        rifugioAltitude: String,
-        pointsEarned: Int = 50
-    ): Boolean {
-        return try {
-            activityRepository.logRifugioVisit(
-                rifugioId = rifugioId,
-                rifugioName = rifugioName,
-                rifugioLocation = rifugioLocation,
-                rifugioAltitude = rifugioAltitude,
-                pointsEarned = pointsEarned
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("HomeViewModel", "Errore nel registrare visita rifugio", e)
-            false
-        }
-    }
 
     /**
-     * NUOVO: Metodo per registrare un achievement
+     * Metodo per registrare un achievement
      */
     suspend fun logAchievement(
         achievementType: String,
@@ -195,7 +168,7 @@ class HomeViewModel : ViewModel() {
     }
 
     /**
-     * NUOVO: Refresh del feed amici
+     * Refresh del feed amici
      */
     fun refreshFeedAmici() {
         viewModelScope.launch {
@@ -251,7 +224,6 @@ class HomeViewModel : ViewModel() {
         _feedAmici.value = feed
     }
 
-    // Resto dei metodi esistenti rimane uguale...
     private suspend fun loadRifugiSalvati() {
         try {
             val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
@@ -283,7 +255,6 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-
     fun refreshRifugiSalvati() {
         android.util.Log.d("HomeViewModel", "refreshRifugiSalvati() chiamato")
         viewModelScope.launch {
@@ -292,7 +263,14 @@ class HomeViewModel : ViewModel() {
     }
 
     private suspend fun loadPunteggio() {
-        _punteggio.value = 82
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
+        val doc = FirebaseFirestore.getInstance()
+            .collection("user_points_stats")
+            .document(userId)
+            .get()
+            .await()
+
+        _punteggio.value = (doc.getLong("totalPoints") ?: 0L).toInt()
     }
 
     private suspend fun loadRifugiBonus() {

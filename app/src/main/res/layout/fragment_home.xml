@@ -346,6 +346,7 @@
 
                 </LinearLayout>
 
+                <!-- AMICI CONTENT - CORRETTO L'ID -->
                 <LinearLayout
                     android:id="@+id/amicicontent"
                     android:layout_width="match_parent"
@@ -359,6 +360,40 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         tools:listitem="@layout/card_feed_amici"/>
+
+                    <LinearLayout
+                        android:id="@+id/emptyFeedLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="32dp"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@drawable/ic_person_24"
+                            app:tint="@color/green_black" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Nessuna attività dai tuoi amici"
+                            android:textColor="@color/black"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/montserrat_bold"
+                            android:layout_marginTop="16dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Ti mostreremo qui le ultime avventure dei tuoi amici"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="14sp"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+
                 </LinearLayout>
 
             </LinearLayout>

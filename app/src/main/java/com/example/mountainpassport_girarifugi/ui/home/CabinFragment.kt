@@ -1,17 +1,24 @@
 package com.example.mountainpassport_girarifugi.ui
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.bumptech.glide.Glide
 
 class CabinFragment : Fragment() {
+
+    private lateinit var viewModel: CabinViewModel
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_cabin, container, false)
@@ -20,7 +27,71 @@ class CabinFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Ricevi i dati dagli arguments invece che dall'intent
+        // Inizializza il ViewModel
+        viewModel = ViewModelProvider(this)[CabinViewModel::class.java]
+
+        // Configura gli observer
+        setupObservers(view)
+
+        // Configura i click listeners
+        setupClickListeners(view)
+
+        // Carica i dati del rifugio
+        loadRifugioData()
+    }
+
+    private fun setupObservers(view: View) {
+        viewModel.rifugio.observe(viewLifecycleOwner) { rifugio ->
+            rifugio?.let { populateUI(view, it) }
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            // Mostra/nasconde loading se hai un ProgressBar
+            view.findViewById<ProgressBar>(R.id.progressBar)?.visibility =
+                if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                viewModel.clearError()
+            }
+        }
+
+        viewModel.isSaved.observe(viewLifecycleOwner) { isSaved ->
+            updateSaveButtonIcon(view, isSaved)
+        }
+
+        viewModel.successMessage.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                viewModel.clearSuccessMessage()
+            }
+        }
+    }
+
+    private fun loadRifugioData() {
+        val rifugioId = arguments?.getInt("rifugioId")
+        val rifugioNome = arguments?.getString("RIFUGIO_NOME")
+
+        when {
+            // Caso 1: Abbiamo l'ID (navigazione moderna)
+            rifugioId != null && rifugioId != 0 -> {
+                viewModel.loadRifugioById(rifugioId)
+            }
+            // Caso 2: Abbiamo solo il nome (navigazione legacy dal HomeFragment)
+            rifugioNome != null -> {
+                viewModel.loadRifugioByName(rifugioNome)
+            }
+            // Caso 3: Abbiamo tutti i dati negli arguments (compatibilità totale)
+            else -> {
+                loadFromArguments()
+            }
+        }
+    }
+
+    private fun loadFromArguments() {
+        // Carica i dati direttamente dagli arguments per compatibilità
         val rifugioNome = arguments?.getString("RIFUGIO_NOME") ?: "Rifugio Sconosciuto"
         val rifugioAltitudine = arguments?.getString("RIFUGIO_ALTITUDINE") ?: "0 m"
         val rifugioDistanza = arguments?.getString("RIFUGIO_DISTANZA") ?: "0 km"
@@ -30,74 +101,96 @@ class CabinFragment : Fragment() {
         val rifugioTempo = arguments?.getString("RIFUGIO_TEMPO") ?: "Non specificato"
         val rifugioDescrizione = arguments?.getString("RIFUGIO_DESCRIZIONE") ?: "Nessuna descrizione disponibile"
 
-        setupUI(view, rifugioNome, rifugioAltitudine, rifugioDistanza, rifugioLocalita,
-            rifugioCoordinate, rifugioDifficolta, rifugioTempo, rifugioDescrizione)
-        setupClickListeners(view)
-    }
-
-    private fun setupUI(view: View, nome: String, altitudine: String, distanza: String,
-                        localita: String, coordinate: String, difficolta: String,
-                        tempo: String, descrizione: String) {
-
-        // Imposta il nome del rifugio
-        view.findViewById<TextView>(R.id.cabinNameTextView).text = nome
-
-        // Imposta l'altitudine
-        view.findViewById<TextView>(R.id.altitudeTextView).text = altitudine
-
-        // Imposta le coordinate (dividi latitudine e longitudine)
-        val coords = coordinate.split(",")
-        if (coords.size == 2) {
-            view.findViewById<TextView>(R.id.coordinatesTextView).text = "${coords[0]}\n${coords[1]}"
-        }
-
-        // Imposta la località
-        view.findViewById<TextView>(R.id.locationTextView).text = localita
-
-        // Imposta i dati del percorso
-        view.findViewById<TextView>(R.id.distanceTextView).text = distanza
-        view.findViewById<TextView>(R.id.timeTextView).text = tempo
-        view.findViewById<TextView>(R.id.difficultyTextView).text = "Difficoltà: $difficolta"
-
-        // Imposta la descrizione del percorso
-        view.findViewById<TextView>(R.id.routeDescriptionTextView).text = descrizione
-
-        // Imposta l'immagine del rifugio
-        setupRifugioImage(view, nome)
-    }
-
-    private fun setupRifugioImage(view: View, nomeRifugio: String) {
-        val imageView = view.findViewById<ImageView>(R.id.cabinImageView)
-
-        // Converti il nome in un nome di risorsa valido
-        val nomeRisorsa = nomeRifugio
-            .lowercase()
-            .replace(" ", "_")
-            .replace("à", "a")
-            .replace("è", "e")
-            .replace("ì", "i")
-            .replace("ò", "o")
-            .replace("ù", "u")
-
-        val resId = resources.getIdentifier(nomeRisorsa, "drawable", requireContext().packageName)
-
-        if (resId != 0) {
-            imageView.setImageResource(resId)
-        } else {
-            // Immagine di fallback
-            imageView.setImageResource(R.drawable.rifugio_torino)
-        }
+        viewModel.loadFromArguments(
+            rifugioNome, rifugioAltitudine, rifugioDistanza, rifugioLocalita,
+            rifugioCoordinate, rifugioDifficolta, rifugioTempo, rifugioDescrizione
+        )
     }
 
     private fun setupClickListeners(view: View) {
-        // Back button - usa Navigation Component
-        view.findViewById<FloatingActionButton>(R.id.fabBack).setOnClickListener {
+        view.findViewById<FloatingActionButton>(R.id.fabBack)?.setOnClickListener {
             findNavController().navigateUp()
         }
 
-        // Save button (se vuoi implementare il salvataggio)
-        view.findViewById<FloatingActionButton>(R.id.fabSave).setOnClickListener {
-            // TODO: Implementa logica di salvataggio rifugio
+        view.findViewById<FloatingActionButton>(R.id.fabSave)?.setOnClickListener {
+            val currentState = viewModel.isSaved.value ?: false
+            viewModel.toggleSaveRifugio()
+
+            val message = if (!currentState) "Rifugio salvato!" else "Rifugio rimosso dai salvati"
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
+
+        // Bottone per registrare visita (se presente nel layout)
+        view.findViewById<FloatingActionButton>(R.id.fabVisit)?.setOnClickListener {
+            viewModel.recordVisit()
+        }
+    }
+
+    private fun populateUI(view: View, rifugio: CabinViewModel.RifugioDisplay) {
+        // Dati principali
+        view.findViewById<TextView>(R.id.cabinNameTextView)?.text = rifugio.nome
+        view.findViewById<TextView>(R.id.altitudeTextView)?.text = rifugio.altitudine
+        view.findViewById<TextView>(R.id.locationTextView)?.text = rifugio.localita
+
+        // Coordinate
+        val coords = rifugio.coordinate.split(",")
+        if (coords.size == 2) {
+            view.findViewById<TextView>(R.id.coordinatesTextView)?.text = "${coords[0]}\n${coords[1]}"
+        }
+
+        // Dati del percorso
+        view.findViewById<TextView>(R.id.distanceTextView)?.text = rifugio.distanza
+        view.findViewById<TextView>(R.id.timeTextView)?.text = rifugio.tempo
+        view.findViewById<TextView>(R.id.difficultyTextView)?.text = "Difficoltà: ${rifugio.difficolta}"
+        view.findViewById<TextView>(R.id.routeDescriptionTextView)?.text = rifugio.descrizione
+
+        // Immagine del rifugio
+        setupRifugioImage(view, rifugio.nome, rifugio.immagineUrl)
+
+        // Punti (se il rifugio ha un ID valido)
+        if (rifugio.id != -1) {
+            view.findViewById<TextView>(R.id.pointsTextView)?.text = rifugio.punti
+        }
+    }
+
+    private fun updateSaveButtonIcon(view: View, isSaved: Boolean) {
+        val iconRes = if (isSaved) {
+            R.drawable.ic_bookmark_added_24px
+        } else {
+            R.drawable.ic_bookmark_add_24px
+        }
+        view.findViewById<FloatingActionButton>(R.id.fabSave)?.setImageResource(iconRes)
+    }
+
+    private fun setupRifugioImage(view: View, nomeRifugio: String, immagineUrl: String?) {
+        val imageView = view.findViewById<ImageView>(R.id.cabinImageView) ?: return
+
+        // Prova prima con l'URL se disponibile
+        if (!immagineUrl.isNullOrEmpty()) {
+            Glide.with(requireContext())
+                .load(immagineUrl)
+                .placeholder(R.drawable.rifugio_torino)
+                .error(R.drawable.rifugio_torino)
+                .centerCrop()
+                .into(imageView)
+        } else {
+            // Fallback alle immagini locali
+            val nomeRisorsa = nomeRifugio
+                .lowercase()
+                .replace(" ", "_")
+                .replace("à", "a")
+                .replace("è", "e")
+                .replace("ì", "i")
+                .replace("ò", "o")
+                .replace("ù", "u")
+
+            val resId = resources.getIdentifier(nomeRisorsa, "drawable", requireContext().packageName)
+
+            if (resId != 0) {
+                imageView.setImageResource(resId)
+            } else {
+                imageView.setImageResource(R.drawable.rifugio_torino)
+            }
         }
     }
 

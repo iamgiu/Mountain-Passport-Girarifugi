@@ -23,8 +23,22 @@ object RifugioSavedEventBus {
     private val _rifugioSavedEvent = MutableLiveData<Unit>()
     val rifugioSavedEvent: LiveData<Unit> = _rifugioSavedEvent
 
+    private val _pointsUpdatedEvent = MutableLiveData<Int>()
+    val pointsUpdatedEvent: LiveData<Int> = _pointsUpdatedEvent
+
+    private val _userStatsUpdatedEvent = MutableLiveData<Unit>()
+    val userStatsUpdatedEvent: LiveData<Unit> = _userStatsUpdatedEvent
+
     fun notifyRifugioSaved() {
         _rifugioSavedEvent.value = Unit
+    }
+
+    fun notifyPointsUpdated(pointsEarned: Int) {
+        _pointsUpdatedEvent.value = pointsEarned
+    }
+
+    fun notifyUserStatsUpdated() {
+        _userStatsUpdatedEvent.value = Unit
     }
 }
 
@@ -54,9 +68,20 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     private val _stats = MutableLiveData<RifugioStats?>()
     val stats: LiveData<RifugioStats?> = _stats
 
+    // Aggiungi questo LiveData per i punti utente
+    private val _userPoints = MutableLiveData<Int>()
+    val userPoints: LiveData<Int> = _userPoints
+
     // Ottiene l'ID dell'utente corrente autenticato
     private fun getCurrentUserId(): String {
-        return UserManager.getCurrentUserIdOrGuest()
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        return if (firebaseUser != null) {
+            android.util.Log.d("CabinViewModel", "✅ USER AUTH: Utente autenticato = ${firebaseUser.uid}")
+            firebaseUser.uid
+        } else {
+            android.util.Log.w("CabinViewModel", "⚠️ USER AUTH: Nessun utente autenticato, usando guest")
+            "guest_user"
+        }
     }
 
     /**
@@ -313,25 +338,74 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     fun recordVisit() {
         viewModelScope.launch {
             try {
-                val rifugio = _rifugio.value ?: return@launch
-                val result = pointsRepository.recordVisit(getCurrentUserId(), rifugio.id)
+                val rifugio = _rifugio.value ?: run {
+                    android.util.Log.e("CabinViewModel", "❌ ERRORE: rifugio è null")
+                    return@launch
+                }
+
+                // CONTROLLA PRIMA L'AUTENTICAZIONE
+                val firebaseUser = FirebaseAuth.getInstance().currentUser
+                if (firebaseUser == null) {
+                    _error.value = "Devi essere loggato per registrare una visita!"
+                    android.util.Log.e("CabinViewModel", "❌ ERROR: Utente non autenticato")
+                    return@launch
+                }
+
+                val userId = firebaseUser.uid
+                android.util.Log.d("CabinViewModel", "🚀 INIZIO: Registrando visita per utente AUTENTICATO $userId al rifugio ${rifugio.id}")
+
+                // Verifica se ha già visitato questo rifugio
+                val alreadyVisited = pointsRepository.hasUserVisitedRifugio(userId, rifugio.id)
+                android.util.Log.d("CabinViewModel", "🔍 CHECK: Già visitato = $alreadyVisited")
+
+                if (alreadyVisited) {
+                    _error.value = "Hai già visitato questo rifugio!"
+                    android.util.Log.w("CabinViewModel", "⚠️ STOP: Rifugio già visitato")
+                    return@launch
+                }
+
+                android.util.Log.d("CabinViewModel", "📞 CHIAMATA: pointsRepository.recordVisit")
+                val result = pointsRepository.recordVisit(userId, rifugio.id)
 
                 result.fold(
                     onSuccess = { userPoints ->
-                        _successMessage.value =
-                            "Visita registrata! +${userPoints.pointsEarned} punti guadagnati!"
-                        android.util.Log.d(
-                            "CabinViewModel",
-                            "Visita registrata: ${userPoints.pointsEarned} punti"
-                        )
+                        android.util.Log.d("CabinViewModel", "✅ SUCCESS: Punti guadagnati = ${userPoints.pointsEarned}")
+                        _successMessage.value = "Visita registrata! +${userPoints.pointsEarned} punti guadagnati!"
+
+                        // Notifica gli altri componenti
+                        android.util.Log.d("CabinViewModel", "📢 NOTIFY: Notificando aggiornamento punti")
+                        RifugioSavedEventBus.notifyPointsUpdated(userPoints.pointsEarned)
+                        RifugioSavedEventBus.notifyUserStatsUpdated()
+
+                        // Ricarica i punti utente
+                        android.util.Log.d("CabinViewModel", "🔄 RELOAD: Ricaricando punti utente")
+                        loadUserPoints()
                     },
-                    onFailure = { exception ->
-                        _error.value = "Errore nel registrare la visita: ${exception.message}"
-                        android.util.Log.e("CabinViewModel", "Errore visita: ${exception.message}")
+                    onFailure = { e ->
+                        android.util.Log.e("CabinViewModel", "❌ FAILURE: ${e.message}")
+                        _error.value = "Errore nel registrare la visita: ${e.message}"
                     }
                 )
             } catch (e: Exception) {
-                _error.value = "Errore nel registrare la visita: ${e.message}"
+                android.util.Log.e("CabinViewModel", "💥 EXCEPTION: ${e.message}", e)
+                _error.value = "Errore imprevisto: ${e.message}"
+            }
+        }
+    }
+
+
+    // Nuovo metodo per caricare i punti utente - AGGIORNATO
+    private fun loadUserPoints() {
+        viewModelScope.launch {
+            try {
+                val firebaseUser = FirebaseAuth.getInstance().currentUser
+                if (firebaseUser != null) {
+                    val stats = pointsRepository.getUserPointsStats(firebaseUser.uid)
+                    _userPoints.value = stats?.totalPoints ?: 0
+                    android.util.Log.d("CabinViewModel", "Punti utente aggiornati: ${stats?.totalPoints ?: 0}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("CabinViewModel", "Errore caricamento punti: ${e.message}")
             }
         }
     }

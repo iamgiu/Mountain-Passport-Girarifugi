@@ -8,39 +8,51 @@ import com.example.mountainpassport_girarifugi.data.repository.NotificationsRepo
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.util.*
 
 class PointsRepository(private val context: Context) {
-    
+
     private val firestore = FirebaseFirestore.getInstance()
     private val rifugioRepository = RifugioRepository(context)
+    private val activityRepository = ActivityRepository()
     
     companion object {
         private const val TAG = "PointsRepository"
     }
-    
+
     /**
-     * Registra una visita a un rifugio e assegna i punti
+     * Registra una visita a un rifugio e assegna i punti - VERSIONE AGGIORNATA
      */
     suspend fun recordVisit(
         userId: String,
         rifugioId: Int
     ): Result<UserPoints> {
+        android.util.Log.d("PointsRepository", "🚀 INIZIO recordVisit: userId=$userId, rifugioId=$rifugioId")
+
         return try {
-            // Ottieni i dati del rifugio
+            // Verifica doppia visita
+            if (hasUserVisitedRifugio(userId, rifugioId)) {
+                android.util.Log.w("PointsRepository", "⚠️ STOP: Rifugio già visitato")
+                return Result.failure(Exception("Hai già visitato questo rifugio"))
+            }
+
+            // Ottieni rifugio
+            android.util.Log.d("PointsRepository", "🏔️ LOAD: Caricando dati rifugio")
             val rifugio = rifugioRepository.getRifugioById(rifugioId)
             if (rifugio == null) {
+                android.util.Log.e("PointsRepository", "❌ ERROR: Rifugio non trovato")
                 return Result.failure(Exception("Rifugio non trovato"))
             }
-            
-            // Calcola i punti
-            val pointsEarned = PointsCalculator.calculateVisitPoints(
-                rifugioId, 
-                rifugio.altitudine
-            )
-            
-            // Crea il record della visita
+
+            android.util.Log.d("PointsRepository", "✅ RIFUGIO: ${rifugio.nome}, altitudine=${rifugio.altitudine}")
+
+            // Calcola punti
+            val pointsEarned = PointsCalculator.calculateVisitPoints(rifugioId, rifugio.altitudine)
+            android.util.Log.d("PointsRepository", "🧮 CALC: Punti calcolati = $pointsEarned")
+
+            // Crea UserPoints
             val userPoints = UserPoints(
                 userId = userId,
                 rifugioId = rifugioId,
@@ -50,30 +62,47 @@ class PointsRepository(private val context: Context) {
                 visitType = VisitType.VISIT,
                 isDoublePoints = PointsCalculator.isDoublePointsRifugio(rifugioId)
             )
-            
+            android.util.Log.d("PointsRepository", "📦 CREATED: UserPoints object")
+
             // Salva in Firebase
-            val docRef = firestore.collection("user_points")
-                .add(userPoints)
-                .await()
-            
-            // Aggiorna le statistiche dell'utente
-            updateUserStats(userId, pointsEarned)
-            
-            // Aggiorna le statistiche del rifugio
-            updateRifugioStats(rifugioId)
-            
-            // Invia notifica per punti guadagnati
+            android.util.Log.d("PointsRepository", "💾 SAVE: Salvando in user_points collection")
+            val docRef = firestore.collection("user_points").add(userPoints).await()
+            android.util.Log.d("PointsRepository", "✅ SAVED: Document ID = ${docRef.id}")
+
+            // Log attività per feed amici
+            android.util.Log.d("PointsRepository", "📝 ACTIVITY: Logging user activity")
             try {
-                Log.d(TAG, "Tentativo di invio notifica per ${pointsEarned} punti - Rifugio: ${rifugio.nome}")
-                
-                // 1. Notifica locale del sistema
-                NotificationHelper.showPointsEarnedNotification(
-                    context = context,
-                    points = pointsEarned,
-                    rifugioName = rifugio.nome
+                val activityRepository = ActivityRepository()
+                val activity = UserActivity(
+                    type = ActivityType.RIFUGIO_VISITATO,
+                    title = "Ha visitato ${rifugio.nome}",
+                    description = "Rifugio visitato in ${rifugio.localita}",
+                    rifugioId = rifugioId.toString(),
+                    rifugioName = rifugio.nome,
+                    rifugioLocation = rifugio.localita,
+                    rifugioAltitude = rifugio.altitudine.toString(),
+                    pointsEarned = pointsEarned
                 )
-                
-                // 2. Notifica in-app nel database
+
+                val activityLogged = activityRepository.logUserActivity(activity)
+                android.util.Log.d("PointsRepository", "📝 ACTIVITY: Logged = $activityLogged")
+            } catch (e: Exception) {
+                android.util.Log.e("PointsRepository", "❌ ACTIVITY ERROR: ${e.message}")
+            }
+
+            // Aggiorna stats utente
+            android.util.Log.d("PointsRepository", "📊 STATS: Aggiornando statistiche utente")
+            updateUserStats(userId, pointsEarned)
+
+            // Aggiorna stats rifugio
+            android.util.Log.d("PointsRepository", "🏔️ STATS: Aggiornando statistiche rifugio")
+            updateRifugioStats(rifugioId)
+
+            // Notifiche
+            android.util.Log.d("PointsRepository", "🔔 NOTIF: Inviando notifiche")
+            try {
+                NotificationHelper.showPointsEarnedNotification(context, pointsEarned, rifugio.nome)
+
                 val notificationsRepository = NotificationsRepository()
                 notificationsRepository.createPointsEarnedNotification(
                     userId = userId,
@@ -81,95 +110,17 @@ class PointsRepository(private val context: Context) {
                     rifugioName = rifugio.nome,
                     rifugioId = rifugioId
                 )
-                
-                Log.d(TAG, "Notifica locale e in-app inviate con successo")
+                android.util.Log.d("PointsRepository", "✅ NOTIF: Notifiche inviate")
             } catch (e: Exception) {
-                Log.e(TAG, "Errore nell'invio della notifica: ${e.message}")
+                android.util.Log.e("PointsRepository", "❌ NOTIF ERROR: ${e.message}")
             }
-            
-            Log.d(TAG, "Visita registrata: ${userPoints.rifugioName} - ${userPoints.pointsEarned} punti")
-            
+
+            android.util.Log.d("PointsRepository", "🎉 SUCCESS: Visita registrata completamente")
             Result.success(userPoints.copy(id = docRef.id))
+
         } catch (e: Exception) {
-            Log.e(TAG, "Errore nel registrare la visita: ${e.message}")
+            android.util.Log.e("PointsRepository", "💥 EXCEPTION: ${e.message}", e)
             Result.failure(e)
-        }
-    }
-    
-    /**
-     * Registra una visita a un rifugio e assegna i punti (overload con oggetto Rifugio)
-     */
-    suspend fun recordVisitWithRifugio(
-        userId: String,
-        rifugioId: Int,
-        rifugio: Rifugio?
-    ): Int {
-        return try {
-            // Ottieni i dati del rifugio
-            val rifugioData = rifugio ?: rifugioRepository.getRifugioById(rifugioId)
-            if (rifugioData == null) {
-                return 0
-            }
-            
-            // Calcola i punti
-            val pointsEarned = PointsCalculator.calculateVisitPoints(
-                rifugioId, 
-                rifugioData.altitudine
-            )
-            
-            // Crea il record della visita
-            val userPoints = UserPoints(
-                userId = userId,
-                rifugioId = rifugioId,
-                rifugioName = rifugioData.nome,
-                pointsEarned = pointsEarned,
-                visitDate = Timestamp.now(),
-                visitType = VisitType.VISIT,
-                isDoublePoints = PointsCalculator.isDoublePointsRifugio(rifugioId)
-            )
-            
-            // Salva in Firebase
-            val docRef = firestore.collection("user_points")
-                .add(userPoints)
-                .await()
-            
-            // Aggiorna le statistiche dell'utente
-            updateUserStats(userId, pointsEarned)
-            
-            // Aggiorna le statistiche del rifugio
-            updateRifugioStats(rifugioId)
-            
-            // Invia notifica per punti guadagnati
-            try {
-                Log.d(TAG, "Tentativo di invio notifica per ${pointsEarned} punti - Rifugio: ${rifugioData.nome}")
-                
-                // 1. Notifica locale del sistema
-                NotificationHelper.showPointsEarnedNotification(
-                    context = context,
-                    points = pointsEarned,
-                    rifugioName = rifugioData.nome
-                )
-                
-                // 2. Notifica in-app nel database
-                val notificationsRepository = NotificationsRepository()
-                notificationsRepository.createPointsEarnedNotification(
-                    userId = userId,
-                    punti = pointsEarned,
-                    rifugioName = rifugioData.nome,
-                    rifugioId = rifugioId
-                )
-                
-                Log.d(TAG, "Notifica locale e in-app inviate con successo")
-            } catch (e: Exception) {
-                Log.e(TAG, "Errore nell'invio della notifica: ${e.message}")
-            }
-            
-            Log.d(TAG, "Visita registrata: ${userPoints.rifugioName} - ${userPoints.pointsEarned} punti")
-            
-            pointsEarned
-        } catch (e: Exception) {
-            Log.e(TAG, "Errore nel registrare la visita: ${e.message}")
-            0
         }
     }
     
@@ -275,57 +226,19 @@ class PointsRepository(private val context: Context) {
         try {
             val docRef = firestore.collection("rifugio_stats")
                 .document(rifugioId.toString())
-            
+
             firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(docRef)
                 val currentVisits = snapshot.getLong("totalVisits") ?: 0
-                
-                transaction.update(docRef, "totalVisits", currentVisits + 1)
+                val newVisits = currentVisits + 1
+
+                // invece di transaction.update → uso set + merge
+                transaction.set(docRef, mapOf("totalVisits" to newVisits), SetOptions.merge())
             }.await()
-            
+
             Log.d(TAG, "Statistiche rifugio aggiornate per ID: $rifugioId")
         } catch (e: Exception) {
             Log.e(TAG, "Errore nell'aggiornare le statistiche rifugio: ${e.message}")
-        }
-    }
-    
-    /**
-     * Ottieni la classifica degli utenti per punti
-     */
-    suspend fun getLeaderboard(limit: Int = 100): List<UserPointsStats> {
-        return try {
-            val snapshot = firestore.collection("user_points_stats")
-                .orderBy("totalPoints", Query.Direction.DESCENDING)
-                .limit(limit.toLong())
-                .get()
-                .await()
-            
-            snapshot.documents.mapNotNull { doc ->
-                doc.toObject(UserPointsStats::class.java)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Errore nel caricare la classifica: ${e.message}")
-            emptyList()
-        }
-    }
-    
-    /**
-     * Ottieni la classifica mensile
-     */
-    suspend fun getMonthlyLeaderboard(limit: Int = 100): List<UserPointsStats> {
-        return try {
-            val snapshot = firestore.collection("user_points_stats")
-                .orderBy("monthlyPoints", Query.Direction.DESCENDING)
-                .limit(limit.toLong())
-                .get()
-                .await()
-            
-            snapshot.documents.mapNotNull { doc ->
-                doc.toObject(UserPointsStats::class.java)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Errore nel caricare la classifica mensile: ${e.message}")
-            emptyList()
         }
     }
     

@@ -22,7 +22,10 @@ import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.example.mountainpassport_girarifugi.data.repository.MonthlyChallengeRepository
-
+import android.view.View
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,13 +46,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
-
-        supportActionBar?.hide()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        supportActionBar?.hide()
+
+        // Nascondi la navigation bar
+        hideSystemUI()
 
         // Inizializza Firebase
         firebaseInitializer = FirebaseInitializer(this)
@@ -64,29 +69,41 @@ class MainActivity : AppCompatActivity() {
         val navView: BottomNavigationView = binding.bottomNavigationView
 
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.nav_home,
-                R.id.nav_map,
-                R.id.nav_leaderboard,
-                R.id.nav_profile
-            )
-        )
 
         // Gestisce il FAB separatamente
         binding.fabScan.setOnClickListener {
             navController.navigate(R.id.nav_scan)
         }
 
-        setupActionBarWithNavController(navController, appBarConfiguration)
+        // RIMUOVI setupActionBarWithNavController per evitare l'errore
+        // setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
         // Avvia reset mensile
         lifecycleScope.launch {
             val repo = MonthlyChallengeRepository()
             repo.resetMonthlyPointsIfNeeded()
+        }
+    }
+
+    private fun hideSystemUI() {
+        // Abilita edge-to-edge
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.apply {
+            // Nascondi la navigation bar
+            hide(WindowInsetsCompat.Type.navigationBars())
+            // Imposta il comportamento quando l'utente swipea per mostrare le barre
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    // Chiamato quando l'activity diventa visibile
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemUI()
         }
     }
 

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import com.example.mountainpassport_girarifugi.data.repository.ActivityRepository
+import com.example.mountainpassport_girarifugi.data.repository.MonthlyChallengeRepository
 import com.example.mountainpassport_girarifugi.data.repository.FriendActivity
 import com.example.mountainpassport_girarifugi.data.repository.ActivityType
 import android.content.Context
@@ -21,6 +22,7 @@ class HomeViewModel : ViewModel() {
 
     private var rifugioRepository: RifugioRepository? = null
     private lateinit var activityRepository: ActivityRepository
+    private lateinit var monthlyChallengeRepository: MonthlyChallengeRepository
 
     // LiveData per l'UI state
     private val _currentTab = MutableLiveData<String>().apply { value = "rifugi" }
@@ -38,7 +40,6 @@ class HomeViewModel : ViewModel() {
     private val _suggerimentiPersonalizzati = MutableLiveData<List<RifugioCard>>()
     val suggerimentiPersonalizzati: LiveData<List<RifugioCard>> = _suggerimentiPersonalizzati
 
-    // MODIFICATO: Ora usa FriendActivity invece di FeedAmico
     private val _feedAmici = MutableLiveData<List<FeedAmico>>()
     val feedAmici: LiveData<List<FeedAmico>> = _feedAmici
 
@@ -51,6 +52,7 @@ class HomeViewModel : ViewModel() {
     fun setRepository(context: Context) {
         rifugioRepository = RifugioRepository(context)
         activityRepository = ActivityRepository()
+        monthlyChallengeRepository = MonthlyChallengeRepository()
         loadData()
     }
 
@@ -64,15 +66,143 @@ class HomeViewModel : ViewModel() {
             try {
                 loadPunteggio()
                 loadRifugiSalvati()
-                loadRifugiBonus()
+                loadRifugiBonus() // Ora carica i veri rifugi bonus
                 loadSuggerimentiPersonalizzati()
-                loadRealFeedAmici() // CAMBIATO: ora carica dati reali
+                loadRealFeedAmici()
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Errore nel caricamento dei dati: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    /**
+     * Carica i rifugi bonus dalla sfida mensile corrente
+     */
+    private suspend fun loadRifugiBonus() {
+        try {
+            android.util.Log.d("HomeViewModel", "Caricamento rifugi bonus...")
+
+            // Ottieni la sfida mensile corrente
+            val monthlyChallenge = monthlyChallengeRepository.getCurrentChallenge()
+
+            if (monthlyChallenge?.bonusRifugi?.isNotEmpty() == true) {
+                android.util.Log.d("HomeViewModel", "Sfida trovata con ${monthlyChallenge.bonusRifugi.size} rifugi bonus")
+
+                val allRifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
+                val rifugiBonus = monthlyChallenge.bonusRifugi.mapNotNull { rifugioId ->
+                    val rifugio = allRifugi.find { it.id == rifugioId }
+                    rifugio?.let {
+                        RifugioCard(
+                            nome = it.nome,
+                            distanza = getDistanceForRifugio(it),
+                            altitudine = "${it.altitudine} m",
+                            difficolta = getDifficultyForRifugio(it),
+                            tempo = getTimeForRifugio(it),
+                            immagine = it.immagineUrl ?: "mountain_background",
+                            bonusPunti = calculateBonusPoints(it.altitudine) // Calcola punti bonus
+                        )
+                    }
+                }
+
+                _rifugiBonus.value = rifugiBonus
+                android.util.Log.d("HomeViewModel", "Caricati ${rifugiBonus.size} rifugi bonus")
+            } else {
+                // Fallback: nessuna sfida o sfida vuota
+                android.util.Log.d("HomeViewModel", "Nessuna sfida trovata, usando rifugi casuali")
+                loadFallbackRifugiBonus()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("HomeViewModel", "Errore caricamento rifugi bonus: ${e.message}")
+            loadFallbackRifugiBonus()
+        }
+    }
+
+    /**
+     * Fallback per rifugi bonus quando non c'è una sfida attiva
+     */
+    private suspend fun loadFallbackRifugiBonus() {
+        try {
+            val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
+            if (rifugi.isNotEmpty()) {
+                val rifugiCasuali = rifugi.shuffled().take(4)
+                val rifugiBonus = rifugiCasuali.map { rifugio ->
+                    RifugioCard(
+                        nome = rifugio.nome,
+                        distanza = getDistanceForRifugio(rifugio),
+                        altitudine = "${rifugio.altitudine} m",
+                        difficolta = getDifficultyForRifugio(rifugio),
+                        tempo = getTimeForRifugio(rifugio),
+                        immagine = rifugio.immagineUrl ?: "mountain_background",
+                        bonusPunti = calculateBonusPoints(rifugio.altitudine)
+                    )
+                }
+                _rifugiBonus.value = rifugiBonus
+            }
+        } catch (e: Exception) {
+            // Rifugi di esempio come ultimo fallback
+            val rifugi = listOf(
+                RifugioCard(
+                    nome = "Rifugio Laghi Gemelli",
+                    distanza = "3.2 km",
+                    altitudine = "2134 m",
+                    difficolta = "Medio",
+                    tempo = "2h 15m",
+                    immagine = "rifugio_laghi_gemelli",
+                    bonusPunti = 75
+                ),
+                RifugioCard(
+                    nome = "Capanna Margherita",
+                    distanza = "4.8 km",
+                    altitudine = "4554 m",
+                    difficolta = "Difficile",
+                    tempo = "6h 30m",
+                    immagine = "capanna_margherita",
+                    bonusPunti = 150
+                )
+            )
+            _rifugiBonus.value = rifugi
+        }
+    }
+
+    /**
+     * Calcola i punti bonus basati sull'altitudine
+     */
+    private fun calculateBonusPoints(altitudine: Int): Int {
+        return when (altitudine) {
+            in 0..1500 -> 50
+            in 1501..2500 -> 75
+            in 2501..3500 -> 100
+            in 3501..4000 -> 125
+            else -> 150
+        }
+    }
+
+    /**
+     * Verifica se un rifugio è nella lista dei bonus correnti
+     */
+    suspend fun isRifugioBonus(rifugioId: Int): Boolean {
+        return try {
+            val monthlyChallenge = monthlyChallengeRepository.getCurrentChallenge()
+            monthlyChallenge?.bonusRifugi?.contains(rifugioId) ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Ottieni i punti bonus per un rifugio specifico
+     */
+    suspend fun getBonusPointsForRifugio(rifugioId: Int): Int? {
+        return try {
+            val rifugio = rifugioRepository?.getRifugioById(rifugioId)
+            if (rifugio != null && isRifugioBonus(rifugioId)) {
+                calculateBonusPoints(rifugio.altitudine)
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -89,7 +219,6 @@ class HomeViewModel : ViewModel() {
                     result.activities.map { activity ->
                         when (activity.activityType) {
                             ActivityType.RIFUGIO_VISITATO -> {
-                                // 🔹 fallback immagine dal JSON se non arriva da Firestore
                                 val rifugioImage = activity.rifugioImageUrl ?: run {
                                     rifugioRepository?.getAllRifugi()
                                         ?.find { it.nome.equals(activity.rifugioName, ignoreCase = true) }
@@ -107,7 +236,7 @@ class HomeViewModel : ViewModel() {
                                         localita = activity.rifugioLocation ?: "Località sconosciuta",
                                         altitudine = activity.rifugioAltitude ?: "0",
                                         puntiGuadagnati = activity.pointsEarned,
-                                        immagine = rifugioImage // 🔹 ora può essere URL, drawable name o null
+                                        immagine = rifugioImage
                                     )
                                 )
                             }
@@ -182,50 +311,6 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Fallback ai dati di esempio se non ci sono amici o attività
-     */
-    private suspend fun loadFallbackFeedAmici() {
-        val feed = listOf(
-            FeedAmico(
-                nomeUtente = "Mario Rossi",
-                avatar = "ic_account_circle_24",
-                testoAttivita = "ha visitato un rifugio",
-                tempo = "2 ore fa",
-                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
-                rifugioInfo = RifugioInfo(
-                    nome = "Rifugio Monte Bianco",
-                    localita = "Val d'Aosta",
-                    altitudine = "2100",
-                    puntiGuadagnati = 50,
-                    immagine = "rifugio_monte_bianco"
-                )
-            ),
-            FeedAmico(
-                nomeUtente = "Lucia Bianchi",
-                avatar = "ic_account_circle_24",
-                testoAttivita = "ha guadagnato un achievement",
-                tempo = "5 ore fa",
-                tipoAttivita = TipoAttivita.ACHIEVEMENT
-            ),
-            FeedAmico(
-                nomeUtente = "Giovanni Verde",
-                avatar = "ic_account_circle_24",
-                testoAttivita = "ha visitato un rifugio",
-                tempo = "1 giorno fa",
-                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
-                rifugioInfo = RifugioInfo(
-                    nome = "Rifugio Laghi Gemelli",
-                    localita = "Val d'Aosta",
-                    altitudine = "2134",
-                    puntiGuadagnati = 30,
-                    immagine = "rifugio_laghi_gemelli"
-                )
-            )
-        )
-        _feedAmici.value = feed
-    }
-
     private suspend fun loadRifugiSalvati() {
         try {
             val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
@@ -251,7 +336,6 @@ class HomeViewModel : ViewModel() {
                 )
             }
         } catch (e: Exception) {
-            // se c’è un errore, svuoto la lista
             _rifugiSalvati.value = emptyList()
             _error.value = "Errore caricamento rifugi salvati: ${e.message}"
         }
@@ -275,50 +359,6 @@ class HomeViewModel : ViewModel() {
         _punteggio.value = (doc.getLong("totalPoints") ?: 0L).toInt()
     }
 
-    private suspend fun loadRifugiBonus() {
-        try {
-            val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
-            if (rifugi.isNotEmpty()) {
-                val rifugiCasuali = rifugi.shuffled().take(4)
-
-                val rifugiBonus = rifugiCasuali.map { rifugio ->
-                    RifugioCard(
-                        nome = rifugio.nome,
-                        distanza = "${(1..10).random()}.${(0..9).random()} km",
-                        altitudine = "${rifugio.altitudine} m",
-                        difficolta = listOf("Facile", "Medio", "Difficile", "Molto Difficile").random(),
-                        tempo = "${(1..8).random()}h ${(0..59).random()}m",
-                        immagine = rifugio.immagineUrl ?: "mountain_background",
-                        bonusPunti = (50..200).random()
-                    )
-                }
-                _rifugiBonus.value = rifugiBonus
-            }
-        } catch (e: Exception) {
-            val rifugi = listOf(
-                RifugioCard(
-                    nome = "Rifugio Laghi Gemelli",
-                    distanza = "3.2 km",
-                    altitudine = "2134 m",
-                    difficolta = "Medio",
-                    tempo = "2h 15m",
-                    immagine = "rifugio_laghi_gemelli",
-                    bonusPunti = 75
-                ),
-                RifugioCard(
-                    nome = "Capanna Margherita",
-                    distanza = "4.8 km",
-                    altitudine = "4554 m",
-                    difficolta = "Difficile",
-                    tempo = "6h 30m",
-                    immagine = "capanna_margherita",
-                    bonusPunti = 150
-                )
-            )
-            _rifugiBonus.value = rifugi
-        }
-    }
-
     private suspend fun loadSuggerimentiPersonalizzati() {
         try {
             val rifugi = rifugioRepository?.getAllRifugi() ?: emptyList()
@@ -329,10 +369,10 @@ class HomeViewModel : ViewModel() {
                 val suggerimenti = rifugiSuggerimenti.map { rifugio ->
                     RifugioCard(
                         nome = rifugio.nome,
-                        distanza = "${(1..15).random()}.${(0..9).random()} km",
+                        distanza = getDistanceForRifugio(rifugio),
                         altitudine = "${rifugio.altitudine} m",
-                        difficolta = listOf("Facile", "Medio", "Difficile", "Molto Difficile").random(),
-                        tempo = "${(1..10).random()}h ${(0..59).random()}m",
+                        difficolta = getDifficultyForRifugio(rifugio),
+                        tempo = getTimeForRifugio(rifugio),
                         immagine = rifugio.immagineUrl ?: "mountain_background"
                     )
                 }
@@ -417,7 +457,7 @@ class HomeViewModel : ViewModel() {
             .replace("ù", "u")
     }
 
-    // Data classes rimangono uguali
+    // Data classes
     data class Escursione(
         val nome: String,
         val altitudine: String,

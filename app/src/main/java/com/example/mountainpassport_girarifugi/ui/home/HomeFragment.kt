@@ -27,6 +27,7 @@ import com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus
 class HomeFragment : Fragment() {
 
     private lateinit var viewModel: HomeViewModel
+    private val MAX_POINTS = 600
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -304,8 +305,12 @@ class HomeFragment : Fragment() {
         val progress = view.findViewById<ProgressBar>(R.id.progressScore)
         val textScoreOverlay = view.findViewById<TextView>(R.id.textScoreOverlay)
 
-        progress.progress = punteggio
-        textScoreOverlay.text = "$punteggio%"
+        val clamped = punteggio.coerceIn(0, MAX_POINTS) // evita valori fuori scala
+        val percent = (clamped * 100) / MAX_POINTS
+
+        progress.max = 100
+        progress.progress = percent
+        textScoreOverlay.text = "$percent%"
     }
 
     private fun setupRifugiBonus(view: View, rifugiBonus: List<HomeViewModel.RifugioCard>) {

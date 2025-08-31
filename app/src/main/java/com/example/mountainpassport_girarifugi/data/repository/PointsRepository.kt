@@ -30,8 +30,6 @@ class PointsRepository(private val context: Context) {
         Log.d(TAG, "🚀 INIZIO recordVisit: userId=$userId, rifugioId=$rifugioId")
 
         return try {
-            // ✅ Non blocchiamo più dopo la prima visita
-
             // Ottieni rifugio
             val rifugio = rifugioRepository.getRifugioById(rifugioId)
                 ?: return Result.failure(Exception("Rifugio non trovato"))

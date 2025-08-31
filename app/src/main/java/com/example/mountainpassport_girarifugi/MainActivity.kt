@@ -20,6 +20,9 @@ import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
+import com.example.mountainpassport_girarifugi.data.repository.MonthlyChallengeRepository
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -79,6 +82,12 @@ class MainActivity : AppCompatActivity() {
 
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
+        // Avvia reset mensile
+        lifecycleScope.launch {
+            val repo = MonthlyChallengeRepository()
+            repo.resetMonthlyPointsIfNeeded()
+        }
     }
 
     private fun initializeFirebase() {

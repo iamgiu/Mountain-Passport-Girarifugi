@@ -1,5 +1,6 @@
 package com.example.mountainpassport_girarifugi.data.model
 
+import com.example.mountainpassport_girarifugi.data.repository.MonthlyChallengeRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 
@@ -52,61 +53,102 @@ enum class VisitType {
  * Calcolatore di punti per i rifugi
  */
 object PointsCalculator {
-    
-    /**
-     * Calcola i punti base per un rifugio basato sull'altitudine
-     * Formula: 1 punto ogni 100m di altitudine (arrotondato)
-     */
-    fun calculateBasePoints(altitude: Int): Int {
-        return (altitude / 100.0).toInt()
-    }
-    
-    /**
-     * Lista dei rifugi che valgono il doppio dei punti
-     */
-    private val doublePointsRifugi = setOf(
-        1,   // 3A 14998 - Rifugio storico
-        147, // Argentière - Rifugio storico
-        150, // Arnspitzhütte - Rifugio storico
 
-    )
-    
+    // Repository per le sfide mensili
+    private val monthlyChallengeRepository = MonthlyChallengeRepository()
+
     /**
-     * Verifica se un rifugio vale il doppio dei punti
+     * Calcola i punti totali per la visita a un rifugio
      */
-    fun isDoublePointsRifugio(rifugioId: Int): Boolean {
-        return doublePointsRifugi.contains(rifugioId)
+    suspend fun calculateVisitPoints(rifugioId: Int, altitudine: Int): Int {
+        val basePoints = calculateBasePoints(altitudine)
+        val isBonus = isCurrentlyBonusRifugio(rifugioId)
+
+        return if (isBonus) {
+            android.util.Log.d("PointsCalculator", "🎯 Rifugio $rifugioId è BONUS! Punti raddoppiati: $basePoints -> ${basePoints * 2}")
+            basePoints * 2
+        } else {
+            android.util.Log.d("PointsCalculator", "📍 Rifugio $rifugioId punti normali: $basePoints")
+            basePoints
+        }
     }
-    
+
     /**
-     * Calcola i punti totali per un rifugio
+     * Calcola i punti base in base all'altitudine
+     */
+    private fun calculateBasePoints(altitudine: Int): Int {
+        return when (altitudine) {
+            in 0..500 -> 10
+            in 501..1000 -> 15
+            in 1001..1500 -> 20
+            in 1501..2000 -> 25
+            in 2001..2500 -> 30
+            in 2501..3000 -> 35
+            in 3001..3500 -> 40
+            in 3501..4000 -> 45
+            in 4001..4500 -> 50
+            else -> 55
+        }
+    }
+
+    /**
+     * Verifica se un rifugio è attualmente nella lista dei bonus
+     */
+    suspend fun isCurrentlyBonusRifugio(rifugioId: Int): Boolean {
+        return try {
+            val challenge = monthlyChallengeRepository.getCurrentChallenge()
+            val isBonus = challenge?.bonusRifugi?.contains(rifugioId) ?: false
+            android.util.Log.d("PointsCalculator", "Verifica bonus per rifugio $rifugioId: $isBonus")
+            isBonus
+        } catch (e: Exception) {
+            android.util.Log.e("PointsCalculator", "Errore verifica bonus: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Metodo legacy per compatibilità
+     */
+    @Deprecated("Use calculateVisitPoints instead")
+    fun isDoublePointsRifugio(rifugioId: Int): Boolean {
+        // Questo metodo è deprecato, ma mantenuto per compatibilità
+        // I punti doppi ora sono gestiti dinamicamente tramite le sfide mensili
+        return false
+    }
+
+    /**
+     * Calcola i punti totali per visualizzazione UI
      */
     fun calculateTotalPoints(rifugioId: Int, altitude: Int): RifugioPoints {
         val basePoints = calculateBasePoints(altitude)
-        val isDouble = isDoublePointsRifugio(rifugioId)
-        val totalPoints = if (isDouble) basePoints * 2 else basePoints
-        
-        val reason = when {
-            isDouble -> "Rifugio storico/speciale - Punti doppi!"
-            altitude >= 3000 -> "Alta quota - Sfida estrema"
-            altitude >= 2500 -> "Quota elevata - Impresa notevole"
-            else -> "Visita standard"
-        }
-        
+
         return RifugioPoints(
             rifugioId = rifugioId,
             basePoints = basePoints,
-            isDoublePoints = isDouble,
-            totalPoints = totalPoints,
-            reason = reason
+            isDoublePoints = false,
+            totalPoints = basePoints,
+            reason = ""
         )
     }
-    
+
     /**
-     * Calcola punti totali per una visita (semplificato)
+     * Ottiene i punti bonus potenziali per un rifugio
      */
-    fun calculateVisitPoints(rifugioId: Int, altitude: Int): Int {
-        val rifugioPoints = calculateTotalPoints(rifugioId, altitude)
-        return rifugioPoints.totalPoints
+    suspend fun getBonusPointsForRifugio(rifugioId: Int, altitudine: Int): Int? {
+        return if (isCurrentlyBonusRifugio(rifugioId)) {
+            calculateBasePoints(altitudine) // I punti bonus sono uguali ai punti base
+        } else null
+    }
+
+    /**
+     * Verifica se è attiva una sfida mensile
+     */
+    suspend fun hasActiveMonthlyChallenge(): Boolean {
+        return try {
+            val challenge = monthlyChallengeRepository.getCurrentChallenge()
+            challenge?.bonusRifugi?.isNotEmpty() ?: false
+        } catch (e: Exception) {
+            false
+        }
     }
 }

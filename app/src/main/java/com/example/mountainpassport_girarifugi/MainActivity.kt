@@ -67,17 +67,48 @@ class MainActivity : AppCompatActivity() {
         requestNotificationPermission()
 
         val navView: BottomNavigationView = binding.bottomNavigationView
-
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
 
-        // Gestisce il FAB separatamente
+        // FIXED: Gestisce il FAB scan con navigazione corretta
         binding.fabScan.setOnClickListener {
-            navController.navigate(R.id.nav_scan)
+            try {
+                // Verifica se siamo già nella home, altrimenti naviga prima lì
+                when (navController.currentDestination?.id) {
+                    R.id.nav_home -> {
+                        // Siamo già in home, naviga direttamente al scan
+                        navController.navigate(R.id.action_homeFragment_to_scanFragment)
+                    }
+                    else -> {
+                        // Siamo in un'altra pagina, torna prima alla home
+                        navController.navigate(R.id.nav_home)
+                        // Poi naviga al scan (potrebbe richiedere un piccolo delay)
+                        navController.navigate(R.id.action_homeFragment_to_scanFragment)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Errore navigazione scan: ${e.message}")
+                // Fallback: naviga sempre alla home prima
+                navController.navigate(R.id.nav_home)
+            }
         }
 
-        // RIMUOVI setupActionBarWithNavController per evitare l'errore
-        // setupActionBarWithNavController(navController, appBarConfiguration)
+        // Setup bottom navigation (esclude scan dal controllo automatico)
         navView.setupWithNavController(navController)
+
+        // OPTIONAL: Gestisci manualmente il click sul centro del bottom nav se necessario
+        navView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_scan -> {
+                    // Non fare nulla per il scan - è gestito dal FAB
+                    false
+                }
+                else -> {
+                    // Comportamento normale per altri elementi
+                    navController.navigate(item.itemId)
+                    true
+                }
+            }
+        }
 
         // Avvia reset mensile
         lifecycleScope.launch {

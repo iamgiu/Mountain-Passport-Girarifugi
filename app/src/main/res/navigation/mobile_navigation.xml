@@ -9,7 +9,7 @@
         android:id="@+id/nav_home"
         android:name="com.example.mountainpassport_girarifugi.ui.home.HomeFragment"
         android:label="Bentornato!"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
 
         <action
             android:id="@+id/action_homeFragment_to_cabinFragment"
@@ -19,24 +19,36 @@
             android:id="@+id/action_homeFragment_to_notificationsFragment"
             app:destination="@+id/nav_notifications" />
 
+        <!-- NEW: Separate scan action from home -->
         <action
             android:id="@+id/action_homeFragment_to_scanFragment"
-            app:destination="@+id/nav_scan" />
+            app:destination="@+id/scan_fragment_standalone" />
+
+    </fragment>
+
+    <!-- NEW: Standalone scan fragment (separate from bottom nav) -->
+    <fragment
+        android:id="@+id/scan_fragment_standalone"
+        android:name="com.example.mountainpassport_girarifugi.ui.scan.ScanFragment"
+        android:label="Scanner QR"
+        tools:layout="@layout/fragment_scan" />
 
     <fragment
         android:id="@+id/nav_notifications"
         android:name="com.example.mountainpassport_girarifugi.ui.notifications.NotificationsFragment"
-        android:label="Notifiche" />
+        android:label="Notifiche">
 
         <action
             android:id="@+id/action_notificationsFragment_to_homeFragment"
             app:destination="@+id/nav_home" />
 
+    </fragment>
+
     <fragment
         android:id="@+id/nav_map"
         android:name="com.example.mountainpassport_girarifugi.ui.map.MapFragment"
         android:label="Mountain Passport"
-        tools:layout="@layout/fragment_map" />
+        tools:layout="@layout/fragment_map">
 
         <action
             android:id="@+id/action_mapFragment_to_SearchCabinFragment"
@@ -46,11 +58,13 @@
             android:id="@+id/action_mapFragment_to_cabinFragment"
             app:destination="@+id/nav_cabin" />
 
+    </fragment>
+
     <fragment
         android:id="@+id/nav_searchcabin"
         android:name="com.example.mountainpassport_girarifugi.ui.map.SearchCabinFragment"
         android:label="Mountain Passport"
-        tools:layout="@layout/fragment_search_cabin" />
+        tools:layout="@layout/fragment_search_cabin">
 
         <action
             android:id="@+id/action_searchCabinFragment_to_cabinFragment"
@@ -60,41 +74,55 @@
             android:id="@+id/action_SearchCabinFragment_to_mapFragment"
             app:destination="@+id/nav_map" />
 
+    </fragment>
+
     <fragment
         android:id="@+id/nav_cabin"
         android:name="com.example.mountainpassport_girarifugi.ui.map.CabinFragment"
         android:label="Mountain Passport"
-        tools:layout="@layout/fragment_cabin" />
+        tools:layout="@layout/fragment_cabin">
 
         <action
             android:id="@+id/action_cabinFragment_to_searchCabinFragment"
             app:destination="@+id/nav_searchcabin" />
 
+    </fragment>
+
+    <!--
     <fragment
         android:id="@+id/nav_scan"
         android:name="com.example.mountainpassport_girarifugi.ui.scan.ScanFragment"
         android:label="Mountain Passport"
         tools:layout="@layout/fragment_scan" />
+    -->
 
     <fragment
         android:id="@+id/nav_leaderboard"
         android:name="com.example.mountainpassport_girarifugi.ui.leaderboard.LeaderboardFragment"
         android:label="Mountain Passport"
-        tools:layout="@layout/fragment_leaderboard" />
+        tools:layout="@layout/fragment_leaderboard">
 
         <action
             android:id="@+id/action_leaderboardfragment_to_addfriendsFragment"
             app:destination="@+id/nav_addfriends" />
 
+    </fragment>
+
     <fragment
         android:id="@+id/nav_addfriends"
         android:name="com.example.mountainpassport_girarifugi.ui.leaderboard.AddFriendsFragment"
         android:label="Mountain Passport"
-        tools:layout="@layout/fragment_add_friends" />
+        tools:layout="@layout/fragment_add_friends">
 
         <action
             android:id="@+id/action_addfriendsFragment_to_leaderboardfragment"
             app:destination="@+id/nav_leaderboard" />
+
+        <action
+            android:id="@+id/action_addfriendsFragment_to_profileFragment"
+            app:destination="@id/profileFragment"/>
+
+    </fragment>
 
     <fragment
         android:id="@+id/profileFragment"
@@ -102,16 +130,11 @@
         android:label="Profilo"
         tools:layout="@layout/fragment_profile_leaderboard" />
 
-        <action
-            android:id="@+id/action_addfriendsFragment_to_profileFragment"
-            app:destination="@id/profileFragment"/>
-
-
     <fragment
         android:id="@+id/nav_profile"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.ProfileFragment"
         android:label="Mountain Passport"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
 
         <action
             android:id="@+id/action_profilefragment_to_settingsFragment"
@@ -121,15 +144,17 @@
             android:id="@+id/action_profileFragment_to_groupsFragment"
             app:destination="@+id/nav_group" />
 
-    <action
-        android:id="@+id/action_profileFragment_to_friendRequestsFragment"
-        app:destination="@+id/nav_friend_requests" />
+        <action
+            android:id="@+id/action_profileFragment_to_friendRequestsFragment"
+            app:destination="@+id/nav_friend_requests" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/nav_group"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.GroupsFragment"
         android:label="Gruppo"
-        tools:layout="@layout/fragment_groups"/>
+        tools:layout="@layout/fragment_groups">
 
         <action
             android:id="@+id/action_groupsFragment_to_settingsGroupFragment"
@@ -139,25 +164,39 @@
             android:id="@+id/action_groupsFragment_to_profileFragment"
             app:destination="@+id/nav_profile" />
 
+    </fragment>
+
     <fragment
         android:id="@+id/nav_settings_group"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.SettingsGroupFragment"
         android:label="Settings Group"
-        tools:layout="@layout/fragment_settings_group"/>
+        tools:layout="@layout/fragment_settings_group">
 
         <action
             android:id="@+id/action_settingsGroupFragment_to_groupsFragment"
             app:destination="@+id/nav_group" />
 
+    </fragment>
 
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.settings.SettingsFragment"
         android:label="Settings"
-        tools:layout="@layout/fragment_settings"/>
+        tools:layout="@layout/fragment_settings">
 
         <action
             android:id="@+id/action_settingsFragment_to_profilefragment"
             app:destination="@+id/nav_profile" />
 
+    </fragment>
+
 </navigation>
+    <!-- Ampo, lo sai che bastava aggiungere questo, si? -->
+    <!--
+    <fragment
+        android:id="@+id/nav_friend_requests"
+        android:name="com.example.mountainpassport_girarifugi.ui.profile.FriendRequestsFragment"
+        android:label="Friend Requests"
+        tools:layout="@layout/fragment_friend_requests" />
+    -->
+

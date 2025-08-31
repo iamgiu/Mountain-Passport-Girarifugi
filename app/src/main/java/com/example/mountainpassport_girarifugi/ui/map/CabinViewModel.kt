@@ -79,10 +79,14 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _isLoading.value = true
                 val rifugioData = repository.getRifugioById(rifugioId)
-                _rifugio.value = rifugioData
 
-                // Carica anche i dati dinamici
-                loadDynamicData(rifugioId)
+                if (rifugioData != null) {
+                    _rifugio.value = rifugioData
+                    // Carica anche i dati dinamici
+                    loadDynamicData(rifugioId)
+                } else {
+                    _error.value = "Rifugio non trovato"
+                }
 
                 _isLoading.value = false
             } catch (e: Exception) {
@@ -145,7 +149,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * METODO CORRETTO: Registra una visita al rifugio
+     * Registra una visita al rifugio
      */
     fun recordVisit() {
         viewModelScope.launch {
@@ -326,39 +330,35 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Aggiunge recensioni di test
-     */
-    fun addTestReviews() {
-        android.util.Log.d("CabinViewModel", "addTestReviews() chiamato")
-        viewModelScope.launch {
-            try {
-                val rifugioId = _rifugio.value?.id ?: return@launch
-                repository.addTestReviews(rifugioId)
-
-                kotlinx.coroutines.delay(1000)
-                loadDynamicData(rifugioId)
-
-            } catch (e: Exception) {
-                android.util.Log.e("CabinViewModel", "Errore nell'aggiunta delle recensioni: ${e.message}")
-                _error.value = "Errore nell'aggiunta delle recensioni di test: ${e.message}"
-            }
-        }
-    }
-
-    /**
      * Aggiunge una recensione dell'utente
      */
     fun addUserReview(rating: Float, comment: String) {
         viewModelScope.launch {
             try {
                 val rifugioId = _rifugio.value?.id ?: return@launch
-                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "user_${System.currentTimeMillis()}"
-                val userName = FirebaseAuth.getInstance().currentUser?.displayName ?: "Utente ${System.currentTimeMillis() % 1000}"
+                val currentUser = FirebaseAuth.getInstance().currentUser ?: return@launch
+
+                android.util.Log.d("CabinViewModel", "=== ADDING USER REVIEW ===")
+                android.util.Log.d("CabinViewModel", "User ID: ${currentUser.uid}")
+
+                // Strategia migliorata per ottenere nome utente e avatar
+                val userInfo = getUserInfoFromFirestore(currentUser.uid)
+
+                val userName = userInfo.first ?: currentUser.displayName
+                ?: currentUser.email?.substringBefore("@")?.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                } ?: "Utente Anonimo"
+
+                val userAvatar = userInfo.second ?: currentUser.photoUrl?.toString()
+
+                android.util.Log.d("CabinViewModel", "Nome finale: '$userName'")
+                android.util.Log.d("CabinViewModel", "Avatar URL: '$userAvatar'")
 
                 val review = Review(
                     rifugioId = rifugioId,
-                    userId = userId,
+                    userId = currentUser.uid,
                     userName = userName,
+                    userAvatar = userAvatar,
                     rating = rating,
                     comment = comment,
                     timestamp = com.google.firebase.Timestamp.now()
@@ -370,9 +370,43 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
                 _successMessage.value = "Recensione aggiunta con successo!"
             } catch (e: Exception) {
-                android.util.Log.e("CabinViewModel", "Errore nell'aggiunta della recensione: ${e.message}")
                 _error.value = "Errore nell'aggiunta della recensione: ${e.message}"
+                android.util.Log.e("CabinViewModel", "Errore in addUserReview: ${e.message}", e)
             }
+        }
+    }
+
+    private suspend fun getUserInfoFromFirestore(userId: String): Pair<String?, String?> {
+        return try {
+            val userDoc = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .get()
+                .await()
+
+            // Ricava prima il nickname, poi nome+cognome
+            val nickname = userDoc.getString("nickname")
+            val nome = userDoc.getString("nome")
+            val cognome = userDoc.getString("cognome")
+
+            val name = when {
+                !nickname.isNullOrBlank() -> nickname
+                !nome.isNullOrBlank() && !cognome.isNullOrBlank() -> "$nome $cognome"
+                !nome.isNullOrBlank() -> nome
+                else -> null
+            }
+
+            val avatar = userDoc.getString("profileImageUrl")
+                ?: userDoc.getString("avatarUrl")
+                ?: userDoc.getString("profilePicture")
+                ?: userDoc.getString("avatar")
+
+            android.util.Log.d("CabinViewModel", "Dati da Firestore - Nome: '$name', Avatar: '$avatar'")
+
+            Pair(name, avatar)
+        } catch (e: Exception) {
+            android.util.Log.e("CabinViewModel", "Errore nel recupero dati utente da Firestore: ${e.message}")
+            Pair(null, null)
         }
     }
 

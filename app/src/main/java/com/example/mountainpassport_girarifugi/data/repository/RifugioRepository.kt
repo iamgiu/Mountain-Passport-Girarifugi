@@ -6,6 +6,7 @@ import com.example.mountainpassport_girarifugi.data.model.Review
 import com.example.mountainpassport_girarifugi.data.model.RifugioStats
 import com.example.mountainpassport_girarifugi.data.model.UserRifugioInteraction
 import com.example.mountainpassport_girarifugi.data.model.TipoRifugio
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.gson.Gson
@@ -36,7 +37,7 @@ class RifugioRepository(private val context: Context) {
     }
 
     /**
-     * Cerca rifugi per nome o localitÃ
+     * Cerca rifugi per nome o località
      */
     suspend fun searchRifugi(query: String): List<Rifugio> {
         val allRifugi = getAllRifugi()
@@ -97,6 +98,7 @@ class RifugioRepository(private val context: Context) {
 
             val snapshot = firestore.collection("reviews")
                 .whereEqualTo("rifugioId", rifugioId)
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .get()
                 .await()
 
@@ -136,12 +138,11 @@ class RifugioRepository(private val context: Context) {
     }
 
     /**
-     * Verifica se un rifugio Ã¨ salvato dall'utente
+     * Verifica se un rifugio è salvato dall'utente
      */
     suspend fun isRifugioSaved(userId: String, rifugioId: Int): Boolean {
         return com.example.mountainpassport_girarifugi.utils.UserManager.isRifugioSaved(rifugioId)
     }
-
 
     /**
      * Salva/rimuove un rifugio dai preferiti
@@ -165,12 +166,19 @@ class RifugioRepository(private val context: Context) {
         }
     }
 
-
     /**
      * Aggiunge una recensione
      */
     suspend fun addReview(review: Review) {
         try {
+            // Verifica se l'utente ha già recensito questo rifugio
+            val existingReviews = getReviewsForRifugio(review.rifugioId)
+            val hasUserReviewed = existingReviews.any { it.userId == review.userId }
+
+            if (hasUserReviewed) {
+                throw IllegalStateException("Hai già recensito questo rifugio")
+            }
+
             val docRef = firestore.collection("reviews").add(review).await()
 
             // Aggiorna l'interazione utente
@@ -194,53 +202,6 @@ class RifugioRepository(private val context: Context) {
         } catch (e: Exception) {
             throw e
         }
-    }
-
-    /**
-     * Aggiunge recensioni di test per dimostrare il funzionamento
-     */
-    suspend fun addTestReviews(rifugioId: Int) {
-        android.util.Log.d("RifugioRepository", "addTestReviews() chiamato per rifugio ID: $rifugioId")
-
-        val testReviews = listOf(
-            Review(
-                rifugioId = rifugioId,
-                userId = "user_test_1",
-                userName = "Marco Rossi",
-                rating = 4.5f,
-                comment = "Rifugio fantastico con vista mozzafiato! Il personale Ã¨ stato molto gentile e il cibo ottimo.",
-                timestamp = com.google.firebase.Timestamp.now()
-            ),
-            Review(
-                rifugioId = rifugioId,
-                userId = "user_test_2",
-                userName = "Anna Bianchi",
-                rating = 5.0f,
-                comment = "Esperienza indimenticabile! Il rifugio Ã¨ pulito e confortevole. TornerÃ² sicuramente.",
-                timestamp = com.google.firebase.Timestamp.now()
-            ),
-            Review(
-                rifugioId = rifugioId,
-                userId = "user_test_3",
-                userName = "Luca Verdi",
-                rating = 4.0f,
-                comment = "Buon rifugio, posizione strategica per le escursioni. Prezzi onesti.",
-                timestamp = com.google.firebase.Timestamp.now()
-            )
-        )
-
-        android.util.Log.d("RifugioRepository", "Aggiungendo ${testReviews.size} recensioni di test")
-
-        testReviews.forEach { review ->
-            try {
-                addReview(review)
-                android.util.Log.d("RifugioRepository", "Recensione aggiunta: ${review.userName}")
-            } catch (e: Exception) {
-                android.util.Log.e("RifugioRepository", "Errore nell'aggiunta della recensione: ${e.message}")
-            }
-        }
-
-        android.util.Log.d("RifugioRepository", "Tutte le recensioni di test aggiunte")
     }
 
     /**

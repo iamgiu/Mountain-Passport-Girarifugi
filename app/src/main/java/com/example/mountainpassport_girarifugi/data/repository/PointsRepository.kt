@@ -30,24 +30,14 @@ class PointsRepository(private val context: Context) {
         Log.d(TAG, "🚀 INIZIO recordVisit: userId=$userId, rifugioId=$rifugioId")
 
         return try {
-            // Verifica doppia visita
-            if (hasUserVisitedRifugio(userId, rifugioId)) {
-                Log.w(TAG, "⚠️ STOP: Rifugio già visitato")
-                return Result.failure(Exception("Hai già visitato questo rifugio"))
-            }
+            // ✅ Non blocchiamo più dopo la prima visita
 
             // Ottieni rifugio
             val rifugio = rifugioRepository.getRifugioById(rifugioId)
-            if (rifugio == null) {
-                Log.e(TAG, "❌ ERROR: Rifugio non trovato")
-                return Result.failure(Exception("Rifugio non trovato"))
-            }
-
-            Log.d(TAG, "✅ RIFUGIO: ${rifugio.nome}, altitudine=${rifugio.altitudine}")
+                ?: return Result.failure(Exception("Rifugio non trovato"))
 
             // Calcola punti
             val pointsEarned = PointsCalculator.calculateVisitPoints(rifugioId, rifugio.altitudine)
-            Log.d(TAG, "🧮 CALC: Punti calcolati = $pointsEarned")
 
             // Crea UserPoints
             val userPoints = UserPoints(
@@ -62,19 +52,21 @@ class PointsRepository(private val context: Context) {
 
             // Salva in Firebase
             val docRef = firestore.collection("user_points").add(userPoints).await()
-            Log.d(TAG, "✅ SAVED: Document ID = ${docRef.id}")
 
-            // 🔹 Salva anche il timbro in users/{uid}/stamps
-            val stampData = mapOf(
-                "refugeName" to rifugio.nome,
-                "date" to System.currentTimeMillis()
-            )
-            firestore.collection("users")
-                .document(userId)
-                .collection("stamps")
-                .add(stampData)
-                .await()
-            Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+            // ✅ Timbro solo alla prima visita
+            val firstVisit = !hasUserVisitedRifugio(userId, rifugioId)
+            if (firstVisit) {
+                val stampData = mapOf(
+                    "refugeName" to rifugio.nome,
+                    "date" to System.currentTimeMillis()
+                )
+                firestore.collection("users")
+                    .document(userId)
+                    .collection("stamps")
+                    .add(stampData)
+                    .await()
+                Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+            }
 
             // Log attività per feed amici
             val activity = UserActivity(
@@ -104,6 +96,23 @@ class PointsRepository(private val context: Context) {
                 rifugioId = rifugioId
             )
 
+            // ✅ Aggiorna interazioni utente-rifugio senza bloccare
+            val interactionRef = firestore.collection("user_rifugio_interactions")
+                .document("${userId}_${rifugioId}")
+
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(interactionRef)
+                val currentCount = snapshot.getLong("visitCount") ?: 0
+                val interaction = mapOf(
+                    "userId" to userId,
+                    "rifugioId" to rifugioId,
+                    "isVisited" to true,
+                    "visitCount" to currentCount + 1,
+                    "lastInteraction" to Timestamp.now()
+                )
+                transaction.set(interactionRef, interaction, SetOptions.merge())
+            }.await()
+
             Log.d(TAG, "🎉 SUCCESS: Visita registrata completamente")
             Result.success(userPoints.copy(id = docRef.id))
 
@@ -113,20 +122,12 @@ class PointsRepository(private val context: Context) {
         }
     }
 
-    /**
-     * Variante semplificata che registra solo la PRIMA visita
-     */
     suspend fun registerRifugioVisitWithPoints(
         userId: String,
         rifugioId: Int
     ): Boolean {
         return try {
             Log.d(TAG, "Registrando visita per userId=$userId, rifugioId=$rifugioId")
-
-            if (hasUserVisitedRifugio(userId, rifugioId)) {
-                Log.w(TAG, "Rifugio già visitato")
-                return false
-            }
 
             val rifugio = rifugioRepository.getRifugioById(rifugioId) ?: return false
 
@@ -142,31 +143,34 @@ class PointsRepository(private val context: Context) {
                 "isDoublePoints" to PointsCalculator.isDoublePointsRifugio(rifugioId)
             )
 
-            val docRef = firestore.collection("user_points").add(userPoints).await()
-            Log.d(TAG, "Visita salvata in user_points: ${docRef.id}")
+            firestore.collection("user_points").add(userPoints).await()
+            Log.d(TAG, "Visita salvata in user_points")
 
-            // 🔹 Aggiungi timbro anche qui
-            val stampData = mapOf(
-                "refugeName" to rifugio.nome,
-                "date" to System.currentTimeMillis()
-            )
-            firestore.collection("users")
-                .document(userId)
-                .collection("stamps")
-                .add(stampData)
-                .await()
-            Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+            // ✅ timbro solo se è la prima visita
+            if (!hasUserVisitedRifugio(userId, rifugioId)) {
+                val stampData = mapOf(
+                    "refugeName" to rifugio.nome,
+                    "date" to System.currentTimeMillis()
+                )
+                firestore.collection("users")
+                    .document(userId)
+                    .collection("stamps")
+                    .add(stampData)
+                    .await()
+                Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+            }
 
+            // Aggiorna interazione con contatore
             val interaction = mapOf(
                 "userId" to userId,
                 "rifugioId" to rifugioId,
                 "isVisited" to true,
-                "visitDate" to Timestamp.now(),
-                "lastInteraction" to Timestamp.now()
+                "lastInteraction" to Timestamp.now(),
+                "visitCount" to com.google.firebase.firestore.FieldValue.increment(1)
             )
             firestore.collection("user_rifugio_interactions")
                 .document("${userId}_${rifugioId}")
-                .set(interaction)
+                .set(interaction, SetOptions.merge())
                 .await()
 
             updateUserStats(userId, pointsCalculated)
@@ -186,7 +190,7 @@ class PointsRepository(private val context: Context) {
 
             NotificationHelper.showPointsEarnedNotification(context, pointsCalculated, rifugio.nome)
 
-            Log.d(TAG, "Prima visita registrata con successo!")
+            Log.d(TAG, "Visita registrata con successo!")
             true
 
         } catch (e: Exception) {

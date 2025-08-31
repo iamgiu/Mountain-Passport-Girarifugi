@@ -19,14 +19,13 @@
             android:id="@+id/action_homeFragment_to_notificationsFragment"
             app:destination="@+id/nav_notifications" />
 
-        <!-- NEW: Separate scan action from home -->
         <action
             android:id="@+id/action_homeFragment_to_scanFragment"
             app:destination="@+id/scan_fragment_standalone" />
 
     </fragment>
 
-    <!-- NEW: Standalone scan fragment (separate from bottom nav) -->
+    <!-- Standalone scan fragment (separate from bottom nav) -->
     <fragment
         android:id="@+id/scan_fragment_standalone"
         android:name="com.example.mountainpassport_girarifugi.ui.scan.ScanFragment"

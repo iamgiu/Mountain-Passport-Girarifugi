@@ -69,27 +69,9 @@ class MainActivity : AppCompatActivity() {
         val navView: BottomNavigationView = binding.bottomNavigationView
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
 
-        // FIXED: Gestisce il FAB scan con navigazione corretta
+        // Gestisce il FAB scan
         binding.fabScan.setOnClickListener {
-            try {
-                // Verifica se siamo già nella home, altrimenti naviga prima lì
-                when (navController.currentDestination?.id) {
-                    R.id.nav_home -> {
-                        // Siamo già in home, naviga direttamente al scan
-                        navController.navigate(R.id.action_homeFragment_to_scanFragment)
-                    }
-                    else -> {
-                        // Siamo in un'altra pagina, torna prima alla home
-                        navController.navigate(R.id.nav_home)
-                        // Poi naviga al scan (potrebbe richiedere un piccolo delay)
-                        navController.navigate(R.id.action_homeFragment_to_scanFragment)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Errore navigazione scan: ${e.message}")
-                // Fallback: naviga sempre alla home prima
-                navController.navigate(R.id.nav_home)
-            }
+            navController.navigate(R.id.scan_fragment_standalone)
         }
 
         // Setup bottom navigation (esclude scan dal controllo automatico)

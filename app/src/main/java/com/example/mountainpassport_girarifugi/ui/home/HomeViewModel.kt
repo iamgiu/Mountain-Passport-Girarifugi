@@ -216,60 +216,32 @@ class HomeViewModel : ViewModel() {
 
             _feedAmici.value = when (result) {
                 is FeedResult.Success -> {
-                    result.activities.map { activity ->
-                        when (activity.activityType) {
-                            ActivityType.RIFUGIO_VISITATO -> {
-                                val rifugioImage = activity.rifugioImageUrl ?: run {
-                                    rifugioRepository?.getAllRifugi()
-                                        ?.find { it.nome.equals(activity.rifugioName, ignoreCase = true) }
-                                        ?.immagineUrl
-                                }
-
-                                FeedAmico(
-                                    nomeUtente = activity.username,
-                                    avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
-                                    testoAttivita = "ha visitato un rifugio",
-                                    tempo = activity.timeAgo,
-                                    tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
-                                    rifugioInfo = RifugioInfo(
-                                        nome = activity.rifugioName ?: "Rifugio",
-                                        localita = activity.rifugioLocation ?: "Località sconosciuta",
-                                        altitudine = activity.rifugioAltitude ?: "0",
-                                        puntiGuadagnati = activity.pointsEarned,
-                                        immagine = rifugioImage
-                                    )
-                                )
+                    result.activities
+                        .filter { it.activityType == ActivityType.RIFUGIO_VISITATO }
+                        .map { activity ->
+                            val rifugioImage = activity.rifugioImageUrl ?: run {
+                                rifugioRepository?.getAllRifugi()
+                                    ?.find { it.nome.equals(activity.rifugioName, ignoreCase = true) }
+                                    ?.immagineUrl
                             }
-                            ActivityType.ACHIEVEMENT -> FeedAmico(
+
+                            FeedAmico(
                                 nomeUtente = activity.username,
                                 avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
-                                testoAttivita = "ha ottenuto un achievement",
+                                testoAttivita = "ha visitato un rifugio",
                                 tempo = activity.timeAgo,
-                                tipoAttivita = TipoAttivita.ACHIEVEMENT
-                            )
-                            ActivityType.PUNTI_GUADAGNATI -> FeedAmico(
-                                nomeUtente = activity.username,
-                                avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
-                                testoAttivita = "ha guadagnato ${activity.pointsEarned} punti",
-                                tempo = activity.timeAgo,
-                                tipoAttivita = TipoAttivita.PUNTI_GUADAGNATI
-                            )
-                            else -> FeedAmico(
-                                nomeUtente = activity.username,
-                                avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
-                                testoAttivita = activity.title,
-                                tempo = activity.timeAgo,
-                                tipoAttivita = TipoAttivita.GENERIC
+                                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
+                                rifugioInfo = RifugioInfo(
+                                    nome = activity.rifugioName ?: "Rifugio",
+                                    localita = activity.rifugioLocation ?: "Località sconosciuta",
+                                    altitudine = activity.rifugioAltitude ?: "0",
+                                    puntiGuadagnati = activity.pointsEarned,
+                                    immagine = rifugioImage
+                                )
                             )
                         }
-                    }
                 }
-                is FeedResult.NoFriends -> emptyList()
-                is FeedResult.NoActivities -> emptyList()
-                is FeedResult.Error -> {
-                    android.util.Log.e("HomeViewModel", "Errore feed amici: ${result.message}")
-                    emptyList()
-                }
+                else -> emptyList()
             }
 
             _isLoading.value = false
@@ -457,21 +429,6 @@ class HomeViewModel : ViewModel() {
             .replace("ù", "u")
     }
 
-    // Data classes
-    data class Escursione(
-        val nome: String,
-        val altitudine: String,
-        val distanza: String,
-        val id: String? = null,
-        val coordinate: String? = null,
-        val localita: String? = null,
-        val servizi: List<String> = emptyList(),
-        val difficolta: String? = null,
-        val tempo: String? = null,
-        val descrizione: String? = null,
-        val immagine: String? = null
-    )
-
     data class RifugioCard(
         val nome: String,
         val distanza: String,
@@ -493,9 +450,6 @@ class HomeViewModel : ViewModel() {
 
     enum class TipoAttivita {
         RIFUGIO_VISITATO,
-        ACHIEVEMENT,
-        PUNTI_GUADAGNATI,
-        RECENSIONE,
         GENERIC
     }
 

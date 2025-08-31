@@ -277,9 +277,6 @@ class HomeFragment : Fragment() {
                 userAvatarUrl = feedAmico.avatar,
                 activityType = when (feedAmico.tipoAttivita) {
                     HomeViewModel.TipoAttivita.RIFUGIO_VISITATO -> ActivityType.RIFUGIO_VISITATO
-                    HomeViewModel.TipoAttivita.ACHIEVEMENT -> ActivityType.ACHIEVEMENT
-                    HomeViewModel.TipoAttivita.PUNTI_GUADAGNATI -> ActivityType.PUNTI_GUADAGNATI
-                    HomeViewModel.TipoAttivita.RECENSIONE -> ActivityType.RECENSIONE
                     else -> ActivityType.GENERIC
                 },
                 title = feedAmico.testoAttivita,
@@ -292,7 +289,6 @@ class HomeFragment : Fragment() {
                 rifugioAltitude = feedAmico.rifugioInfo?.altitudine?.let { "${it}m" },
                 rifugioImageUrl = feedAmico.rifugioInfo?.immagine,
                 pointsEarned = feedAmico.rifugioInfo?.puntiGuadagnati ?: 0,
-                achievementType = if (feedAmico.tipoAttivita == HomeViewModel.TipoAttivita.ACHIEVEMENT) "general" else null
             )
         } catch (e: Exception) {
             android.util.Log.e("HomeFragment", "Errore conversione FeedAmico: ${e.message}")

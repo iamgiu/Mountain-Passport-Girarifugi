@@ -153,7 +153,7 @@ class FeedAmiciAdapter(
         }
     }
 
-    // ViewHolder rifugio visitato - SEMPLIFICATO
+    // ViewHolder rifugio visitato
     class RifugioVisitatoViewHolder(
         itemView: View,
         private val onRifugioClick: ((String) -> Unit)?

@@ -72,49 +72,40 @@ class ActivityRepository {
     }
 
     /**
-     * VERSIONE MIGLIORATA: Ottiene il feed delle attività degli amici
+     *  Ottiene il feed delle attività degli amici
      */
-// Sostituisci il metodo getFriendsFeed in ActivityRepository.kt con questa versione con debug:
-
     suspend fun getFriendsFeed(limit: Int = 20): FeedResult {
         return try {
-            val currentUserId = UserManager.getCurrentUserIdOrGuest()
-            android.util.Log.d("ActivityRepository", "=== getFriendsFeed START ===")
-            android.util.Log.d("ActivityRepository", "Current User ID: '$currentUserId'")
-
-            // Verifica anche FirebaseAuth
-            val firebaseUserId = FirebaseAuth.getInstance().currentUser?.uid
-            android.util.Log.d("ActivityRepository", "Firebase User ID: '$firebaseUserId'")
-
-            // 1. Ottieni tutti gli amici in una volta sola
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                ?: UserManager.getCurrentUserIdOrGuest()
             val friendIds = getFriendIds(currentUserId).toMutableSet()
             friendIds.add(currentUserId)
 
-            android.util.Log.d("ActivityRepository", "Friend IDs (incluso utente corrente): $friendIds")
-            android.util.Log.d("ActivityRepository", "Friend IDs ottenuti: $friendIds (size: ${friendIds.size})")
+            android.util.Log.d("FEED_DEBUG", "STEP 1: Trovati ${friendIds.size} utenti (incluso corrente)")
 
-            if (friendIds.isEmpty()) {
-                android.util.Log.d("ActivityRepository", "NESSUN AMICO - returning NoFriends")
+            if (friendIds.size <= 1) {
+                android.util.Log.d("FEED_DEBUG", "RESULT: NoFriends")
                 return FeedResult.NoFriends
             }
 
-            // 2. Pre-carica i nomi utente per tutti gli amici
+            android.util.Log.d("FEED_DEBUG", "STEP 2: Inizio preload nomi...")
             preloadUserNames(friendIds)
+            android.util.Log.d("FEED_DEBUG", "STEP 2: Preload nomi completato")
 
-            // 3. Ottieni le attività con query ottimizzata
+            android.util.Log.d("FEED_DEBUG", "STEP 3: Inizio query attività...")
             val activities = getActivitiesForUsers(friendIds, limit)
-            android.util.Log.d("ActivityRepository", "Attività ottenute: ${activities.size}")
+            android.util.Log.d("FEED_DEBUG", "STEP 3: Query completata, trovate ${activities.size} attività")
 
             if (activities.isEmpty()) {
-                android.util.Log.d("ActivityRepository", "NESSUNA ATTIVITÀ - returning NoActivities")
-                return FeedResult.NoActivities(friendIds.size)
+                android.util.Log.d("FEED_DEBUG", "RESULT: NoActivities")
+                return FeedResult.NoActivities(friendIds.size - 1)
             }
 
-            android.util.Log.d("ActivityRepository", "SUCCESS - returning ${activities.size} activities")
+            android.util.Log.d("FEED_DEBUG", "RESULT: Success con ${activities.size} attività")
             return FeedResult.Success(activities)
 
         } catch (e: Exception) {
-            android.util.Log.e("ActivityRepository", "ERRORE in getFriendsFeed", e)
+            android.util.Log.e("FEED_DEBUG", "RESULT: Error - ${e.message}", e)
             return FeedResult.Error(e.message ?: "Errore sconosciuto")
         }
     }

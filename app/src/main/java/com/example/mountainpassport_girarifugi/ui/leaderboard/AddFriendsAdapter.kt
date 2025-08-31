@@ -1,6 +1,7 @@
 package com.example.mountainpassport_girarifugi.ui.leaderboard
 
 import android.annotation.SuppressLint
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,65 +36,84 @@ class AddFriendsAdapter(
         @SuppressLint("ClickableViewAccessibility")
         fun bind(user: AddFriendUser) {
             binding.apply {
-                // Imposta i dati dell'utente
                 textViewFriendName.text = user.name
                 textViewRefuges.text = "${user.refugesCount} rifugi"
                 textViewPoints.text = "${user.points} pt"
-                imageSecondPlace.setImageResource(user.avatarResource)
 
-                // Gestisce lo stato del bottone
-                if (user.isRequestSent) {
-                    btnAddFriend.text = "Inviata"
-                    btnAddFriend.isEnabled = false
-                    btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                        itemView.context.getColor(com.example.mountainpassport_girarifugi.R.color.blue)
-                    )
+                val profileImageView = binding.imageViewProfile
+
+                // --- Gestione immagine profilo ---
+                val profileData = user.profileImageUrl
+                if (!profileData.isNullOrBlank()) {
+                    try {
+                        val base64Data = if (profileData.startsWith("data:image")) {
+                            // Ha il prefisso MIME completo
+                            profileData.substringAfter("base64,")
+                        } else if (profileData.startsWith("/9j/") || profileData.startsWith("iVBORw0KGgo")) {
+                            // È già Base64 puro (JPEG inizia con /9j/, PNG con iVBORw0KGgo)
+                            profileData
+                        } else {
+                            // Caso URL remoto o altro formato
+                            null
+                        }
+
+                        if (base64Data != null) {
+                            val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                            val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                            if (bitmap != null) {
+                                profileImageView.setImageBitmap(bitmap)
+                            } else {
+                                profileImageView.setImageResource(user.avatarResource)
+                            }
+                        } else {
+                            // URL remoto - qui potresti usare Glide se necessario
+                            profileImageView.setImageResource(user.avatarResource)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        profileImageView.setImageResource(user.avatarResource)
+                    }
                 } else {
-                    btnAddFriend.text = if (user.id.startsWith("g")) "Unisciti" else "Aggiungi"
-                    btnAddFriend.isEnabled = true
-                    btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                        itemView.context.getColor(com.example.mountainpassport_girarifugi.R.color.blue_black)
-                    )
+                    // Nessuna immagine, usa avatar locale
+                    profileImageView.setImageResource(user.avatarResource)
                 }
 
-                // Click listener per la card (apre il profilo)
-                cardViewFriend.setOnClickListener {
-                    onUserClick(user)
+                // --- Bottone aggiungi amico ---
+                when {
+                    user.isAlreadyFriend -> {
+                        btnAddFriend.text = "Già Amici"
+                        btnAddFriend.isEnabled = false
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(itemView.context.getColor(R.color.gray_light))
+                        btnAddFriend.setTextColor(itemView.context.getColor(R.color.gray))
+                    }
+                    user.isRequestSent -> {
+                        btnAddFriend.text = "Inviata"
+                        btnAddFriend.isEnabled = false
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(itemView.context.getColor(R.color.blue))
+                        btnAddFriend.setTextColor(itemView.context.getColor(R.color.white))
+                    }
+                    else -> {
+                        btnAddFriend.text = if (user.id.startsWith("g")) "Unisciti" else "Aggiungi"
+                        btnAddFriend.isEnabled = true
+                        btnAddFriend.backgroundTintList = android.content.res.ColorStateList.valueOf(itemView.context.getColor(R.color.green))
+                        btnAddFriend.setTextColor(itemView.context.getColor(R.color.white))
+                    }
                 }
 
-                // Click listener per il bottone (invia richiesta)
+                // --- Click listener ---
+                cardViewFriend.setOnClickListener { onUserClick(user) }
                 btnAddFriend.setOnClickListener {
-                    if (!user.isRequestSent) {
+                    if (!user.isAlreadyFriend && !user.isRequestSent) {
                         onAddFriendClick(user)
                     }
                 }
 
-                // Animazione di click per la card
-                cardViewFriend.setOnTouchListener { view, motionEvent ->
-                    when (motionEvent.action) {
-                        android.view.MotionEvent.ACTION_DOWN -> {
-                            view.animate().scaleX(0.98f).scaleY(0.98f).duration = 100
-                        }
-                        android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                            view.animate().scaleX(1.0f).scaleY(1.0f).duration = 100
-                        }
+                // --- Animazioni touch ---
+                cardViewFriend.setOnClickListener { onUserClick(user) }
+                btnAddFriend.setOnClickListener {
+                    if (!user.isAlreadyFriend && !user.isRequestSent) {
+                        onAddFriendClick(user)
                     }
-                    false
-                }
-
-                // Animazione di click per il bottone
-                btnAddFriend.setOnTouchListener { view, motionEvent ->
-                    if (!user.isRequestSent) {
-                        when (motionEvent.action) {
-                            android.view.MotionEvent.ACTION_DOWN -> {
-                                view.animate().scaleX(0.95f).scaleY(0.95f).duration = 80
-                            }
-                            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                                view.animate().scaleX(1.0f).scaleY(1.0f).duration = 80
-                            }
-                        }
-                    }
-                    false
                 }
             }
         }

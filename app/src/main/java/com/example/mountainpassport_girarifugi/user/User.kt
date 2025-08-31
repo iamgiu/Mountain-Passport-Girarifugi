@@ -6,10 +6,12 @@ data class User(
     val nome: String = "",
     val cognome: String = "",
     val nickname: String = "",
-    val profileImageUrl: String = "" // String perché usero l'URL
+    val profileImageUrl: String? = null, // AGGIUNGI LA VIRGOLA QUI
+    val points: Int = 0,
+    val refugesCount: Int = 0
 ) {
-    // Firestore requires a no-argument constructor
-    constructor() : this("", "", "", "", "")
+    // Aggiorna anche il costruttore vuoto per includere i nuovi campi
+    constructor() : this("", "", "", "", "", null, 0, 0)
 
     fun isProfileComplete(): Boolean {
         return nome.isNotBlank() && cognome.isNotBlank() && nickname.isNotBlank()

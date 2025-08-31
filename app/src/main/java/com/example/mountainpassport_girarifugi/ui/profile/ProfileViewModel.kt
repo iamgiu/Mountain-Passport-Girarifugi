@@ -14,9 +14,14 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.example.mountainpassport_girarifugi.ui.profile.FriendRequest
 import android.content.Context
 import androidx.lifecycle.viewModelScope
+import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.model.UserPoints
+import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.tasks.await
 
 // Data class per rappresentare i dati del profilo utente
 data class ProfileData(
@@ -31,7 +36,8 @@ data class Stamp(
     val refugeName: String,
     val date: String,
     val altitude: String,
-    val region: String
+    val region: String,
+    val imageResId: Int = R.drawable.stamps
 )
 
 // Data class per rappresentare un gruppo
@@ -55,8 +61,8 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     val profileData: LiveData<ProfileData> = _profileData
 
     // LiveData per la lista dei timbri
-    private val _stamps = MutableLiveData<List<Stamp>>()
-    val stamps: LiveData<List<Stamp>> = _stamps
+    private val _stamps = MutableLiveData<List<UserPoints>>()
+    val stamps: LiveData<List<UserPoints>> = _stamps
 
     // LiveData per la lista dei gruppi
     private val _groups = MutableLiveData<List<Group>>()
@@ -92,6 +98,27 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
         loadGroups()
         loadFriends()
         startListeningForFriendRequests()
+
+        observePointsUpdates()
+    }
+
+    /**
+     * NUOVO: Osserva gli aggiornamenti dei punti da altri Fragment
+     */
+    private fun observePointsUpdates() {
+        // Observer per quando vengono guadagnati punti
+        com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus.pointsUpdatedEvent.observeForever { pointsEarned ->
+            // Ricarica i dati del profilo quando vengono guadagnati punti
+            loadUserData()
+            loadStamps()
+        }
+
+        // Observer per quando le statistiche utente vengono aggiornate
+        com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus.userStatsUpdatedEvent.observeForever {
+            // Ricarica i dati del profilo
+            loadUserData()
+            loadStamps()
+        }
     }
 
     private fun loadUserData() {
@@ -100,7 +127,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
 
         if (currentUser != null) {
             loadUserProfileFromDatabase(currentUser.uid)
-            loadUserPointsStats(currentUser.uid)
+            loadUserPointsStats(currentUser.uid) // ASSICURATI che questo venga chiamato
         } else {
             val profileData = ProfileData(
                 fullName = "Utente",
@@ -112,38 +139,143 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * MODIFICATO: Carica le statistiche dei punti dell'utente
+     */
+    private fun loadUserPointsStats(userId: String) {
+        viewModelScope.launch {
+            try {
+                val stats = withContext(Dispatchers.IO) {
+                    pointsRepository.getUserPointsStats(userId)
+                }
+
+                // NUOVO: Se non ci sono statistiche, prova a caricarle dal documento users
+                val finalStats = stats ?: loadStatsFromUserDocument(userId)
+
+                if (finalStats != null) {
+                    // Aggiorna le statistiche nel profilo
+                    val currentProfile = _profileData.value ?: ProfileData(
+                        fullName = "Utente",
+                        username = "utente_guest",
+                        monthlyScore = "0",
+                        visitedRefuges = "0"
+                    )
+
+                    val updatedProfile = currentProfile.copy(
+                        monthlyScore = finalStats.monthlyPoints.toString(),
+                        visitedRefuges = finalStats.totalVisits.toString()
+                    )
+                    _profileData.value = updatedProfile
+
+                    android.util.Log.d("ProfileViewModel", "Statistiche aggiornate: ${finalStats.totalPoints} punti, ${finalStats.totalVisits} visite")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ProfileViewModel", "Errore nel caricare le statistiche: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     *  Carica statistiche dal documento users se user_points_stats è vuoto
+     */
+    private suspend fun loadStatsFromUserDocument(userId: String): com.example.mountainpassport_girarifugi.data.model.UserPointsStats? {
+        return try {
+            val userDoc = firestore.collection("users").document(userId).get().await()
+            if (userDoc.exists()) {
+                val points = userDoc.getLong("points")?.toInt() ?: 0
+                val refugesCount = userDoc.getLong("refugesCount")?.toInt() ?: 0
+
+                // Crea un oggetto UserPointsStats di base
+                com.example.mountainpassport_girarifugi.data.model.UserPointsStats(
+                    userId = userId,
+                    totalPoints = points,
+                    totalVisits = refugesCount,
+                    monthlyPoints = 0, // Non disponibile nel documento users
+                    monthlyVisits = 0  // Non disponibile nel documento users
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ProfileViewModel", "Errore nel caricare stats da users: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     *  Ricarica tutti i dati
+     */
+    fun refreshData() {
+        android.util.Log.d("ProfileViewModel", "Refreshing profile data...")
+        loadUserData()
+        loadStamps()
+        loadGroups()
+        loadFriends()
+
+        // : Forza il ricaricamento delle statistiche
+        val currentUser = firebaseAuth.currentUser
+        if (currentUser != null) {
+            loadUserPointsStats(currentUser.uid)
+        }
+    }
+
     private fun loadStamps() {
-        val currentUserId = UserManager.getCurrentUserId()
-        if (currentUserId != null) {
-            loadUserVisits(currentUserId)
+        val currentUser = firebaseAuth.currentUser
+        if (currentUser != null) {
+            loadUserStampsFromFirestore(currentUser.uid)
         } else {
-            // Se non c'è utente autenticato, mostra lista vuota
             _stamps.value = emptyList()
         }
     }
-    
+
+
+    private fun loadUserStampsFromFirestore(userId: String) {
+        firestore.collection("users")
+            .document(userId)
+            .collection("stamps")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val stampsList = snapshot.documents.mapNotNull { doc ->
+                    val refugeName = doc.getString("refugeName") ?: return@mapNotNull null
+                    val dateMillis = doc.getLong("date") ?: 0L
+                    val dateFormatted = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                        .format(java.util.Date(dateMillis))
+
+                    // Puoi riusare UserPoints oppure una data class tua
+                    UserPoints(
+                        rifugioId = 0, // se non hai l’id lo lasci 0
+                        rifugioName = refugeName,
+                        visitDate = com.google.firebase.Timestamp(dateMillis / 1000, 0),
+                        pointsEarned = 0
+                    )
+                }
+                _stamps.value = stampsList
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("ProfileViewModel", "Errore caricamento timbri: ${e.message}", e)
+                _stamps.value = emptyList()
+            }
+    }
+
+
     /**
-     * Carica le visite dell'utente e le converte in timbri
+     * Carica le visite dell'utente e le converte in timbri - VERSIONE CORRETTA
      */
     private fun loadUserVisits(userId: String) {
         viewModelScope.launch {
             try {
+                android.util.Log.d("ProfileViewModel", "Caricando visite per userId: $userId")
+
                 val visits = withContext(Dispatchers.IO) {
-                    pointsRepository.getUserVisits(userId, 50)
+                    pointsRepository.getUserVisits(userId, 200)
                 }
-                
-                val stamps = visits.map { visit ->
-                    Stamp(
-                        refugeName = visit.rifugioName,
-                        date = visit.visitDate.toDate().toString().substring(0, 10), // Formato YYYY-MM-DD
-                        altitude = "Visitato", // Potremmo aggiungere l'altitudine se necessario
-                        region = "Punti: ${visit.pointsEarned}"
-                    )
-                }
-                _stamps.value = stamps
+
+                android.util.Log.d("ProfileViewModel", "Visite caricate: ${visits.size}")
+                _stamps.value = visits
+
             } catch (e: Exception) {
+                android.util.Log.e("ProfileViewModel", "Errore nel caricare le visite: ${e.message}", e)
                 _stamps.value = emptyList()
-                android.util.Log.e("ProfileViewModel", "Errore nel caricare le visite: ${e.message}")
             }
         }
     }
@@ -179,12 +311,6 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
         _groups.value = sampleGroups
     }
 
-    fun refreshData() {
-        loadUserData()
-        loadStamps()
-        loadGroups()
-    }
-
     // Implementazione del caricamento dei dati del profilo dal database
     fun performLogout() {
         firebaseAuth.signOut()
@@ -193,33 +319,6 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
 
     fun onLogoutEventHandled() {
         _logoutEvent.value = false
-    }
-    
-    /**
-     * Carica le statistiche dei punti dell'utente
-     */
-    private fun loadUserPointsStats(userId: String) {
-        viewModelScope.launch {
-            try {
-                val stats = withContext(Dispatchers.IO) {
-                    pointsRepository.getUserPointsStats(userId)
-                }
-                
-                if (stats != null) {
-                    // Aggiorna le statistiche nel profilo
-                    _profileData.value?.let { currentProfile ->
-                        val updatedProfile = currentProfile.copy(
-                            monthlyScore = stats.monthlyPoints.toString(),
-                            visitedRefuges = stats.totalVisits.toString()
-                        )
-                        _profileData.value = updatedProfile
-                    }
-                }
-            } catch (e: Exception) {
-                // In caso di errore, mantieni i valori di default
-                android.util.Log.e("ProfileViewModel", "Errore nel caricare le statistiche: ${e.message}")
-            }
-        }
     }
 
     fun loadUserProfileFromDatabase(userId: String) {

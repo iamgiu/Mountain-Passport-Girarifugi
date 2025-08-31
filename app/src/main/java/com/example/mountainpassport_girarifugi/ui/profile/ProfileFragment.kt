@@ -17,7 +17,6 @@ import android.widget.ImageView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import android.graphics.BitmapFactory
 import android.util.Base64
-import java.io.File
 
 class ProfileFragment : Fragment() {
 
@@ -26,7 +25,6 @@ class ProfileFragment : Fragment() {
 
     // Aggiungi RecyclerView e Adapter per i gruppi
     private lateinit var groupsRecyclerView: RecyclerView
-    private lateinit var groupsAdapter: GroupsAdapter
 
     // Views del profilo
     private lateinit var fullNameTextView: TextView
@@ -58,7 +56,6 @@ class ProfileFragment : Fragment() {
 
         // Configura la RecyclerView
         setupStampsRecyclerView()
-        setupGroupsRecyclerView()
 
         // Configura gli observer per il ViewModel
         setupObservers()
@@ -87,19 +84,6 @@ class ProfileFragment : Fragment() {
         stampsRecyclerView.adapter = stampsAdapter
     }
 
-    private fun setupGroupsRecyclerView() {
-        // Configura il layout manager orizzontale per i gruppi
-        val layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        groupsRecyclerView.layoutManager = layoutManager
-
-        // Inizializza l'adapter con il listener per i click
-        groupsAdapter = GroupsAdapter(emptyList()) { group ->
-            // Navigazione al profilo del gruppo
-            navigateToGroupProfile(group)
-        }
-        groupsRecyclerView.adapter = groupsAdapter
-    }
-
     private fun setupObservers() {
         // Observer per i dati del profilo
         viewModel.profileData.observe(viewLifecycleOwner) { profileData ->
@@ -109,11 +93,6 @@ class ProfileFragment : Fragment() {
         // Observer per i timbri
         viewModel.stamps.observe(viewLifecycleOwner) { stamps ->
             stampsAdapter.updateStamps(stamps)
-        }
-
-        // Observer per i gruppi
-        viewModel.groups.observe(viewLifecycleOwner) { groups ->
-            groupsAdapter.updateGroups(groups)
         }
 
         // Observer per gli errori di caricamento
@@ -132,8 +111,6 @@ class ProfileFragment : Fragment() {
             }
         }
         loadSavedProfileImage()
-
-        // TODO Observer per richieste e lista amici
 
     }
 
@@ -179,8 +156,10 @@ class ProfileFragment : Fragment() {
                 if (document.exists()) {
                     val user = document.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
                     user?.let {
-                        if (it.profileImageUrl.isNotEmpty()) {
-                            loadImageFromBase64(it.profileImageUrl)
+                        it.profileImageUrl?.let { url ->
+                            if (url.isNotEmpty()) {
+                                loadImageFromBase64(url)
+                            }
                         }
                     }
                 }

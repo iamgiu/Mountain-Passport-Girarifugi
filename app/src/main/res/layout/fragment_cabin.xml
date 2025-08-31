@@ -601,13 +601,16 @@
                 android:layout_marginBottom="100dp"
                 android:padding="16dp">
 
+                <!-- Riga titolo + FAB -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="12dp">
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
 
                     <TextView
+                        android:id="@+id/reviewsTitle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -616,46 +619,48 @@
                         android:textSize="22sp"
                         android:fontFamily="@font/montserrat_bold" />
 
+                    <!-- FAB per aggiungere recensione -->
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/fabAddReview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="Aggiungi Recensione"
+                        app:srcCompat="@drawable/ic_add_comment_24px"
+                        app:backgroundTint="@color/blue_black"
+                        app:tint="@color/light_blue" />
+                </LinearLayout>
+
+                <!-- Stelline sotto al titolo -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <RatingBar
+                        android:id="@+id/reviewsRatingBar"
+                        style="?android:attr/ratingBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5"
+                        android:stepSize="0.5"
+                        android:rating="4.5"
+                        android:isIndicator="true"
+                        android:progressTint="@color/blue" />
+
                     <TextView
                         android:id="@+id/reviewsRatingTextView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⭐ 4.5 (23 recensioni)"
+                        android:layout_marginStart="8dp"
+                        android:text="4.5 (23 recensioni)"
                         android:textColor="@color/blue_black"
                         android:textSize="14sp"
                         android:fontFamily="@font/montserrat_semibold" />
-
-                </LinearLayout>
-                
-                <!-- Pulsanti per aggiungere recensioni -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="end"
-                    android:layout_marginBottom="8dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/addReviewButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="Aggiungi Recensione"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/blue"
-                        android:textColor="@color/white" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/addTestReviewsButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Aggiungi Recensioni Test"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/green"
-                        android:textColor="@color/white" />
-
                 </LinearLayout>
 
+                <!-- Lista recensioni -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerViewUsers"
                     android:layout_width="match_parent"
@@ -676,7 +681,6 @@
                     android:gravity="center"
                     android:padding="24dp"
                     android:visibility="gone" />
-
             </LinearLayout>
 
         </LinearLayout>
@@ -710,7 +714,7 @@
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="120dp"
-        android:src="@drawable/ic_bookmark_24px"
+        android:src="@drawable/ic_bookmark_add_24px"
         app:backgroundTint="@color/green_black"
         app:fabSize="normal"
         app:tint="@color/light_green" />

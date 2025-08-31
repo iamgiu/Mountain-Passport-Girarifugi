@@ -33,7 +33,7 @@ class MountainPassportFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "Nuovo token FCM: $token")
-        
+
         // Salva il token nel database
         saveTokenToDatabase(token)
     }
@@ -45,7 +45,7 @@ class MountainPassportFirebaseMessagingService : FirebaseMessagingService() {
         // Gestisci i dati del messaggio
         remoteMessage.data.isNotEmpty().let {
             Log.d(TAG, "Dati del messaggio: ${remoteMessage.data}")
-            
+
             // Crea notifica locale
             val title = remoteMessage.data["title"] ?: "Mountain Passport"
             val message = remoteMessage.data["message"] ?: "Nuova notifica"
@@ -142,7 +142,7 @@ class MountainPassportFirebaseMessagingService : FirebaseMessagingService() {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
-        
+
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE

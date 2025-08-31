@@ -11,7 +11,10 @@ data class Rifugio(
     val descrizione: String? = null,
     val tipo: TipoRifugio = TipoRifugio.RIFUGIO,
     val regione: String? = null,
-    val immagineRes: Int? = null
+    val immagineRes: Int? = null,
+    val servizi: List<String> = emptyList(),
+    val difficolta: String? = null,
+    val tempo: String? = null
 )
 
 enum class TipoRifugio {

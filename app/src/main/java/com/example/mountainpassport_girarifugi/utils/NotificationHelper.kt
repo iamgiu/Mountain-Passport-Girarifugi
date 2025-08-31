@@ -147,29 +147,34 @@ object NotificationHelper {
     }
 
     /**
-     * Mostra una notifica per un nuovo rifugio
+     * Mostra una notifica per timbro ottenuto
      */
-    fun showNewRifugioNotification(
+    fun showStampObtainedNotification(
         context: Context,
         rifugioName: String,
         notificationId: Int = 3
     ) {
-        val title = "Nuovo rifugio disponibile"
-        val message = "$rifugioName è ora disponibile per la visita!"
+        val title = "Timbro ottenuto!"
+        val message = "Hai ottenuto il timbro di $rifugioName!"
         
         showNotification(context, title, message, notificationId)
     }
 
     /**
-     * Mostra una notifica per un achievement sbloccato
+     * Mostra una notifica per sfida completata
      */
-    fun showAchievementNotification(
+    fun showChallengeCompletedNotification(
         context: Context,
-        achievementName: String,
+        challengeName: String,
+        points: Int? = null,
         notificationId: Int = 4
     ) {
-        val title = "Achievement sbloccato!"
-        val message = "Hai sbloccato: $achievementName"
+        val title = "Sfida completata!"
+        val message = if (points != null) {
+            "Hai completato la sfida '$challengeName' e guadagnato $points punti!"
+        } else {
+            "Hai completato la sfida '$challengeName'!"
+        }
         
         showNotification(context, title, message, notificationId)
     }

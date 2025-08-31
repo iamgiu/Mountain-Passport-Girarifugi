@@ -1,5 +1,7 @@
 package com.example.mountainpassport_girarifugi.ui.leaderboard
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +20,7 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
     private var global: List<LeaderboardUser> = emptyList()
 
     fun submitList(newGlobal: List<LeaderboardUser>) {
+        // I dati dovrebbero arrivare già ordinati e con le posizioni dal ViewModel
         global = newGlobal
         notifyDataSetChanged()
     }
@@ -27,14 +30,10 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
     }
 
     override fun getItemCount(): Int {
-        return if (global.isEmpty()) 0 else {
-            // Se ci sono almeno 3 elementi, mostra top3 + il resto
-            // Se ci sono meno di 3, mostra solo le righe normali
-            if (global.size >= 3) {
-                1 + (global.size - 3) // 1 per top3 + resto
-            } else {
-                global.size // Solo righe normali
-            }
+        return if (global.isEmpty()) {
+            0
+        } else {
+            1 + maxOf(0, global.size - 3)
         }
     }
 
@@ -57,18 +56,19 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is Top3ViewHolder -> {
-                // Prendi i primi 3 utenti per il podio
                 val top3 = global.take(3)
-                if (top3.size >= 3) {
-                    holder.bind(top3[0], top3[1], top3[2]) // 1°, 2°, 3°
-                }
+                holder.bind(
+                    top3.getOrNull(0) ?: LeaderboardUser.empty(),
+                    top3.getOrNull(1) ?: LeaderboardUser.empty(),
+                    top3.getOrNull(2) ?: LeaderboardUser.empty()
+                )
             }
             is RowViewHolder -> {
-                // Per gli altri utenti (dal 4° in poi)
-                val userIndex = position + 2 // +2 perché i primi 3 sono nel podio
+                // CORREZIONE: position 1 deve mostrare il 4° utente (index 3)
+                val userIndex = position + 2
+
                 if (userIndex < global.size) {
-                    val user = global[userIndex]
-                    holder.bind(user)
+                    holder.bind(global[userIndex])
                 }
             }
         }
@@ -76,36 +76,109 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
 
     // ViewHolder per il podio (top 3)
     class Top3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
         fun bind(first: LeaderboardUser, second: LeaderboardUser, third: LeaderboardUser) {
             // Primo posto (centro)
-            itemView.findViewById<TextView>(R.id.textFirstPlaceName).text = first.name
-            itemView.findViewById<TextView>(R.id.textFirstPlaceScore).text = first.points.toString()
-            itemView.findViewById<ImageView>(R.id.imageFirstPlace).setImageResource(first.avatarResource)
+            bindUser(
+                itemView.findViewById(R.id.imageFirstPlace),
+                itemView.findViewById(R.id.textFirstPlaceName),
+                itemView.findViewById(R.id.textFirstPlaceScore),
+                first
+            )
 
             // Secondo posto (sinistra)
-            itemView.findViewById<TextView>(R.id.textSecondPlaceName).text = second.name
-            itemView.findViewById<TextView>(R.id.textSecondPlaceScore).text = second.points.toString()
-            itemView.findViewById<ImageView>(R.id.imageSecondPlace).setImageResource(second.avatarResource)
+            bindUser(
+                itemView.findViewById(R.id.imageSecondPlace),
+                itemView.findViewById(R.id.textSecondPlaceName),
+                itemView.findViewById(R.id.textSecondPlaceScore),
+                second
+            )
 
             // Terzo posto (destra)
-            itemView.findViewById<TextView>(R.id.textThirdPlaceName).text = third.name
-            itemView.findViewById<TextView>(R.id.textThirdPlaceScore).text = third.points.toString()
-            itemView.findViewById<ImageView>(R.id.imageThirdPlace).setImageResource(third.avatarResource)
+            bindUser(
+                itemView.findViewById(R.id.imageThirdPlace),
+                itemView.findViewById(R.id.textThirdPlaceName),
+                itemView.findViewById(R.id.textThirdPlaceScore),
+                third
+            )
+        }
+
+        private fun bindUser(imageView: ImageView, nameView: TextView, scoreView: TextView, user: LeaderboardUser) {
+            nameView.text = user.name
+            scoreView.text = user.points.toString()
+            setProfileImage(imageView, user)
+        }
+
+        private fun setProfileImage(imageView: ImageView, user: LeaderboardUser) {
+            val profileData = user.profileImageUrl
+            if (!profileData.isNullOrBlank()) {
+                try {
+                    val base64Data = when {
+                        profileData.startsWith("data:image") -> profileData.substringAfter("base64,")
+                        profileData.startsWith("/9j/") || profileData.startsWith("iVBORw0KGgo") -> profileData
+                        else -> null
+                    }
+
+                    if (base64Data != null) {
+                        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                        if (bitmap != null) {
+                            imageView.setImageBitmap(bitmap)
+                        } else {
+                            imageView.setImageResource(user.avatarResource)
+                        }
+                    } else {
+                        imageView.setImageResource(user.avatarResource)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    imageView.setImageResource(user.avatarResource)
+                }
+            } else {
+                imageView.setImageResource(user.avatarResource)
+            }
         }
     }
 
     // ViewHolder per le righe normali (dal 4° posto in poi)
     class RowViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
         fun bind(user: LeaderboardUser) {
-            itemView.findViewById<TextView>(R.id.textViewPosition).text = "${user.position}"
+            itemView.findViewById<TextView>(R.id.textViewPosition).text = "${user.position}°"
             itemView.findViewById<TextView>(R.id.textViewFriendName).text = user.name
-            itemView.findViewById<TextView>(R.id.textViewPoints).text = "${user.points}"
+            itemView.findViewById<TextView>(R.id.textViewPoints).text = "${user.points} pt"
             itemView.findViewById<TextView>(R.id.textViewRefuges).text = "${user.refugesCount} rifugi"
 
-            // Imposta l'avatar corretto
-            itemView.findViewById<ImageView>(R.id.imageSecondPlace)?.setImageResource(user.avatarResource)
+            val avatarImageView = itemView.findViewById<ImageView>(R.id.imageSecondPlace)
+            avatarImageView?.let { setProfileImage(it, user) }
+        }
+
+        private fun setProfileImage(imageView: ImageView, user: LeaderboardUser) {
+            val profileData = user.profileImageUrl
+            if (!profileData.isNullOrBlank()) {
+                try {
+                    val base64Data = when {
+                        profileData.startsWith("data:image") -> profileData.substringAfter("base64,")
+                        profileData.startsWith("/9j/") || profileData.startsWith("iVBORw0KGgo") -> profileData
+                        else -> null
+                    }
+
+                    if (base64Data != null) {
+                        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                        if (bitmap != null) {
+                            imageView.setImageBitmap(bitmap)
+                        } else {
+                            imageView.setImageResource(user.avatarResource)
+                        }
+                    } else {
+                        imageView.setImageResource(user.avatarResource)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    imageView.setImageResource(user.avatarResource)
+                }
+            } else {
+                imageView.setImageResource(user.avatarResource)
+            }
         }
     }
 }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.example.mountainpassport_girarifugi.data.model.Review
 import com.example.mountainpassport_girarifugi.data.model.RifugioStats
-import com.example.mountainpassport_girarifugi.data.model.UserRifugioInteraction
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -28,7 +27,6 @@ class FirebaseInitializer(private val context: Context) {
             // Crea raccolte con dati di esempio
             createSampleReviews()
             createSampleStats()
-            createSampleInteractions()
             createSamplePoints()
             
             Log.d(TAG, "Firebase inizializzato con successo")
@@ -133,56 +131,6 @@ class FirebaseInitializer(private val context: Context) {
             Log.d(TAG, "Statistiche di esempio create: ${sampleStats.size}")
         } catch (e: Exception) {
             Log.e(TAG, "Errore nella creazione delle statistiche: ${e.message}")
-        }
-    }
-    
-    /**
-     * Crea interazioni utente di esempio
-     */
-    private suspend fun createSampleInteractions() {
-        try {
-            val sampleInteractions = listOf(
-                UserRifugioInteraction(
-                    userId = "user_123",
-                    rifugioId = 1,
-                    isSaved = true,
-                    isVisited = true,
-                    visitDate = Timestamp.now(),
-                    rating = 4.5f,
-                    reviewId = "review_1"
-                ),
-                UserRifugioInteraction(
-                    userId = "user_123",
-                    rifugioId = 3,
-                    isSaved = false,
-                    isVisited = true,
-                    visitDate = Timestamp.now(),
-                    rating = 3.5f,
-                    reviewId = "review_3"
-                ),
-                UserRifugioInteraction(
-                    userId = "user_456",
-                    rifugioId = 1,
-                    isSaved = true,
-                    isVisited = true,
-                    visitDate = Timestamp.now(),
-                    rating = 4.0f,
-                    reviewId = "review_2"
-                )
-            )
-            
-            // Inserisci le interazioni
-            sampleInteractions.forEach { interaction ->
-                val docId = "${interaction.userId}_${interaction.rifugioId}"
-                firestore.collection("user_rifugio_interactions")
-                    .document(docId)
-                    .set(interaction)
-                    .await()
-            }
-            
-            Log.d(TAG, "Interazioni di esempio create: ${sampleInteractions.size}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Errore nella creazione delle interazioni: ${e.message}")
         }
     }
     

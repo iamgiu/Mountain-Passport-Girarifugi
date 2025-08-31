@@ -34,8 +34,11 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 
-class MapFragment : Fragment() {
+class MapFragment : Fragment(), MapListener {
 
     private var _binding: FragmentMapBinding? = null
     private val binding get() = _binding!!
@@ -51,6 +54,10 @@ class MapFragment : Fragment() {
 
     // Lista dei rifugi caricati dal JSON
     private var rifugiList: List<Rifugio> = emptyList()
+
+    // Flag per controllare il follow location
+    private var isFollowingLocation = true
+    private var userInteractedWithMap = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -110,7 +117,11 @@ class MapFragment : Fragment() {
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
                 locationResult.lastLocation?.let { location ->
-                    updateMapLocation(location)
+                    // Aggiorna la posizione solo se l'utente non ha interagito con la mappa
+                    // o se è attivo il follow location
+                    if (isFollowingLocation && !userInteractedWithMap) {
+                        updateMapLocation(location)
+                    }
                 }
             }
         }
@@ -130,6 +141,9 @@ class MapFragment : Fragment() {
             // Configura la mappa
             binding.mapView.setTileSource(TileSourceFactory.MAPNIK)
             binding.mapView.setMultiTouchControls(true)
+
+            // Aggiungi il listener per detectare le interazioni utente
+            binding.mapView.addMapListener(this)
 
             // Ottieni il controller della mappa
             mapController = binding.mapView.controller
@@ -162,23 +176,23 @@ class MapFragment : Fragment() {
                 val rifugi = withContext(Dispatchers.IO) {
                     rifugioRepository.getAllRifugi()
                 }
-                
+
                 rifugiList = rifugi
-                
+
                 // Aggiungi i marker alla mappa
                 addRifugiMarkers()
-                
+
                 // Mostra un messaggio con il numero di rifugi caricati
                 Toast.makeText(
-                    requireContext(), 
-                    "Caricati ${rifugi.size} rifugi sulla mappa", 
+                    requireContext(),
+                    "Caricati ${rifugi.size} rifugi sulla mappa",
                     Toast.LENGTH_SHORT
                 ).show()
-                
+
             } catch (e: Exception) {
                 Toast.makeText(
-                    requireContext(), 
-                    "Errore nel caricamento rifugi: ${e.message}", 
+                    requireContext(),
+                    "Errore nel caricamento rifugi: ${e.message}",
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -188,7 +202,8 @@ class MapFragment : Fragment() {
     private fun setupLocationOverlay() {
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(requireContext()), binding.mapView)
         myLocationOverlay?.enableMyLocation()
-        myLocationOverlay?.enableFollowLocation()
+        // NON abilitare il follow location automatico
+        // myLocationOverlay?.enableFollowLocation()
         binding.mapView.overlays.add(myLocationOverlay)
     }
 
@@ -244,11 +259,29 @@ class MapFragment : Fragment() {
     private fun setupClickListeners() {
         binding.buttonMyLocation.setOnClickListener {
             if (checkLocationPermissions()) {
+                // Riabilita il follow location e centra sulla posizione utente
+                isFollowingLocation = true
+                userInteractedWithMap = false
                 centerMapOnUserLocation()
             } else {
                 requestLocationPermissions()
             }
         }
+    }
+
+    // Implementazione MapListener per detectare interazioni utente
+    override fun onScroll(event: ScrollEvent?): Boolean {
+        // L'utente ha fatto scroll, disabilita il follow location
+        userInteractedWithMap = true
+        isFollowingLocation = false
+        return false
+    }
+
+    override fun onZoom(event: ZoomEvent?): Boolean {
+        // L'utente ha fatto zoom, disabilita il follow location
+        userInteractedWithMap = true
+        isFollowingLocation = false
+        return false
     }
 
     private fun requestLocationPermissions() {
@@ -259,7 +292,7 @@ class MapFragment : Fragment() {
                 "L'app ha bisogno dei permessi di localizzazione per mostrare la tua posizione sulla mappa",
                 Toast.LENGTH_LONG
             ).show()
-            
+
             // Richiedi i permessi
             requestPermissions(
                 arrayOf(
@@ -300,13 +333,13 @@ class MapFragment : Fragment() {
                     val shouldShowRationale = shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
                     if (shouldShowRationale) {
                         Toast.makeText(
-                            requireContext(), 
+                            requireContext(),
                             "I permessi di localizzazione sono necessari per mostrare la tua posizione sulla mappa. Puoi abilitarli nelle impostazioni dell'app.",
                             Toast.LENGTH_LONG
                         ).show()
                     } else {
                         Toast.makeText(
-                            requireContext(), 
+                            requireContext(),
                             "Permessi di localizzazione negati. La tua posizione non sarà mostrata sulla mappa.",
                             Toast.LENGTH_LONG
                         ).show()
@@ -375,13 +408,12 @@ class MapFragment : Fragment() {
     }
 
     private fun updateMapLocation(location: Location) {
-        // Aggiorna la posizione sulla mappa in tempo reale
-        val userLocation = GeoPoint(location.latitude, location.longitude)
-
-        mapController.setCenter(userLocation)
-
-        // L'overlay si aggiornerà automaticamente
-        binding.mapView.invalidate()
+        // Aggiorna la posizione sulla mappa solo se il follow location è attivo
+        if (isFollowingLocation && !userInteractedWithMap) {
+            val userLocation = GeoPoint(location.latitude, location.longitude)
+            mapController.setCenter(userLocation)
+            binding.mapView.invalidate()
+        }
     }
 
     override fun onResume() {

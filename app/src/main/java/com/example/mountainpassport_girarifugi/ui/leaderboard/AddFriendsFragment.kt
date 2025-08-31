@@ -51,7 +51,6 @@ class AddFriendsFragment : Fragment() {
         }
     }
 
-
     private fun setupTabs() {
         binding.btnTabPersone.setOnClickListener {
             selectTab(0)
@@ -72,9 +71,18 @@ class AddFriendsFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = usersAdapter
 
-            // Aggiungi un po' di padding per evitare che l'ultimo elemento sia nascosto
-            setPadding(0, 0, 0, 100)
-            clipToPadding = false
+            // RIMUOVI IL PADDING ECCESSIVO E MIGLIORA LO SCROLLING
+            // setPadding(0, 0, 0, 100) // RIMUOVI QUESTA RIGA
+            // clipToPadding = false // RIMUOVI QUESTA RIGA
+
+            // AGGIUNGI QUESTE CONFIGURAZIONI PER MIGLIORARE LO SCROLLING
+            isNestedScrollingEnabled = true
+            setHasFixedSize(false) // Cambia a false per contenuto dinamico
+
+            // PADDING E CLIPPING GIÀ GESTITI NEL LAYOUT XML
+
+            // MIGLIORA LA PERFORMANCE DELLO SCROLLING
+            itemAnimator = null // Disabilita animazioni se causano problemi
         }
     }
 
@@ -82,6 +90,8 @@ class AddFriendsFragment : Fragment() {
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String): Boolean {
                 performSearch(query)
+                // AGGIUNGI QUESTO PER NASCONDERE LA TASTIERA
+                binding.searchView.clearFocus()
                 return true
             }
 
@@ -92,13 +102,19 @@ class AddFriendsFragment : Fragment() {
             }
         })
 
-        // Imposta il focus sulla SearchView
-        binding.searchView.requestFocus()
+        // RIMUOVI IL FOCUS AUTOMATICO CHE PUÒ CAUSARE PROBLEMI
+        // binding.searchView.requestFocus() // COMMENTA O RIMUOVI QUESTA RIGA
     }
 
     private fun observeViewModel() {
         viewModel.searchResults.observe(viewLifecycleOwner) { users ->
-            usersAdapter.submitList(users)
+            usersAdapter.submitList(users) {
+                // CALLBACK ESEGUITO DOPO L'AGGIORNAMENTO DELLA LISTA
+                // SCROLL AL TOP DOPO L'AGGIORNAMENTO (OPZIONALE)
+                if (users.isNotEmpty()) {
+                    binding.recyclerViewUsers.scrollToPosition(0)
+                }
+            }
 
             // Mostra/nasconde il messaggio di "nessun risultato"
             if (users.isEmpty() && binding.searchView.query.isNotEmpty()) {
@@ -118,14 +134,6 @@ class AddFriendsFragment : Fragment() {
             }
         }
     }
-
-    // MockUp ricerca amici
-//    private fun performSearch(query: String) {
-//        when (currentTab) {
-//            0 -> viewModel.searchUsers(query)
-//            1 -> viewModel.searchGroups(query)
-//        }
-//    }
 
     // Ricerca tramite Firebase
     private fun performSearch(query: String) {
@@ -171,33 +179,23 @@ class AddFriendsFragment : Fragment() {
                 1 -> viewModel.loadDefaultGroups()
             }
         }
-
-//        // MockUp Ricerca
-//        val currentQuery = binding.searchView.query.toString()
-//        if (currentQuery.isNotEmpty()) {
-//            performSearch(currentQuery)
-//        } else {
-//            // Se non c'è query, carica i dati di default
-//            when (currentTab) {
-//                0 -> viewModel.loadDefaultUsers()
-//                1 -> viewModel.loadDefaultGroups()
-//            }
-//        }
     }
 
     private fun onUserProfileClicked(user: AddFriendUser) {
         val bundle = Bundle().apply {
             putString("TYPE", if (currentTab == 0) "USER" else "GROUP")
+            putString("USER_ID", user.id)                    // ✅ AGGIUNTO!
             putString("USER_NAME", user.name)
             putString("USER_USERNAME", user.username)
             putInt("USER_POINTS", user.points)
             putInt("USER_REFUGES", user.refugesCount)
             putInt("USER_AVATAR", user.avatarResource)
+            putString("USER_PROFILE_IMAGE_URL", user.profileImageUrl)
         }
 
         findNavController().navigate(R.id.action_addfriendsFragment_to_profileFragment, bundle)
-    }
 
+    }
 
     private fun onAddFriendClicked(user: AddFriendUser) {
         // Gestisce la richiesta di amicizia o di unione al gruppo

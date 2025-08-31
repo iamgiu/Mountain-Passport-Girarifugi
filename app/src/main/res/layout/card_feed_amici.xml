@@ -16,34 +16,20 @@
         android:padding="16dp"
         android:gravity="center_vertical">
 
-        <!-- Avatar colorato -->
+        <!-- Avatar -->
         <androidx.cardview.widget.CardView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="12dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginEnd="16dp"
+            app:cardCornerRadius="40dp"
+            app:cardElevation="4dp">
 
-            <LinearLayout
-                android:id="@+id/avatarContainer"
+            <ImageView
+                android:id="@+id/imageSecondPlace"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:background="@color/blue">
-
-                <TextView
-                    android:id="@+id/avatarInitials"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MR"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/montserrat_bold" />
-
-            </LinearLayout>
-
+                android:scaleType="centerCrop"
+                android:src="@drawable/avatar_giovanni" />
         </androidx.cardview.widget.CardView>
 
         <!-- Contenuto principale -->

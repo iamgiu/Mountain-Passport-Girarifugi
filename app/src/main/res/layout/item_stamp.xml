@@ -2,8 +2,8 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="120dp"
-    android:layout_height="160dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp">
@@ -15,21 +15,36 @@
         android:padding="12dp"
         android:gravity="center">
 
-        <ImageView
-            android:id="@+id/stampImageView"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:src="@drawable/ic_cabin_24" />
+        <!-- Cerchio colorato come sfondo -->
+        <FrameLayout
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            android:background="@drawable/stamp_circle_bg">
 
+            <!-- Immagine timbro -->
+            <ImageView
+                android:id="@+id/stampImageView"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:src="@drawable/stamps"
+                android:layout_gravity="center"
+                android:contentDescription="Timbro" />
+        </FrameLayout>
+
+        <!-- Nome rifugio -->
         <TextView
             android:id="@+id/stampNameTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nome Timbro"
-            android:textSize="12sp"
+            android:text="Nome Rifugio"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:gravity="center"
-            android:layout_marginTop="8dp" />
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
 
     </LinearLayout>
 

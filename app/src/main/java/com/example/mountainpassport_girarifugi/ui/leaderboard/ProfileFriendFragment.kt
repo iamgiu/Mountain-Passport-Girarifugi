@@ -7,13 +7,35 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.repository.PointsRepository
+import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
+import com.example.mountainpassport_girarifugi.ui.profile.Stamp
+import com.example.mountainpassport_girarifugi.ui.profile.StampsAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ProfileFriendFragment : Fragment() {
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    private lateinit var stampsRecyclerView: RecyclerView
+    private lateinit var stampsAdapter: StampsAdapter
+
+    private val pointsRepository by lazy { PointsRepository(requireContext()) }
+    private val rifugioRepository by lazy { RifugioRepository(requireContext()) }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val type = arguments?.getString("TYPE") ?: "USER"
 
         return if (type == "USER") {
@@ -31,7 +53,8 @@ class ProfileFriendFragment : Fragment() {
         val points = arguments?.getInt("USER_POINTS") ?: 0
         val refuges = arguments?.getInt("USER_REFUGES") ?: 0
         val avatar = arguments?.getInt("USER_AVATAR") ?: R.drawable.avatar_sara
-        val profileImageUrl = arguments?.getString("USER_PROFILE_IMAGE_URL") // AGGIUNGI QUESTA RIGA
+        val profileImageUrl = arguments?.getString("USER_PROFILE_IMAGE_URL")
+        val friendId = arguments?.getString("USER_ID")
 
         // Popola le view
         view.findViewById<TextView>(R.id.fullNameTextView).text = name
@@ -39,9 +62,20 @@ class ProfileFriendFragment : Fragment() {
         view.findViewById<TextView>(R.id.monthlyScoreTextView).text = "$points"
         view.findViewById<TextView>(R.id.visitedRefugesTextView).text = "$refuges"
 
-        // GESTIONE IMMAGINE PROFILO (come in AddFriendsAdapter)
         val profileImageView = view.findViewById<ImageView>(R.id.profileImageView)
         setProfileImage(profileImageView, profileImageUrl, avatar)
+
+        // Setup RecyclerView timbri
+        stampsRecyclerView = view.findViewById(R.id.stampsRecyclerView)
+        stampsRecyclerView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        stampsAdapter = StampsAdapter(emptyList())
+        stampsRecyclerView.adapter = stampsAdapter
+
+        // Carica i timbri dell’amico
+        if (!friendId.isNullOrEmpty()) {
+            loadFriendStamps(friendId)
+        }
 
         setupClickListeners(view)
     }
@@ -50,30 +84,27 @@ class ProfileFriendFragment : Fragment() {
         if (!profileImageUrl.isNullOrBlank()) {
             try {
                 val base64Data = when {
-                    profileImageUrl.startsWith("data:image") -> {
-                        // Ha il prefisso MIME completo
+                    profileImageUrl.startsWith("data:image") ->
                         profileImageUrl.substringAfter("base64,")
-                    }
-                    profileImageUrl.startsWith("/9j/") || profileImageUrl.startsWith("iVBORw0KGgo") -> {
-                        // È già Base64 puro (JPEG inizia con /9j/, PNG con iVBORw0KGgo)
+                    profileImageUrl.startsWith("/9j/") || profileImageUrl.startsWith("iVBORw0KGgo") ->
                         profileImageUrl
-                    }
-                    else -> {
-                        // Caso URL remoto o altro formato
-                        null
-                    }
+                    else -> null
                 }
 
                 if (base64Data != null) {
-                    val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                    val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                    val decodedBytes =
+                        android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                    val bitmap = android.graphics.BitmapFactory.decodeByteArray(
+                        decodedBytes,
+                        0,
+                        decodedBytes.size
+                    )
                     if (bitmap != null) {
                         imageView.setImageBitmap(bitmap)
                     } else {
                         imageView.setImageResource(defaultAvatar)
                     }
                 } else {
-                    // URL remoto - qui potresti usare Glide se necessario
                     imageView.setImageResource(defaultAvatar)
                 }
             } catch (e: Exception) {
@@ -81,20 +112,44 @@ class ProfileFriendFragment : Fragment() {
                 imageView.setImageResource(defaultAvatar)
             }
         } else {
-            // Nessuna immagine, usa avatar locale
             imageView.setImageResource(defaultAvatar)
         }
     }
 
     private fun setupClickListeners(view: View) {
-        // Back button - usa Navigation Component
         view.findViewById<FloatingActionButton>(R.id.fabBack).setOnClickListener {
             findNavController().navigateUp()
         }
     }
 
+    private fun loadFriendStamps(friendId: String) {
+        lifecycleScope.launch {
+            val visits = withContext(Dispatchers.IO) {
+                pointsRepository.getUserVisits(friendId, 100)
+            }
+
+            val stamps = visits.mapNotNull { visit ->
+                val rifugio = withContext(Dispatchers.IO) {
+                    rifugioRepository.getRifugioById(visit.rifugioId)
+                }
+                rifugio?.let {
+                    Stamp(
+                        refugeName = it.nome,
+                        date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                            .format(visit.visitDate.toDate()),
+                        altitude = "${it.altitudine} m",
+                        region = it.regione ?: it.localita,
+                        imageResId = R.drawable.stamps
+                    )
+                }
+            }
+            stampsAdapter.updateStamps(stamps)
+        }
+    }
+
     companion object {
         fun newInstanceUser(
+            userId: String,
             name: String,
             username: String,
             points: Int,
@@ -105,6 +160,7 @@ class ProfileFriendFragment : Fragment() {
             val fragment = ProfileFriendFragment()
             val args = Bundle().apply {
                 putString("TYPE", "USER")
+                putString("USER_ID", userId)
                 putString("USER_NAME", name)
                 putString("USER_USERNAME", username)
                 putInt("USER_POINTS", points)
@@ -117,6 +173,7 @@ class ProfileFriendFragment : Fragment() {
         }
 
         fun newInstanceGroup(
+            groupId: String,
             name: String,
             username: String,
             points: Int,
@@ -127,6 +184,7 @@ class ProfileFriendFragment : Fragment() {
             val fragment = ProfileFriendFragment()
             val args = Bundle().apply {
                 putString("TYPE", "GROUP")
+                putString("USER_ID", groupId)
                 putString("USER_NAME", name)
                 putString("USER_USERNAME", username)
                 putInt("USER_POINTS", points)

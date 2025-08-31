@@ -14,9 +14,12 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.example.mountainpassport_girarifugi.ui.profile.FriendRequest
 import android.content.Context
 import androidx.lifecycle.viewModelScope
+import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 
 // Data class per rappresentare i dati del profilo utente
@@ -32,7 +35,8 @@ data class Stamp(
     val refugeName: String,
     val date: String,
     val altitude: String,
-    val region: String
+    val region: String,
+    val imageResId: Int = R.drawable.stamps
 )
 
 // Data class per rappresentare un gruppo
@@ -225,27 +229,66 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * Carica le visite dell'utente e le converte in timbri
+     * Carica le visite dell'utente e le converte in timbri - VERSIONE CORRETTA
      */
     private fun loadUserVisits(userId: String) {
         viewModelScope.launch {
             try {
+                android.util.Log.d("ProfileViewModel", "Caricando visite per userId: $userId")
+
                 val visits = withContext(Dispatchers.IO) {
-                    pointsRepository.getUserVisits(userId, 50)
+                    pointsRepository.getUserVisits(userId, 200)
                 }
 
-                val stamps = visits.map { visit ->
-                    Stamp(
-                        refugeName = visit.rifugioName,
-                        date = visit.visitDate.toDate().toString().substring(0, 10), // Formato YYYY-MM-DD
-                        altitude = "Visitato", // Potremmo aggiungere l'altitudine se necessario
-                        region = "Punti: ${visit.pointsEarned}"
-                    )
+                android.util.Log.d("ProfileViewModel", "Visite caricate: ${visits.size}")
+
+                if (visits.isEmpty()) {
+                    android.util.Log.w("ProfileViewModel", "Nessuna visita trovata")
+                    _stamps.value = emptyList()
+                    return@launch
                 }
-                _stamps.value = stamps
+
+                val rifugioRepo = RifugioRepository(context)
+
+                // Raggruppa per rifugioId e prendi solo la prima visita
+                val stampsMap = mutableMapOf<Int, Stamp>()
+
+                for (visit in visits) {
+                    // Se questo rifugio non è già nei timbri, aggiungilo
+                    if (!stampsMap.containsKey(visit.rifugioId)) {
+                        val rifugio = withContext(Dispatchers.IO) {
+                            rifugioRepo.getRifugioById(visit.rifugioId)
+                        }
+
+                        val stamp = Stamp(
+                            refugeName = rifugio?.nome ?: "Rifugio #${visit.rifugioId}",
+                            date = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                .format(visit.visitDate.toDate()),
+                            altitude = rifugio?.altitudine?.toString()?.plus(" m") ?: "${visit.pointsEarned} punti",
+                            region = rifugio?.regione ?: rifugio?.localita ?: "Visitato",
+                            imageResId = R.drawable.stamps
+                        )
+
+                        stampsMap[visit.rifugioId] = stamp
+                        android.util.Log.d("ProfileViewModel", "Timbro aggiunto: ${stamp.refugeName}")
+                    }
+                }
+
+                // Ordina per data di visita (più recenti per primi) usando la data originale
+                val sortedStamps = stampsMap.values.sortedByDescending { stamp ->
+                    // Trova la visita corrispondente per ordinare per data originale
+                    visits.find { visit ->
+                        val rifugio = runBlocking { rifugioRepo.getRifugioById(visit.rifugioId) }
+                        rifugio?.nome == stamp.refugeName || "Rifugio #${visit.rifugioId}" == stamp.refugeName
+                    }?.visitDate?.seconds ?: 0
+                }
+
+                _stamps.value = sortedStamps
+                android.util.Log.d("ProfileViewModel", "Timbri finali: ${sortedStamps.size}")
+
             } catch (e: Exception) {
+                android.util.Log.e("ProfileViewModel", "Errore nel caricare le visite: ${e.message}", e)
                 _stamps.value = emptyList()
-                android.util.Log.e("ProfileViewModel", "Errore nel caricare le visite: ${e.message}")
             }
         }
     }

@@ -64,9 +64,12 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                // Controlla se serve reset mensile
+                monthlyChallengeRepository.resetMonthlyPointsIfNeeded()
+
                 loadPunteggio()
                 loadRifugiSalvati()
-                loadRifugiBonus() // Ora carica i veri rifugi bonus
+                loadRifugiBonus()
                 loadSuggerimentiPersonalizzati()
                 loadRealFeedAmici()
                 _error.value = null
@@ -328,7 +331,10 @@ class HomeViewModel : ViewModel() {
             .get()
             .await()
 
-        _punteggio.value = (doc.getLong("totalPoints") ?: 0L).toInt()
+        val punti = (doc.getLong("totalPoints") ?: 0L).toInt()
+        android.util.Log.d("HomeViewModel", "Punti caricati per utente $userId: $punti")
+
+        _punteggio.value = punti
     }
 
     private suspend fun loadSuggerimentiPersonalizzati() {

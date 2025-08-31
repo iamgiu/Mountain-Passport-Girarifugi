@@ -25,10 +25,11 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
     }
 
     private fun getCurrentMonthKey(): String {
-        val cal = Calendar.getInstance()
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
         val year = cal.get(Calendar.YEAR)
         val month = cal.get(Calendar.MONTH) + 1
-        return String.format("%04d-%02d", year, month)
+        val key = String.format("%04d-%02d", year, month)
+        return key
     }
 
     /**
@@ -76,7 +77,8 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
                     doc.reference,
                     mapOf(
                         "monthlyPoints" to 0,
-                        "monthlyVisits" to 0
+                        "monthlyVisits" to 0,
+                        "totalPoints" to 0
                     )
                 )
             }

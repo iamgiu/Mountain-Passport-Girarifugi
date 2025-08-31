@@ -1,62 +1,98 @@
 package com.example.mountainpassport_girarifugi.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
-import com.example.mountainpassport_girarifugi.data.repository.PointsRepository
-import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
-import com.example.mountainpassport_girarifugi.ui.profile.Stamp
 import com.example.mountainpassport_girarifugi.ui.profile.StampsAdapter
+import com.example.mountainpassport_girarifugi.ui.profile.ProfileFriendViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.*
 
 class ProfileFriendFragment : Fragment() {
+
+    companion object {
+        private const val TAG = "ProfileFriendFragment"
+    }
 
     private lateinit var stampsRecyclerView: RecyclerView
     private lateinit var stampsAdapter: StampsAdapter
 
-    private val pointsRepository by lazy { PointsRepository(requireContext()) }
-    private val rifugioRepository by lazy { RifugioRepository(requireContext()) }
+    private val friendId by lazy {
+        val id = arguments?.getString("USER_ID") ?: ""
+        Log.d(TAG, "🆔 FriendId recuperato: '$id'")
+        id
+    }
+
+    private val viewModel: ProfileFriendViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val type = arguments?.getString("TYPE") ?: "USER"
-
-        return if (type == "USER") {
-            inflater.inflate(R.layout.fragment_profile_leaderboard, container, false)
-        } else {
-            inflater.inflate(R.layout.fragment_profile_group_leaderboard, container, false)
-        }
+    ): View {
+        Log.d(TAG, "🏗️ Creando vista...")
+        return inflater.inflate(R.layout.fragment_profile_leaderboard, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Log.d(TAG, "👀 Vista creata, inizializzando...")
+
+        // Recupera e logga tutti gli argomenti per debug
+        logArguments()
+
+        // Popola i dati dell'utente
+        populateUserData(view)
+
+        // Setup RecyclerView
+        setupRecyclerView(view)
+
+        // Setup observers
+        setupObservers()
+
+        // Setup click listeners
+        setupClickListeners(view)
+
+        // Carica i timbri se abbiamo un ID valido
+        if (friendId.isNotEmpty()) {
+            Log.d(TAG, "📍 Caricando timbri per: $friendId")
+            viewModel.loadStamps(friendId)
+        } else {
+            Log.e(TAG, "❌ FriendId vuoto, impossibile caricare timbri")
+            showError("ID utente non valido")
+        }
+    }
+
+    private fun logArguments() {
+        Log.d(TAG, "📋 Argomenti ricevuti:")
+        arguments?.let { args ->
+            args.keySet().forEach { key ->
+                Log.d(TAG, "  $key: ${args.get(key)}")
+            }
+        } ?: Log.d(TAG, "  Nessun argomento ricevuto")
+    }
+
+    private fun populateUserData(view: View) {
         val name = arguments?.getString("USER_NAME") ?: "Nome sconosciuto"
         val username = arguments?.getString("USER_USERNAME") ?: ""
         val points = arguments?.getInt("USER_POINTS") ?: 0
         val refuges = arguments?.getInt("USER_REFUGES") ?: 0
         val avatar = arguments?.getInt("USER_AVATAR") ?: R.drawable.avatar_sara
         val profileImageUrl = arguments?.getString("USER_PROFILE_IMAGE_URL")
-        val friendId = arguments?.getString("USER_ID")
 
-        // Popola le view
+        Log.d(TAG, "👤 Dati utente: name=$name, username=$username, points=$points, refuges=$refuges")
+
+        // Popola UI
         view.findViewById<TextView>(R.id.fullNameTextView).text = name
         view.findViewById<TextView>(R.id.usernameTextView).text = username
         view.findViewById<TextView>(R.id.monthlyScoreTextView).text = "$points"
@@ -64,20 +100,55 @@ class ProfileFriendFragment : Fragment() {
 
         val profileImageView = view.findViewById<ImageView>(R.id.profileImageView)
         setProfileImage(profileImageView, profileImageUrl, avatar)
+    }
 
-        // Setup RecyclerView timbri
+    private fun setupRecyclerView(view: View) {
+        Log.d(TAG, "🔄 Setup RecyclerView...")
+
         stampsRecyclerView = view.findViewById(R.id.stampsRecyclerView)
-        stampsRecyclerView.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        stampsRecyclerView.layoutManager = LinearLayoutManager(
+            requireContext(),
+            LinearLayoutManager.HORIZONTAL,
+            false
+        )
+
+        // Inizializza adapter con lista vuota
         stampsAdapter = StampsAdapter(emptyList())
         stampsRecyclerView.adapter = stampsAdapter
 
-        // Carica i timbri dell’amico
-        if (!friendId.isNullOrEmpty()) {
-            loadFriendStamps(friendId)
+        Log.d(TAG, "✅ RecyclerView configurata")
+    }
+
+    private fun setupObservers() {
+        Log.d(TAG, "👁️ Setup observers...")
+
+        // Observer per i timbri
+        viewModel.stamps.observe(viewLifecycleOwner) { stamps ->
+            Log.d(TAG, "🏔️ Timbri ricevuti: ${stamps.size}")
+            stamps.forEach { stamp ->
+                Log.d(TAG, "  - ${stamp.rifugioName}")
+            }
+            stampsAdapter.updateStamps(stamps)
+
+            // Mostra messaggio se non ci sono timbri
+            if (stamps.isEmpty()) {
+                showToast("Nessun timbro trovato per questo utente")
+            }
         }
 
-        setupClickListeners(view)
+        // Observer per il loading
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            Log.d(TAG, "⏳ Loading: $isLoading")
+            // Qui puoi mostrare/nascondere un progress bar
+        }
+
+        // Observer per gli errori
+        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            if (errorMessage.isNotEmpty()) {
+                Log.e(TAG, "❌ Errore: $errorMessage")
+                showError(errorMessage)
+            }
+        }
     }
 
     private fun setProfileImage(imageView: ImageView, profileImageUrl: String?, defaultAvatar: Int) {
@@ -108,7 +179,7 @@ class ProfileFriendFragment : Fragment() {
                     imageView.setImageResource(defaultAvatar)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Errore caricamento immagine profilo: ${e.message}")
                 imageView.setImageResource(defaultAvatar)
             }
         } else {
@@ -117,83 +188,17 @@ class ProfileFriendFragment : Fragment() {
     }
 
     private fun setupClickListeners(view: View) {
-        view.findViewById<FloatingActionButton>(R.id.fabBack).setOnClickListener {
-            findNavController().navigateUp()
+        view.findViewById<FloatingActionButton>(R.id.fabBack)?.setOnClickListener {
+            Log.d(TAG, "🔙 Tornando indietro...")
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
     }
 
-    private fun loadFriendStamps(friendId: String) {
-        lifecycleScope.launch {
-            val visits = withContext(Dispatchers.IO) {
-                pointsRepository.getUserVisits(friendId, 100)
-            }
-
-            val stamps = visits.mapNotNull { visit ->
-                val rifugio = withContext(Dispatchers.IO) {
-                    rifugioRepository.getRifugioById(visit.rifugioId)
-                }
-                rifugio?.let {
-                    Stamp(
-                        refugeName = it.nome,
-                        date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                            .format(visit.visitDate.toDate()),
-                        altitude = "${it.altitudine} m",
-                        region = it.regione ?: it.localita,
-                        imageResId = R.drawable.stamps
-                    )
-                }
-            }
-            stampsAdapter.updateStamps(stamps)
-        }
+    private fun showError(message: String) {
+        Toast.makeText(requireContext(), "Errore: $message", Toast.LENGTH_LONG).show()
     }
 
-    companion object {
-        fun newInstanceUser(
-            userId: String,
-            name: String,
-            username: String,
-            points: Int,
-            refuges: Int,
-            avatar: Int,
-            profileImageUrl: String?
-        ): ProfileFriendFragment {
-            val fragment = ProfileFriendFragment()
-            val args = Bundle().apply {
-                putString("TYPE", "USER")
-                putString("USER_ID", userId)
-                putString("USER_NAME", name)
-                putString("USER_USERNAME", username)
-                putInt("USER_POINTS", points)
-                putInt("USER_REFUGES", refuges)
-                putInt("USER_AVATAR", avatar)
-                putString("USER_PROFILE_IMAGE_URL", profileImageUrl)
-            }
-            fragment.arguments = args
-            return fragment
-        }
-
-        fun newInstanceGroup(
-            groupId: String,
-            name: String,
-            username: String,
-            points: Int,
-            refuges: Int,
-            avatar: Int,
-            profileImageUrl: String?
-        ): ProfileFriendFragment {
-            val fragment = ProfileFriendFragment()
-            val args = Bundle().apply {
-                putString("TYPE", "GROUP")
-                putString("USER_ID", groupId)
-                putString("USER_NAME", name)
-                putString("USER_USERNAME", username)
-                putInt("USER_POINTS", points)
-                putInt("USER_REFUGES", refuges)
-                putInt("USER_AVATAR", avatar)
-                putString("USER_PROFILE_IMAGE_URL", profileImageUrl)
-            }
-            fragment.arguments = args
-            return fragment
-        }
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 }

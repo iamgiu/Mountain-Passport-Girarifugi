@@ -15,6 +15,7 @@ import com.example.mountainpassport_girarifugi.ui.profile.FriendRequest
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.model.UserPoints
 import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,8 +61,8 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     val profileData: LiveData<ProfileData> = _profileData
 
     // LiveData per la lista dei timbri
-    private val _stamps = MutableLiveData<List<Stamp>>()
-    val stamps: LiveData<List<Stamp>> = _stamps
+    private val _stamps = MutableLiveData<List<UserPoints>>()
+    val stamps: LiveData<List<UserPoints>> = _stamps
 
     // LiveData per la lista dei gruppi
     private val _groups = MutableLiveData<List<Group>>()
@@ -175,7 +176,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * NUOVO: Carica statistiche dal documento users se user_points_stats è vuoto
+     *  Carica statistiche dal documento users se user_points_stats è vuoto
      */
     private suspend fun loadStatsFromUserDocument(userId: String): com.example.mountainpassport_girarifugi.data.model.UserPointsStats? {
         return try {
@@ -202,7 +203,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * MODIFICATO: Ricarica tutti i dati
+     *  Ricarica tutti i dati
      */
     fun refreshData() {
         android.util.Log.d("ProfileViewModel", "Refreshing profile data...")
@@ -211,7 +212,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
         loadGroups()
         loadFriends()
 
-        // NUOVO: Forza il ricaricamento delle statistiche
+        // : Forza il ricaricamento delle statistiche
         val currentUser = firebaseAuth.currentUser
         if (currentUser != null) {
             loadUserPointsStats(currentUser.uid)
@@ -219,14 +220,43 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     private fun loadStamps() {
-        val currentUserId = UserManager.getCurrentUserId()
-        if (currentUserId != null) {
-            loadUserVisits(currentUserId)
+        val currentUser = firebaseAuth.currentUser
+        if (currentUser != null) {
+            loadUserStampsFromFirestore(currentUser.uid)
         } else {
-            // Se non c'è utente autenticato, mostra lista vuota
             _stamps.value = emptyList()
         }
     }
+
+
+    private fun loadUserStampsFromFirestore(userId: String) {
+        firestore.collection("users")
+            .document(userId)
+            .collection("stamps")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val stampsList = snapshot.documents.mapNotNull { doc ->
+                    val refugeName = doc.getString("refugeName") ?: return@mapNotNull null
+                    val dateMillis = doc.getLong("date") ?: 0L
+                    val dateFormatted = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                        .format(java.util.Date(dateMillis))
+
+                    // Puoi riusare UserPoints oppure una data class tua
+                    UserPoints(
+                        rifugioId = 0, // se non hai l’id lo lasci 0
+                        rifugioName = refugeName,
+                        visitDate = com.google.firebase.Timestamp(dateMillis / 1000, 0),
+                        pointsEarned = 0
+                    )
+                }
+                _stamps.value = stampsList
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("ProfileViewModel", "Errore caricamento timbri: ${e.message}", e)
+                _stamps.value = emptyList()
+            }
+    }
+
 
     /**
      * Carica le visite dell'utente e le converte in timbri - VERSIONE CORRETTA
@@ -241,50 +271,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
                 }
 
                 android.util.Log.d("ProfileViewModel", "Visite caricate: ${visits.size}")
-
-                if (visits.isEmpty()) {
-                    android.util.Log.w("ProfileViewModel", "Nessuna visita trovata")
-                    _stamps.value = emptyList()
-                    return@launch
-                }
-
-                val rifugioRepo = RifugioRepository(context)
-
-                // Raggruppa per rifugioId e prendi solo la prima visita
-                val stampsMap = mutableMapOf<Int, Stamp>()
-
-                for (visit in visits) {
-                    // Se questo rifugio non è già nei timbri, aggiungilo
-                    if (!stampsMap.containsKey(visit.rifugioId)) {
-                        val rifugio = withContext(Dispatchers.IO) {
-                            rifugioRepo.getRifugioById(visit.rifugioId)
-                        }
-
-                        val stamp = Stamp(
-                            refugeName = rifugio?.nome ?: "Rifugio #${visit.rifugioId}",
-                            date = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                                .format(visit.visitDate.toDate()),
-                            altitude = rifugio?.altitudine?.toString()?.plus(" m") ?: "${visit.pointsEarned} punti",
-                            region = rifugio?.regione ?: rifugio?.localita ?: "Visitato",
-                            imageResId = R.drawable.stamps
-                        )
-
-                        stampsMap[visit.rifugioId] = stamp
-                        android.util.Log.d("ProfileViewModel", "Timbro aggiunto: ${stamp.refugeName}")
-                    }
-                }
-
-                // Ordina per data di visita (più recenti per primi) usando la data originale
-                val sortedStamps = stampsMap.values.sortedByDescending { stamp ->
-                    // Trova la visita corrispondente per ordinare per data originale
-                    visits.find { visit ->
-                        val rifugio = runBlocking { rifugioRepo.getRifugioById(visit.rifugioId) }
-                        rifugio?.nome == stamp.refugeName || "Rifugio #${visit.rifugioId}" == stamp.refugeName
-                    }?.visitDate?.seconds ?: 0
-                }
-
-                _stamps.value = sortedStamps
-                android.util.Log.d("ProfileViewModel", "Timbri finali: ${sortedStamps.size}")
+                _stamps.value = visits
 
             } catch (e: Exception) {
                 android.util.Log.e("ProfileViewModel", "Errore nel caricare le visite: ${e.message}", e)

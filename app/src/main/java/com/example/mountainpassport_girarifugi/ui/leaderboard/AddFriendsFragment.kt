@@ -184,6 +184,7 @@ class AddFriendsFragment : Fragment() {
     private fun onUserProfileClicked(user: AddFriendUser) {
         val bundle = Bundle().apply {
             putString("TYPE", if (currentTab == 0) "USER" else "GROUP")
+            putString("USER_ID", user.id)                    // ✅ AGGIUNTO!
             putString("USER_NAME", user.name)
             putString("USER_USERNAME", user.username)
             putInt("USER_POINTS", user.points)
@@ -193,6 +194,7 @@ class AddFriendsFragment : Fragment() {
         }
 
         findNavController().navigate(R.id.action_addfriendsFragment_to_profileFragment, bundle)
+
     }
 
     private fun onAddFriendClicked(user: AddFriendUser) {

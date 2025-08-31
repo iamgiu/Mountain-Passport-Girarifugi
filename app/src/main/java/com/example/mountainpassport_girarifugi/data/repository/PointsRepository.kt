@@ -64,6 +64,18 @@ class PointsRepository(private val context: Context) {
             val docRef = firestore.collection("user_points").add(userPoints).await()
             Log.d(TAG, "✅ SAVED: Document ID = ${docRef.id}")
 
+            // 🔹 Salva anche il timbro in users/{uid}/stamps
+            val stampData = mapOf(
+                "refugeName" to rifugio.nome,
+                "date" to System.currentTimeMillis()
+            )
+            firestore.collection("users")
+                .document(userId)
+                .collection("stamps")
+                .add(stampData)
+                .await()
+            Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+
             // Log attività per feed amici
             val activity = UserActivity(
                 type = ActivityType.RIFUGIO_VISITATO,
@@ -132,6 +144,18 @@ class PointsRepository(private val context: Context) {
 
             val docRef = firestore.collection("user_points").add(userPoints).await()
             Log.d(TAG, "Visita salvata in user_points: ${docRef.id}")
+
+            // 🔹 Aggiungi timbro anche qui
+            val stampData = mapOf(
+                "refugeName" to rifugio.nome,
+                "date" to System.currentTimeMillis()
+            )
+            firestore.collection("users")
+                .document(userId)
+                .collection("stamps")
+                .add(stampData)
+                .await()
+            Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
 
             val interaction = mapOf(
                 "userId" to userId,

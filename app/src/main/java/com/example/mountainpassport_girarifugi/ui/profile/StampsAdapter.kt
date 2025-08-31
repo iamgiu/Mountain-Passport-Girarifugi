@@ -7,8 +7,12 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.model.UserPoints
+import java.text.SimpleDateFormat
+import java.util.*
 
-class StampsAdapter(private var stamps: List<Stamp>) : RecyclerView.Adapter<StampsAdapter.StampViewHolder>() {
+class StampsAdapter(private var stamps: List<UserPoints>) :
+    RecyclerView.Adapter<StampsAdapter.StampViewHolder>() {
 
     class StampViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val refugeNameTextView: TextView = itemView.findViewById(R.id.stampNameTextView)
@@ -16,20 +20,24 @@ class StampsAdapter(private var stamps: List<Stamp>) : RecyclerView.Adapter<Stam
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StampViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_stamp, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_stamp, parent, false)
         return StampViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: StampViewHolder, position: Int) {
         val stamp = stamps[position]
 
-        holder.refugeNameTextView.text = "${stamp.refugeName}\n${stamp.date}"
-        holder.stampImageView.setImageResource(stamp.imageResId)
+        val dateFormatted = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            .format(stamp.visitDate.toDate())
+
+        holder.refugeNameTextView.text = "${stamp.rifugioName}\n$dateFormatted"
+        holder.stampImageView.setImageResource(R.drawable.stamps) // icona fissa
     }
 
     override fun getItemCount(): Int = stamps.size
 
-    fun updateStamps(newStamps: List<Stamp>) {
+    fun updateStamps(newStamps: List<UserPoints>) {
         stamps = newStamps
         notifyDataSetChanged()
     }

@@ -5,6 +5,7 @@ import com.google.firebase.firestore.Query
 import com.example.mountainpassport_girarifugi.utils.UserManager
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
+import com.example.mountainpassport_girarifugi.data.repository.RifugioRepository
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -13,8 +14,8 @@ class ActivityRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val dateFormat = SimpleDateFormat("dd MMM yyyy - HH:mm", Locale.ITALIAN)
 
-    // Cache per i nomi utente per ridurre le chiamate a Firebase
-    private val userNameCache = mutableMapOf<String, String>()
+    // Solo cache per le immagini rifugio
+    private val rifugioImageCache = mutableMapOf<String, String?>()
 
     /**
      * Registra un'attività dell'utente (visita rifugio, achievement, etc.)
@@ -23,7 +24,6 @@ class ActivityRepository {
         return try {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 ?: UserManager.getCurrentUserIdOrGuest()
-
 
             val activityData = mapOf(
                 "userId" to currentUserId,
@@ -35,6 +35,7 @@ class ActivityRepository {
                 "rifugioName" to activity.rifugioName,
                 "rifugioLocation" to activity.rifugioLocation,
                 "rifugioAltitude" to activity.rifugioAltitude,
+                "rifugioImageUrl" to activity.rifugioImageUrl,
                 "pointsEarned" to activity.pointsEarned,
                 "achievementType" to activity.achievementType,
                 "visible" to activity.visible
@@ -45,8 +46,7 @@ class ActivityRepository {
                 .await()
 
             true
-        } catch (e: Exception) {
-            android.util.Log.e("ActivityRepository", "Error logging activity", e)
+        } catch (_: Exception) {
             false
         }
     }
@@ -67,12 +67,11 @@ class ActivityRepository {
             achievementType = achievementType,
             pointsEarned = pointsEarned
         )
-
         return logUserActivity(activity)
     }
 
     /**
-     *  Ottiene il feed delle attività degli amici
+     * Ottiene il feed delle attività degli amici
      */
     suspend fun getFriendsFeed(limit: Int = 20): FeedResult {
         return try {
@@ -81,101 +80,35 @@ class ActivityRepository {
             val friendIds = getFriendIds(currentUserId).toMutableSet()
             friendIds.add(currentUserId)
 
-            android.util.Log.d("FEED_DEBUG", "STEP 1: Trovati ${friendIds.size} utenti (incluso corrente)")
-
             if (friendIds.size <= 1) {
-                android.util.Log.d("FEED_DEBUG", "RESULT: NoFriends")
                 return FeedResult.NoFriends
             }
 
-            android.util.Log.d("FEED_DEBUG", "STEP 2: Inizio preload nomi...")
-            preloadUserNames(friendIds)
-            android.util.Log.d("FEED_DEBUG", "STEP 2: Preload nomi completato")
-
-            android.util.Log.d("FEED_DEBUG", "STEP 3: Inizio query attività...")
             val activities = getActivitiesForUsers(friendIds, limit)
-            android.util.Log.d("FEED_DEBUG", "STEP 3: Query completata, trovate ${activities.size} attività")
 
             if (activities.isEmpty()) {
-                android.util.Log.d("FEED_DEBUG", "RESULT: NoActivities")
                 return FeedResult.NoActivities(friendIds.size - 1)
             }
 
-            android.util.Log.d("FEED_DEBUG", "RESULT: Success con ${activities.size} attività")
-            return FeedResult.Success(activities)
-
+            FeedResult.Success(activities)
         } catch (e: Exception) {
-            android.util.Log.e("FEED_DEBUG", "RESULT: Error - ${e.message}", e)
-            return FeedResult.Error(e.message ?: "Errore sconosciuto")
+            FeedResult.Error(e.message ?: "Errore sconosciuto")
         }
     }
 
-    // E aggiungi anche il debug a getFriendIds:
     private suspend fun getFriendIds(currentUserId: String): Set<String> {
-        val friendIds = mutableSetOf<String>()
-
-        android.util.Log.d("ActivityRepository", "=== getFriendIds START ===")
-        android.util.Log.d("ActivityRepository", "Cercando amici per user: '$currentUserId'")
-
-        try {
-            val path = "users/$currentUserId/friends"
-            android.util.Log.d("ActivityRepository", "Path Firebase: $path")
-
+        return try {
             val snapshot = firestore.collection("users")
                 .document(currentUserId)
                 .collection("friends")
                 .get()
                 .await()
 
-            android.util.Log.d("ActivityRepository", "Snapshot ottenuto. Documenti: ${snapshot.documents.size}")
-            android.util.Log.d("ActivityRepository", "Snapshot vuoto: ${snapshot.isEmpty}")
-
-            snapshot.documents.forEachIndexed { index, doc ->
-                android.util.Log.d("ActivityRepository", "Doc[$index] - ID: '${doc.id}', exists: ${doc.exists()}")
-                android.util.Log.d("ActivityRepository", "Doc[$index] - Data: ${doc.data}")
-
-                if (doc.exists()) {
-                    friendIds.add(doc.id)
-                }
-            }
-
-            android.util.Log.d("ActivityRepository", "Friend IDs finali: $friendIds")
-
-        } catch (e: Exception) {
-            android.util.Log.e("ActivityRepository", "ERRORE in getFriendIds", e)
-        }
-
-        android.util.Log.d("ActivityRepository", "=== getFriendIds END - returning ${friendIds.size} IDs ===")
-        return friendIds
-    }
-
-
-    /**
-     * Pre-carica i nomi utente per ridurre le chiamate a Firebase
-     */
-    private suspend fun preloadUserNames(userIds: Set<String>) {
-        try {
-            val uncachedIds = userIds.filter { !userNameCache.containsKey(it) }
-
-            if (uncachedIds.isEmpty()) return
-
-            // Carica i nomi in batch (Firestore supporta max 10 elementi per whereIn)
-            uncachedIds.chunked(10).forEach { batch ->
-                val snapshot = firestore.collection("users")
-                    .whereIn("__name__", batch) // Query sui document ID
-                    .get()
-                    .await()
-
-                snapshot.documents.forEach { doc ->
-                    val userId = doc.id
-                    val nome = doc.getString("nome") ?: ""
-                    val cognome = doc.getString("cognome") ?: ""
-                    val username = "$nome $cognome".trim().takeIf { it.isNotBlank() } ?: "Utente"
-                    userNameCache[userId] = username
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("ActivityRepository", "Error preloading usernames", e)
+            snapshot.documents.mapNotNull { doc ->
+                if (doc.exists()) doc.id else null
+            }.toSet()
+        } catch (_: Exception) {
+            emptySet()
         }
     }
 
@@ -186,7 +119,6 @@ class ActivityRepository {
         val activities = mutableListOf<FriendActivity>()
 
         try {
-            // Chunking per rispettare il limite di Firestore (10 elementi per whereIn)
             userIds.chunked(10).forEach { batch ->
                 val snapshot = firestore.collection("user_activities")
                     .whereIn("userId", batch)
@@ -204,21 +136,36 @@ class ActivityRepository {
                     val title = data["title"] as? String ?: return@forEach
                     val timestamp = data["timestamp"] as? Long ?: return@forEach
 
-                    // Usa il nome dalla cache
-                    val username = userNameCache[userId] ?: "Utente"
+                    // 🔹 Carica direttamente i dati utente
+                    val userDoc = firestore.collection("users").document(userId).get().await()
+                    val nome = userDoc.getString("nome") ?: ""
+                    val cognome = userDoc.getString("cognome") ?: ""
+                    val username = "$nome $cognome".trim().takeIf { it.isNotBlank() } ?: "Utente"
+
+                    val userAvatarUrl = userDoc.getString("profileImageUrl")
+                        ?: userDoc.getString("profile_image_url")
+                        ?: userDoc.getString("profileImage")
+                        ?: userDoc.getString("avatar")
+                        ?: userDoc.getString("profilePicture")
+
+                    val rifugioId = data["rifugioId"] as? String
+                    val rifugioImageUrl = data["rifugioImageUrl"] as? String
+                        ?: getRifugioImageFromCache(rifugioId)
 
                     val friendActivity = FriendActivity(
                         userId = userId,
                         username = username,
+                        userAvatarUrl = userAvatarUrl,
                         activityType = try { ActivityType.valueOf(type) } catch (e: Exception) { ActivityType.GENERIC },
                         title = title,
                         description = data["description"] as? String ?: "",
                         timestamp = timestamp,
                         timeAgo = getTimeAgo(timestamp),
-                        rifugioId = data["rifugioId"] as? String,
+                        rifugioId = rifugioId,
                         rifugioName = data["rifugioName"] as? String,
                         rifugioLocation = data["rifugioLocation"] as? String,
                         rifugioAltitude = data["rifugioAltitude"] as? String,
+                        rifugioImageUrl = rifugioImageUrl,
                         pointsEarned = (data["pointsEarned"] as? Long)?.toInt() ?: 0,
                         achievementType = data["achievementType"] as? String
                     )
@@ -227,12 +174,45 @@ class ActivityRepository {
                 }
             }
 
-            // Ordina tutte le attività per timestamp e limita
             return activities.sortedByDescending { it.timestamp }.take(limit)
-
-        } catch (e: Exception) {
-            android.util.Log.e("ActivityRepository", "Error getting activities", e)
+        } catch (_: Exception) {
             return emptyList()
+        }
+    }
+
+    /**
+     * Carica l'immagine del rifugio dalla cache o da Firebase
+     */
+    private suspend fun getRifugioImageFromCache(rifugioId: String?): String? {
+        if (rifugioId == null) return null
+
+        return rifugioImageCache[rifugioId] ?: run {
+            try {
+                val rifugioImageUrl = getRifugioImageUrl(rifugioId)
+                rifugioImageCache[rifugioId] = rifugioImageUrl
+                rifugioImageUrl
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    /**
+     * Carica l'URL dell'immagine del rifugio da Firebase
+     */
+    private suspend fun getRifugioImageUrl(rifugioId: String): String? {
+        return try {
+            val rifugioDoc = firestore.collection("rifugi")
+                .document(rifugioId)
+                .get()
+                .await()
+
+            rifugioDoc.getString("imageUrl")
+                ?: rifugioDoc.getString("immagineUrl")
+                ?: rifugioDoc.getString("primaryImage")
+                ?: rifugioDoc.getString("image")
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -249,8 +229,16 @@ class ActivityRepository {
                 .get()
                 .await()
 
-            // Ottieni i dettagli dell'utente una volta sola
-            val username = getUserName(userId)
+            val userDoc = firestore.collection("users").document(userId).get().await()
+            val nome = userDoc.getString("nome") ?: ""
+            val cognome = userDoc.getString("cognome") ?: ""
+            val username = "$nome $cognome".trim().takeIf { it.isNotBlank() } ?: "Utente"
+
+            val userAvatarUrl = userDoc.getString("profileImageUrl")
+                ?: userDoc.getString("profile_image_url")
+                ?: userDoc.getString("profileImage")
+                ?: userDoc.getString("avatar")
+                ?: userDoc.getString("profilePicture")
 
             activitiesSnapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
@@ -259,49 +247,30 @@ class ActivityRepository {
                 val title = data["title"] as? String ?: return@mapNotNull null
                 val timestamp = data["timestamp"] as? Long ?: return@mapNotNull null
 
+                val rifugioId = data["rifugioId"] as? String
+                val rifugioImageUrl = data["rifugioImageUrl"] as? String
+                    ?: getRifugioImageFromCache(rifugioId)
+
                 FriendActivity(
                     userId = userId,
                     username = username,
+                    userAvatarUrl = userAvatarUrl,
                     activityType = try { ActivityType.valueOf(type) } catch (e: Exception) { ActivityType.GENERIC },
                     title = title,
                     description = data["description"] as? String ?: "",
                     timestamp = timestamp,
                     timeAgo = getTimeAgo(timestamp),
-                    rifugioId = data["rifugioId"] as? String,
+                    rifugioId = rifugioId,
                     rifugioName = data["rifugioName"] as? String,
                     rifugioLocation = data["rifugioLocation"] as? String,
                     rifugioAltitude = data["rifugioAltitude"] as? String,
+                    rifugioImageUrl = rifugioImageUrl,
                     pointsEarned = (data["pointsEarned"] as? Long)?.toInt() ?: 0,
                     achievementType = data["achievementType"] as? String
                 )
             }
-        } catch (e: Exception) {
-            android.util.Log.e("ActivityRepository", "Error fetching user activities", e)
+        } catch (_: Exception) {
             emptyList()
-        }
-    }
-
-    /**
-     * Helper per ottenere il nome utente (con cache)
-     */
-    private suspend fun getUserName(userId: String): String {
-        return userNameCache[userId] ?: run {
-            try {
-                val userDoc = firestore.collection("users")
-                    .document(userId)
-                    .get()
-                    .await()
-
-                val userData = userDoc.data
-                val nome = userData?.get("nome") as? String ?: ""
-                val cognome = userData?.get("cognome") as? String ?: ""
-                val username = "$nome $cognome".trim().takeIf { it.isNotBlank() } ?: "Utente"
-
-                userNameCache[userId] = username
-                username
-            } catch (e: Exception) {
-                "Utente"
-            }
         }
     }
 
@@ -321,11 +290,8 @@ class ActivityRepository {
         }
     }
 
-    /**
-     * Pulisce la cache dei nomi utente
-     */
-    fun clearUserNameCache() {
-        userNameCache.clear()
+    fun clearCache() {
+        rifugioImageCache.clear()
     }
 }
 
@@ -351,6 +317,7 @@ data class UserActivity(
     val rifugioName: String? = null,
     val rifugioLocation: String? = null,
     val rifugioAltitude: String? = null,
+    val rifugioImageUrl: String? = null,
     val pointsEarned: Int = 0,
     val achievementType: String? = null,
     val visible: Boolean = true
@@ -362,6 +329,7 @@ data class UserActivity(
 data class FriendActivity(
     val userId: String,
     val username: String,
+    val userAvatarUrl: String? = null,
     val activityType: ActivityType,
     val title: String,
     val description: String,
@@ -371,6 +339,7 @@ data class FriendActivity(
     val rifugioName: String? = null,
     val rifugioLocation: String? = null,
     val rifugioAltitude: String? = null,
+    val rifugioImageUrl: String? = null,
     val pointsEarned: Int = 0,
     val achievementType: String? = null
 )
@@ -385,5 +354,5 @@ enum class ActivityType {
     RECENSIONE,
     MILESTONE,
     BADGE_EARNED,
-    GENERIC // Aggiunto per gestire tipi sconosciuti
+    GENERIC
 }

@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.navigation.fragment.findNavController
 import com.example.mountainpassport_girarifugi.R
+import com.example.mountainpassport_girarifugi.data.repository.ActivityType
+import com.example.mountainpassport_girarifugi.data.repository.FriendActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.button.MaterialButton
 import com.example.mountainpassport_girarifugi.ui.map.RifugioSavedEventBus
@@ -195,7 +197,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Metodo per navigare dai feed amici - AGGIORNATO
+    // Metodo per navigare dai feed amici - VERSIONE CORRETTA
     private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
         val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
         val emptyFeedLayout = view.findViewById<View>(R.id.emptyFeedLayout)
@@ -208,27 +210,51 @@ class HomeFragment : Fragment() {
             emptyFeedLayout.visibility = View.GONE
 
             recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
-            val adapter = FeedAmiciAdapter(feedAmici) { rifugioInfo ->
-                // AGGIORNATO: Cerca il rifugio nel database e usa l'ID
+
+            // Converti da FeedAmico a FriendActivity per l'adapter
+            val friendActivities = feedAmici.mapNotNull { feedAmico ->
+                convertFeedAmicoToFriendActivity(feedAmico)
+            }
+
+            val adapter = FeedAmiciAdapter(friendActivities) { rifugioId ->
+                // Il callback ora riceve direttamente il rifugioId
                 lifecycleScope.launch {
                     try {
-                        val rifugio = viewModel.findRifugioByName(rifugioInfo.nome)
-
-                        if (rifugio != null) {
-                            // Usa l'ID del rifugio trovato
+                        // Se abbiamo un ID valido, naviga direttamente
+                        if (rifugioId.isNotBlank()) {
                             val bundle = Bundle().apply {
-                                putInt("rifugioId", rifugio.id)
+                                // Se rifugioId è numerico, convertilo a Int
+                                val rifugioIdInt = rifugioId.toIntOrNull()
+                                if (rifugioIdInt != null) {
+                                    putInt("rifugioId", rifugioIdInt)
+                                } else {
+                                    // Fallback: cerca per nome se l'ID non è numerico
+                                    val rifugio = viewModel.findRifugioByName(rifugioId)
+                                    if (rifugio != null) {
+                                        putInt("rifugioId", rifugio.id)
+                                    } else {
+                                        // Ultimo fallback: usa i dati che abbiamo
+                                        putString("RIFUGIO_NOME", rifugioId)
+                                        putString("RIFUGIO_ALTITUDINE", "0 m")
+                                        putString("RIFUGIO_DISTANZA", "N/A")
+                                        putString("RIFUGIO_LOCALITA", "Località sconosciuta")
+                                        putString("RIFUGIO_COORDINATE", "0.0000,0.0000")
+                                        putString("RIFUGIO_DIFFICOLTA", "N/A")
+                                        putString("RIFUGIO_TEMPO", "N/A")
+                                        putString("RIFUGIO_DESCRIZIONE", "Descrizione non disponibile")
+                                    }
+                                }
                             }
                             findNavController().navigate(R.id.action_homeFragment_to_cabinFragment, bundle)
                         } else {
-                            // Fallback: crea un messaggio di errore
                             Toast.makeText(
                                 requireContext(),
-                                "Rifugio non trovato: ${rifugioInfo.nome}",
+                                "Informazioni rifugio non disponibili",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } catch (e: Exception) {
+                        android.util.Log.e("HomeFragment", "Errore navigazione rifugio: ${e.message}")
                         Toast.makeText(
                             requireContext(),
                             "Errore nell'apertura del rifugio",
@@ -238,6 +264,38 @@ class HomeFragment : Fragment() {
                 }
             }
             recyclerFeed.adapter = adapter
+        }
+    }
+
+    // Funzione helper per convertire FeedAmico in FriendActivity
+    private fun convertFeedAmicoToFriendActivity(feedAmico: HomeViewModel.FeedAmico): FriendActivity? {
+        return try {
+            FriendActivity(
+                userId = "unknown_user",
+                username = feedAmico.nomeUtente,
+                userAvatarUrl = feedAmico.avatar,
+                activityType = when (feedAmico.tipoAttivita) {
+                    HomeViewModel.TipoAttivita.RIFUGIO_VISITATO -> ActivityType.RIFUGIO_VISITATO
+                    HomeViewModel.TipoAttivita.ACHIEVEMENT -> ActivityType.ACHIEVEMENT
+                    HomeViewModel.TipoAttivita.PUNTI_GUADAGNATI -> ActivityType.PUNTI_GUADAGNATI
+                    HomeViewModel.TipoAttivita.RECENSIONE -> ActivityType.RECENSIONE
+                    else -> ActivityType.GENERIC
+                },
+                title = feedAmico.testoAttivita,
+                description = feedAmico.testoAttivita,
+                timestamp = System.currentTimeMillis(),
+                timeAgo = feedAmico.tempo,
+                rifugioId = feedAmico.rifugioInfo?.nome,
+                rifugioName = feedAmico.rifugioInfo?.nome,
+                rifugioLocation = feedAmico.rifugioInfo?.localita,
+                rifugioAltitude = feedAmico.rifugioInfo?.altitudine?.let { "${it}m" },
+                rifugioImageUrl = feedAmico.rifugioInfo?.immagine,
+                pointsEarned = feedAmico.rifugioInfo?.puntiGuadagnati ?: 0,
+                achievementType = if (feedAmico.tipoAttivita == HomeViewModel.TipoAttivita.ACHIEVEMENT) "general" else null
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("HomeFragment", "Errore conversione FeedAmico: ${e.message}")
+            null
         }
     }
 

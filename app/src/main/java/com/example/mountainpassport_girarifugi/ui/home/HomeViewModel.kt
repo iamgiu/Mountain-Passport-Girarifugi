@@ -79,71 +79,73 @@ class HomeViewModel : ViewModel() {
     /**
      *  Carica il feed reale degli amici dalle attività
      */
-    private suspend fun loadRealFeedAmici() {
-        try {
-            when (val result = activityRepository.getFriendsFeed(20)) {
+    private fun loadRealFeedAmici() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = activityRepository.getFriendsFeed(20)
+
+            _feedAmici.value = when (result) {
                 is FeedResult.Success -> {
-                    val feedItems = result.activities.map { activity ->
+                    result.activities.map { activity ->
                         when (activity.activityType) {
-                            ActivityType.RIFUGIO_VISITATO -> FeedAmico(
-                                nomeUtente = activity.username,
-                                avatar = "ic_account_circle_24",
-                                testoAttivita = "ha visitato un rifugio",
-                                tempo = activity.timeAgo,
-                                tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
-                                rifugioInfo = RifugioInfo(
-                                    nome = activity.rifugioName ?: "Rifugio",
-                                    localita = activity.rifugioLocation ?: "Località sconosciuta",
-                                    altitudine = activity.rifugioAltitude ?: "0",
-                                    puntiGuadagnati = activity.pointsEarned,
-                                    immagine = activity.rifugioName?.let { getImageResourceName(it) } ?: "mountain_background"
+                            ActivityType.RIFUGIO_VISITATO -> {
+                                // 🔹 fallback immagine dal JSON se non arriva da Firestore
+                                val rifugioImage = activity.rifugioImageUrl ?: run {
+                                    rifugioRepository?.getAllRifugi()
+                                        ?.find { it.nome.equals(activity.rifugioName, ignoreCase = true) }
+                                        ?.immagineUrl
+                                }
+
+                                FeedAmico(
+                                    nomeUtente = activity.username,
+                                    avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
+                                    testoAttivita = "ha visitato un rifugio",
+                                    tempo = activity.timeAgo,
+                                    tipoAttivita = TipoAttivita.RIFUGIO_VISITATO,
+                                    rifugioInfo = RifugioInfo(
+                                        nome = activity.rifugioName ?: "Rifugio",
+                                        localita = activity.rifugioLocation ?: "Località sconosciuta",
+                                        altitudine = activity.rifugioAltitude ?: "0",
+                                        puntiGuadagnati = activity.pointsEarned,
+                                        immagine = rifugioImage // 🔹 ora può essere URL, drawable name o null
+                                    )
                                 )
-                            )
+                            }
                             ActivityType.ACHIEVEMENT -> FeedAmico(
                                 nomeUtente = activity.username,
-                                avatar = "ic_account_circle_24",
+                                avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
                                 testoAttivita = "ha ottenuto un achievement",
                                 tempo = activity.timeAgo,
                                 tipoAttivita = TipoAttivita.ACHIEVEMENT
                             )
                             ActivityType.PUNTI_GUADAGNATI -> FeedAmico(
                                 nomeUtente = activity.username,
-                                avatar = "ic_account_circle_24",
+                                avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
                                 testoAttivita = "ha guadagnato ${activity.pointsEarned} punti",
                                 tempo = activity.timeAgo,
                                 tipoAttivita = TipoAttivita.PUNTI_GUADAGNATI
                             )
                             else -> FeedAmico(
                                 nomeUtente = activity.username,
-                                avatar = "ic_account_circle_24",
+                                avatar = activity.userAvatarUrl ?: "ic_account_circle_24",
                                 testoAttivita = activity.title,
                                 tempo = activity.timeAgo,
                                 tipoAttivita = TipoAttivita.GENERIC
                             )
                         }
                     }
-                    _feedAmici.value = feedItems
                 }
-                is FeedResult.NoFriends -> {
-                    _feedAmici.value = emptyList()
-                    _error.value = "Non hai ancora amici da seguire."
-                }
-                is FeedResult.NoActivities -> {
-                    _feedAmici.value = emptyList()
-                    _error.value = "I tuoi ${result.friendsCount} amici non hanno ancora attività recenti."
-                }
+                is FeedResult.NoFriends -> emptyList()
+                is FeedResult.NoActivities -> emptyList()
                 is FeedResult.Error -> {
-                    _feedAmici.value = emptyList()
-                    _error.value = "Errore nel feed: ${result.message}"
+                    android.util.Log.e("HomeViewModel", "Errore feed amici: ${result.message}")
+                    emptyList()
                 }
             }
-        } catch (e: Exception) {
-            android.util.Log.e("HomeViewModel", "Errore caricamento feed amici", e)
-            // fallback dimostrativo
-            loadFallbackFeedAmici()
+
+            _isLoading.value = false
         }
     }
-
 
     /**
      * Metodo per registrare un achievement

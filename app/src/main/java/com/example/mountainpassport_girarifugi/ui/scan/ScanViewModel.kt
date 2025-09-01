@@ -89,7 +89,7 @@ class ScanViewModel : ViewModel() {
     
     private fun parseQRContent(qrContent: String): Int? {
         return try {
-            // Formato atteso: "rifugio_123" o solo "123"
+
             val cleanContent = qrContent.trim()
             when {
                 cleanContent.startsWith("rifugio_") -> {

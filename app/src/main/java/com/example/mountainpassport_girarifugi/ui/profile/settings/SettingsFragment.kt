@@ -66,10 +66,10 @@ class SettingsFragment : Fragment() {
             val base64String = sharedPreferences.getString("cropped_image", null)
 
             if (!base64String.isNullOrEmpty()) {
-                // Pulisci i dati temporanei
+                // Pulisce i dati temporanei
                 sharedPreferences.edit().remove("cropped_image").apply()
 
-                // Converti da Base64 a Bitmap
+                // Converte da Base64 a Bitmap
                 val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
                 BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
             } else {
@@ -111,10 +111,10 @@ class SettingsFragment : Fragment() {
         setupClickListeners()
         setupObservers()
 
-        // Profile image initialization
+        // Inizializzazione immagine profilo
         initProfileImage(view)
 
-        // Setup settings FAB
+        // FAB Settings inizializzato
         setupForwardButton(view)
     }
 
@@ -139,7 +139,6 @@ class SettingsFragment : Fragment() {
             showResetPasswordConfirmationDialog()
         }
 
-        // Click listener for profile image button
         binding.changeImageButton.setOnClickListener {
             checkPermissionAndOpenGallery()
         }
@@ -157,8 +156,6 @@ class SettingsFragment : Fragment() {
             binding.annullaButton.isEnabled = !isLoading
             binding.logoutButton.isEnabled = !isLoading
             binding.resetPasswordButton.isEnabled = !isLoading
-
-            // Puoi aggiungere un progress bar se necessario
         }
 
         // Observer per gli errori di validazione
@@ -262,7 +259,6 @@ class SettingsFragment : Fragment() {
         requireActivity().finish()
     }
 
-    // Fixed methods for profile image handling
     private fun initProfileImage(view: View) {
         profileImageView = view.findViewById(R.id.profileImageView)
         loadSavedProfileImage()
@@ -305,10 +301,10 @@ class SettingsFragment : Fragment() {
 
     private fun handleCroppedImage(bitmap: Bitmap) {
         try {
-            // Show the cropped image immediately
+
             profileImageView.setImageBitmap(bitmap)
 
-            // Convert bitmap to Base64 and upload
+            // Converto a Base64 per caricare immagine di profilo
             uploadBitmapAsBase64(bitmap)
 
             Toast.makeText(requireContext(), "Caricamento immagine profilo...", Toast.LENGTH_SHORT).show()

@@ -52,7 +52,7 @@ class SettingsViewModel : ViewModel() {
         _isLoading.value = true
 
         try {
-            // Converti l'immagine in Base64
+            // Converte l'immagine in Base64
             val inputStream = context.contentResolver.openInputStream(imageUri)
             val bitmap = BitmapFactory.decodeStream(inputStream)
 
@@ -137,7 +137,6 @@ class SettingsViewModel : ViewModel() {
         loadUserData()
     }
 
-    // Sve profile image URI
     fun saveProfileImageUri(imageUri: String) {
         _profileImageUri.value = imageUri
     }
@@ -169,19 +168,19 @@ class SettingsViewModel : ViewModel() {
     fun validateAndSaveProfile(nome: String, cognome: String, nickname: String) {
         val errors = ValidationErrors()
 
-        // Validation
+        // Segnala mancata compilazione campi obbligatori
         when {
             nome.trim().isEmpty() -> {
-                errors.nomeError = "Nome è richiesto"
+                errors.nomeError = "Il Nome è richiesto"
             }
             cognome.trim().isEmpty() -> {
-                errors.cognomeError = "Cognome è richiesto"
+                errors.cognomeError = "Il Cognome è richiesto"
             }
             nickname.trim().isEmpty() -> {
-                errors.nicknameError = "Nickname è richiesto"
+                errors.nicknameError = "Il Nickname è richiesto"
             }
             else -> {
-                // All valid, proceed with save
+                // Se sono tutti validi procede
                 saveProfile(nome.trim(), cognome.trim(), nickname.trim())
                 return
             }

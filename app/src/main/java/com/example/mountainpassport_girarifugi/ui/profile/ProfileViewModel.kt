@@ -38,14 +38,6 @@ data class Stamp(
     val imageResId: Int = R.drawable.stamps
 )
 
-// Data class per rappresentare un gruppo
-data class Group(
-    val id: String,
-    val name: String,
-    val memberCount: Int,
-    val description: String = "",
-)
-
 class ProfileViewModel(private val context: Context) : ViewModel() {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
@@ -69,10 +61,6 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     // LiveData per la lista dei timbri
     private val _stamps = MutableLiveData<List<UserPoints>>()
     val stamps: LiveData<List<UserPoints>> = _stamps
-
-    // LiveData per la lista dei gruppi
-    private val _groups = MutableLiveData<List<Group>>()
-    val groups: LiveData<List<Group>> = _groups
 
     // LiveData per gestire il logout
     private val _logoutEvent = MutableLiveData<Boolean>()
@@ -123,7 +111,6 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
         try {
             loadUserData()
             loadStamps()
-            loadGroups()
             loadFriends()
             startListeningForFriendRequests()
         } catch (e: Exception) {
@@ -161,7 +148,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * Carica le statistiche dei punti dell'utente - VERSIONE SICURA
+     * Carica le statistiche dei punti dell'utente
      */
     private fun loadUserPointsStats(userId: String) {
         viewModelScope.launch {
@@ -210,7 +197,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * Carica statistiche dal documento users - VERSIONE SICURA
+     * Carica statistiche dal documento users
      */
     private suspend fun loadStatsFromUserDocument(userId: String): com.example.mountainpassport_girarifugi.data.model.UserPointsStats? {
         return try {
@@ -241,7 +228,7 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * Ricarica tutti i dati - VERSIONE SICURA
+     * Ricarica tutti i dati
      */
     fun refreshData() {
         Log.d(TAG, "Refresh dei dati del profilo...")
@@ -252,7 +239,6 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
 
             loadUserData()
             loadStamps()
-            loadGroups()
             loadFriends()
 
         } catch (e: Exception) {
@@ -313,29 +299,6 @@ class ProfileViewModel(private val context: Context) : ViewModel() {
         } catch (e: Exception) {
             Log.e(TAG, "Errore in loadUserStampsFromFirestore", e)
             _stamps.value = emptyList()
-        }
-    }
-
-    private fun loadGroups() {
-        try {
-            val sampleGroups = listOf(
-                Group(
-                    id = "group1",
-                    name = "Amanti delle Alpi",
-                    memberCount = 12,
-                    description = "Gruppo per esplorare le Alpi lombarde",
-                ),
-                Group(
-                    id = "group2",
-                    name = "Rifugi del Nord",
-                    memberCount = 8,
-                    description = "Scopriamo insieme i rifugi del nord Italia",
-                )
-            )
-            _groups.value = sampleGroups
-        } catch (e: Exception) {
-            Log.e(TAG, "Errore in loadGroups", e)
-            _groups.value = emptyList()
         }
     }
 

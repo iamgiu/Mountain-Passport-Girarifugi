@@ -23,14 +23,12 @@ class ProfileFragment : Fragment() {
     private lateinit var stampsRecyclerView: RecyclerView
     private lateinit var stampsAdapter: StampsAdapter
     private lateinit var groupsRecyclerView: RecyclerView
-
     // Views del profilo
     private lateinit var fullNameTextView: TextView
     private lateinit var usernameTextView: TextView
     private lateinit var monthlyScoreTextView: TextView
     private lateinit var visitedRefugesTextView: TextView
     private lateinit var profileImageView: ImageView
-
     // ViewModel
     private val viewModel: ProfileViewModel by viewModels {
         ProfileViewModelFactory(requireContext())
@@ -116,7 +114,7 @@ class ProfileFragment : Fragment() {
                     if (profileData != null) {
                         updateProfileUI(profileData)
 
-                        // Carica l'immagine profilo solo una volta quando i dati sono pronti
+                        // Carica l'immagine profilo
                         if (!profileImageLoaded) {
                             loadSavedProfileImage()
                             profileImageLoaded = true
@@ -194,7 +192,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun hideLoadingState() {
-        // Lo stato normale sarÃ  ripristinato dagli observer dei dati
+        // Lo stato normale sarà  ripristinato dagli observer dei dati
     }
 
     private fun setupSettingsButton(view: View) {

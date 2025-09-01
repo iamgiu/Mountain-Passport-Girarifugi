@@ -7,7 +7,7 @@ GiraRifugi trasforma le tue escursioni ai rifugi in un'avventura digitale. Accum
 ## Screenshots
 
 <div align="center">
-  <img src="Screenshot_20250901_193726.png" width="200" alt="Schermata principale"/>
+  <img src="https://github.com/user-attachments/assets/Screenshot_20250901_193726" width="200" alt="Schermata principale"/>
   <img src="screenshots/map.png" width="200" alt="Mappa rifugi"/>
   <img src="screenshots/checkin.png" width="200" alt="Check-in"/>
   <img src="screenshots/profile.png" width="200" alt="Profilo utente"/>

@@ -1,48 +1,62 @@
-# GiraRifugi 🏔️
+# GiraRifugi 
 
-**Digitalizzazione del sistema Girarifugi con gamification, check-in ai rifugi e recensioni community verificate**
+**App Android per digitalizzare le visite ai rifugi alpini con gamification e recensioni verificate**
 
-GiraRifugi è un'app Android innovativa che trasforma l'esperienza dei rifugi alpini in un'avventura digitale gamificata. Scopri, visita e condividi i rifugi delle Alpi attraverso un sistema di punti, achievement e recensioni verificate dalla community.
+GiraRifugi trasforma le tue escursioni ai rifugi in un'avventura digitale. Accumula punti, sblocca achievement e condividi le tue esperienze con una community di appassionati di montagna.
 
-## ✨ Funzionalità Principali
+## Screenshots
 
-### 📍 Check-in Digitale
-- **Check-in tramite QR code** o geolocalizzazione automatica
-- **Verifica presenza** attraverso geofencing intelligente
-- **Storico visite** completo con timestamp e dettagli
+<div align="center">
+  <img src="screenshots/home.png" width="200" alt="Schermata principale"/>
+  <img src="screenshots/map.png" width="200" alt="Mappa rifugi"/>
+  <img src="screenshots/checkin.png" width="200" alt="Check-in"/>
+  <img src="screenshots/profile.png" width="200" alt="Profilo utente"/>
+</div>
 
-### 🎮 Sistema Gamificato
-- **1 punto** per ogni visita al rifugio
-- **2 punti** per ogni pernottamento
-- **Bonus speciali** per sfide stagionali e obiettivi
-- **Badge e achievement** per traguardi raggiunti
+## Come funziona
 
-### ⭐ Recensioni Verificate
-- **Solo chi visita può recensire** - garantiamo autenticità
-- **Consigli pratici** su servizi, cibo, accessibilità
-- **Foto e tips** dalla community di escursionisti
-- **Rating dettagliato** per ogni aspetto del rifugio
+### 1. **Trova i rifugi sulla mappa**
+Esplora tutti i rifugi alpini attraverso una mappa interattiva. Filtra per servizi disponibili, quota altimetrica o difficoltà di accesso.
 
-### 🎯 Passaporto Digitale
-- **Collezione badge** personalizzata
-- **Achievement unlockabili** basati su visite e attività
-- **Progress tracker** per obiettivi personali
-- **Statistiche dettagliate** del proprio percorso
+### 2. **Fai check-in quando arrivi**
+Una volta al rifugio, fai check-in scansionando il QR code oppure tramite GPS automatico. Il sistema verifica che tu sia effettivamente presente.
 
-### 🏆 Classifiche Competitive
-- **Leaderboard globali** tra tutti gli utenti
-- **Classifiche regionali** per area geografica
-- **Competizione tra amici** e gruppi privati
-- **Aggiornamenti real-time** dei punteggi
+### 3. **Accumula punti e badge**
+- **1 punto ogni 100m di altitudine**
+- **Bonus extra** per sfide mensili
 
-### 🗺️ Mappa Interattiva
-- **Database completo** rifugi alpini
-- **Filtri avanzati** per servizi, quota, difficoltà
-- **Informazioni dettagliate** su ogni struttura
-- **Navigazione integrata** verso i rifugi
+### 4. **Scrivi recensioni verificate**
+Solo chi ha visitato realmente il rifugio può lasciare una recensione. Condividi foto, consigli su cibo e servizi, informazioni pratiche per gli altri escursionisti.
+
+### 5. **Sfida altri appassionati**
+Confronta i tuoi progressi nella classifica globale e vedi chi ha visitato più rifugi.
+
+## Funzionalità principali
+
+### **Check-in intelligente**
+- Scansiona il QR code del rifugio
+- Sistema di verifica automatica della presenza
+- Storico completo di tutte le tue visite
+
+### **Sistema a punti**
+- Raccogli punti per ogni visita e pernottamento  
+- Sblocca badge speciali per diversi traguardi
+- Sfide mensili con premi bonus
+
+### **Recensioni della community**
+- Solo visitatori verificati possono recensire
+- Vota servizi, cibo, pulizia, accessibilità
+- Aggiungi consigli pratici
+
+### **Il tuo passaporto montano**
+- Collezione personale di tutti i badge conquistati
+- Statistiche dettagliate delle tue escursioni  
+- Obiettivi personalizzabili da raggiungere
+
+### **Mappa completa dei rifugi**
+- Database aggiornato di tutti i rifugi alpini
+- Informazioni dettagliate: contatti, servizi, prezzi
 
 ## 📄 Licenza
 
-Distribuito sotto licenza MIT. Vedi `LICENSE` per maggiori informazioni.
-
-**GiraRifugi** - *Trasforma ogni escursione in un'avventura digitale* 🏔️✨
+Progetto open source sotto licenza MIT.

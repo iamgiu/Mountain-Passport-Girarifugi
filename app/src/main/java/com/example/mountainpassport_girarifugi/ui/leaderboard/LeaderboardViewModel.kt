@@ -44,14 +44,9 @@ class LeaderboardViewModel : ViewModel() {
     private val _friendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val friendsLeaderboard: LiveData<List<LeaderboardUser>> = _friendsLeaderboard
 
-    // LiveData per i gruppi (se necessario)
-    private val _groupsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
-    val groupsLeaderboard: LiveData<List<LeaderboardUser>> = _groupsLeaderboard
-
     // Liste originali per la ricerca
     private var originalFriendsList: List<LeaderboardUser> = emptyList()
     private var originalGlobalList: List<LeaderboardUser> = emptyList()
-    private var originalGroupsList: List<LeaderboardUser> = emptyList()
 
     // Stati di caricamento
     private val _isLoadingGlobal = MutableLiveData<Boolean>()
@@ -93,7 +88,7 @@ class LeaderboardViewModel : ViewModel() {
                 for (doc in snapshot.documents) {
                     val userData = doc.data
                     if (userData != null) {
-                        // MODIFICA: Carica i dati reali dai punti come fai per gli amici
+                        // Carica i dati reali dai punti come fai per gli amici
                         val (realPoints, realRefuges) = getUserStatsFromPoints(doc.id)
 
                         val nome = userData["nome"] as? String ?: ""
@@ -287,48 +282,6 @@ class LeaderboardViewModel : ViewModel() {
             avatarResource = R.drawable.avatar_mario,
             profileImageUrl = profileImageUrl
         )
-    }
-
-    /**
-     * Funzioni di ricerca
-     */
-    fun searchInFriends(query: String) {
-        if (query.isBlank()) {
-            _friendsLeaderboard.value = originalFriendsList
-        } else {
-            val filteredFriends = originalFriendsList.filter { user ->
-                user.name.contains(query, ignoreCase = true)
-            }
-            _friendsLeaderboard.value = filteredFriends
-        }
-    }
-
-    fun searchInGlobal(query: String) {
-        if (query.isBlank()) {
-            _globalLeaderboard.value = originalGlobalList
-        } else {
-            val filteredUsers = originalGlobalList.filter { user ->
-                user.name.contains(query, ignoreCase = true)
-            }
-            _globalLeaderboard.value = filteredUsers
-        }
-    }
-
-    fun searchInGroups(query: String) {
-        if (query.isBlank()) {
-            _groupsLeaderboard.value = originalGroupsList
-        } else {
-            val filteredGroups = originalGroupsList.filter { user ->
-                user.name.contains(query, ignoreCase = true)
-            }
-            _groupsLeaderboard.value = filteredGroups
-        }
-    }
-
-    fun clearSearch() {
-        _friendsLeaderboard.value = originalFriendsList
-        _globalLeaderboard.value = originalGlobalList
-        _groupsLeaderboard.value = originalGroupsList
     }
 
     /**

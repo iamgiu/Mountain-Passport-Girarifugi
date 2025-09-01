@@ -28,11 +28,10 @@
             <ImageView
                 android:id="@+id/iconNotification"
                 android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_notifications_black_24dp"
-                app:tint="@color/green"
-                android:background="@drawable/gradient_green_card" />
+                app:tint="@color/blue" />
 
         </androidx.cardview.widget.CardView>
 

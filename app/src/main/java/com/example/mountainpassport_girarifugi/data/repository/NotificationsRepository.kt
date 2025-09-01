@@ -17,11 +17,20 @@ class NotificationsRepository {
 
     companion object {
         private const val COLLECTION_NOTIFICATIONS = "notifications"
-        private const val TAG = "NotificationsRepository"
     }
 
     /**
-     * Carica tutte le notifiche dell'utente corrente
+     *
+     * Prende tutte le notifiche dell'utente corrente
+     *
+     * Controlla che ci sia un utente loggato
+     *
+     * Prende tutte le notifiche su Firebase li converte in FirebaseNotifica (dataclass)
+     *
+     * Li trasforma in NotificationsViewModel.Notifica
+     *
+     * Ordina i risultati per timestamp piÃ¹ recente
+     *
      */
     suspend fun getAllNotifications(): List<NotificationsViewModel.Notifica> {
         val currentUser = auth.currentUser
@@ -44,7 +53,6 @@ class NotificationsRepository {
                 }
             }
 
-            // Ordina le notifiche in memoria per timestamp (dal più recente)
             notifiche.sortedByDescending { notifica ->
                 parseTempoToTimestamp(notifica.tempo)
             }
@@ -55,7 +63,11 @@ class NotificationsRepository {
     }
 
     /**
+     *
      * Sposta una notifica in "Precedenti" aggiornando il timestamp
+     *
+     * Calcola un timestamp di 2 giorni fa e aggiorna la notifica
+     *
      */
     suspend fun moveNotificationToPrevious(notificaId: String): Boolean {
         return try {
@@ -81,7 +93,13 @@ class NotificationsRepository {
     }
 
     /**
-     * Parse tempo string to timestamp for proper sorting
+     *
+     * Conversione del campo tempo
+     *
+     * Trasforma la stringa tempo in millisecondi
+     *
+     * Serve per ordinare le notifica lato client
+     *
      */
     private fun parseTempoToTimestamp(tempo: String): Long {
         val now = System.currentTimeMillis()
@@ -107,67 +125,56 @@ class NotificationsRepository {
                 val months = tempo.substringBefore(" mesi fa").toLongOrNull() ?: 0
                 now - (months * 30 * 24 * 60 * 60 * 1000)
             }
-            else -> 0L // Fallback for unknown formats
+            else -> 0L
         }
     }
 
     /**
-     * Observer per le notifiche in tempo reale
+     *
+     *  Observer per le notifiche in tempo reale
+     *
      */
     fun observeNotifications(): Flow<List<NotificationsViewModel.Notifica>> = callbackFlow {
-        android.util.Log.d(TAG, "observeNotifications() called")
 
         val currentUser = auth.currentUser
         if (currentUser == null) {
-            android.util.Log.e(TAG, "User not authenticated in observer")
             trySend(emptyList())
             close()
             return@callbackFlow
         }
 
-        android.util.Log.d(TAG, "Setting up real-time listener for user: ${currentUser.uid}")
-
         val listener = firestore.collection(COLLECTION_NOTIFICATIONS)
             .whereEqualTo("userId", currentUser.uid)
-            // REMOVE orderBy to avoid index requirement
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    android.util.Log.e(TAG, "Error in snapshot listener", error)
-
-                    // Don't close the flow, just send empty list to prevent crash
-                    android.util.Log.w(TAG, "Sending empty list due to listener error")
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
-
-                android.util.Log.d(TAG, "Snapshot received with ${snapshot?.documents?.size ?: 0} documents")
 
                 val notifiche = snapshot?.documents?.mapNotNull { doc ->
                     try {
                         doc.toObject(FirebaseNotifica::class.java)?.copy(id = doc.id)?.toNotifica()
                     } catch (e: Exception) {
-                        android.util.Log.e(TAG, "Error converting document in listener: ${doc.id}", e)
                         null
                     }
                 } ?: emptyList()
 
-                // Sort in memory
                 val sortedNotifiche = notifiche.sortedByDescending { notifica ->
                     parseTempoToTimestamp(notifica.tempo)
                 }
 
-                android.util.Log.d(TAG, "Sending ${sortedNotifiche.size} sorted notifications to observer")
                 trySend(sortedNotifiche)
             }
 
         awaitClose {
-            android.util.Log.d(TAG, "Removing snapshot listener")
             listener.remove()
         }
     }
 
     /**
+     *
      * Segna una notifica come letta
+     *
      */
     suspend fun markAsRead(notificaId: String): Boolean {
         return try {
@@ -177,13 +184,14 @@ class NotificationsRepository {
                 .await()
             true
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error marking notification as read", e)
             false
         }
     }
 
     /**
+     *
      * Segna tutte le notifiche come lette
+     *
      */
     suspend fun markAllAsRead(): Boolean {
         val currentUser = auth.currentUser ?: return false
@@ -203,13 +211,14 @@ class NotificationsRepository {
             batch.commit().await()
             true
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error marking all notifications as read", e)
             false
         }
     }
 
     /**
+     *
      * Elimina una notifica
+     *
      */
     suspend fun deleteNotification(notificaId: String): Boolean {
         return try {
@@ -217,16 +226,16 @@ class NotificationsRepository {
                 .document(notificaId)
                 .delete()
                 .await()
-            android.util.Log.d(TAG, "Notification deleted successfully: $notificaId")
             true
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error deleting notification: $notificaId", e)
             false
         }
     }
 
     /**
+     *
      * Crea una nuova notifica
+     *
      */
     suspend fun createNotification(
         userId: String,
@@ -259,16 +268,16 @@ class NotificationsRepository {
             )
 
             docRef.set(notifica).await()
-            android.util.Log.d(TAG, "Notification created successfully: ${docRef.id}")
             true
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error creating notification", e)
             false
         }
     }
 
     /**
+     *
      * Crea notifica di richiesta amicizia
+     *
      */
     suspend fun createFriendRequestNotification(
         receiverId: String,
@@ -277,32 +286,30 @@ class NotificationsRepository {
         senderAvatarUrl: String? = null
     ): Boolean {
         return try {
-            android.util.Log.d(TAG, "Creating friend request notification - Receiver: $receiverId, Sender: $senderId, Name: $senderName")
 
             val success = createNotification(
                 userId = receiverId,
-                titolo = senderName, // Nome completo nel titolo
-                descrizione = "Richiesta di amicizia", // Descrizione generica
+                titolo = senderName,
+                descrizione = "Richiesta di amicizia",
                 tipo = NotificationsViewModel.TipoNotifica.RICHIESTA_AMICIZIA,
                 categoria = "amici",
-                utenteId = senderId // IMPORTANTE: ID del mittente per gestire accetta/rifiuta
+                utenteId = senderId
             )
 
             if (success) {
-                android.util.Log.d(TAG, "Friend request notification created successfully")
             } else {
-                android.util.Log.e(TAG, "Failed to create friend request notification")
             }
 
             success
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error creating friend request notification", e)
             false
         }
     }
 
     /**
+     *
      * Crea notifica di amicizia accettata
+     *
      */
     suspend fun createFriendAcceptedNotification(
         receiverId: String,
@@ -310,7 +317,6 @@ class NotificationsRepository {
         accepterId: String
     ): Boolean {
         return try {
-            android.util.Log.d(TAG, "Creating friend accepted notification - Receiver: $receiverId, Accepter: $accepterName")
 
             createNotification(
                 userId = receiverId,
@@ -321,31 +327,14 @@ class NotificationsRepository {
                 utenteId = accepterId
             )
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error creating friend accepted notification", e)
             false
         }
     }
 
     /**
-     * Crea notifica per nuovo rifugio
-     */
-    suspend fun createNewRifugioNotification(
-        userId: String,
-        rifugioId: String,
-        rifugioName: String
-    ): Boolean {
-        return createNotification(
-            userId = userId,
-            titolo = "Nuovo rifugio disponibile",
-            descrizione = "$rifugioName è ora disponibile per la visita!",
-            tipo = NotificationsViewModel.TipoNotifica.NUOVO_MEMBRO_GRUPPO,
-            categoria = "rifugi",
-            rifugioId = rifugioId
-        )
-    }
-
-    /**
+     *
      * Crea notifica per punti guadagnati
+     *
      */
     suspend fun createPointsEarnedNotification(
         userId: String,
@@ -364,29 +353,27 @@ class NotificationsRepository {
             titolo = "Punti guadagnati",
             descrizione = descrizione,
             tipo = NotificationsViewModel.TipoNotifica.PUNTI_OTTENUTI,
-            categoria = "rifugi", // Cambiato da "punti" a "rifugi"
+            categoria = "rifugi",
             puntiGuadagnati = punti,
             rifugioId = rifugioId?.toString()
         )
     }
 
     /**
-     * Elimina notifiche di richieste amicizia obsolete (già processate)
+     *
+     * Elimina notifiche di richieste amicizia obsolete
+     *
      */
     suspend fun cleanupObsoleteRequests(userId: String): Boolean {
         return try {
-            android.util.Log.d(TAG, "Cleaning up obsolete friend request notifications for user: $userId")
 
             val firestore = FirebaseFirestore.getInstance()
 
-            // Trova tutte le notifiche di richiesta amicizia dell'utente
             val notificationsSnapshot = firestore.collection(COLLECTION_NOTIFICATIONS)
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("tipo", "RICHIESTA_AMICIZIA")
                 .get()
                 .await()
-
-            android.util.Log.d(TAG, "Found ${notificationsSnapshot.documents.size} friend request notifications")
 
             val batch = firestore.batch()
             var deletedCount = 0
@@ -396,7 +383,6 @@ class NotificationsRepository {
                 val senderId = notification?.utenteId
 
                 if (!senderId.isNullOrBlank()) {
-                    // Controlla lo stato della richiesta corrispondente
                     val requestSnapshot = firestore.collection("friendRequests")
                         .whereEqualTo("senderId", senderId)
                         .whereEqualTo("receiverId", userId)
@@ -407,15 +393,11 @@ class NotificationsRepository {
                         doc.getString("status") == "pending"
                     }
 
-                    // Se non c'è una richiesta pendente valida, elimina la notifica
                     if (!hasValidPendingRequest) {
-                        android.util.Log.d(TAG, "Deleting obsolete notification: ${notificationDoc.id}")
                         batch.delete(notificationDoc.reference)
                         deletedCount++
                     }
                 } else {
-                    // Notifica senza senderId valido, elimina
-                    android.util.Log.d(TAG, "Deleting invalid notification: ${notificationDoc.id}")
                     batch.delete(notificationDoc.reference)
                     deletedCount++
                 }
@@ -423,17 +405,21 @@ class NotificationsRepository {
 
             if (deletedCount > 0) {
                 batch.commit().await()
-                android.util.Log.d(TAG, "Deleted $deletedCount obsolete notifications")
             }
 
             true
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error cleaning up obsolete requests", e)
             false
         }
     }
 
-    // Data class per Firebase
+    /**
+     *
+     * Data class per rappresentare il modello usato in Firebase
+     *
+     * Ha un metodo toNotifica() che converte in NotificationsViewModel.Notifica
+     *
+     */
     data class FirebaseNotifica(
         val id: String = "",
         val userId: String = "",
@@ -457,21 +443,25 @@ class NotificationsRepository {
                 tipo = try {
                     NotificationsViewModel.TipoNotifica.valueOf(tipo)
                 } catch (e: Exception) {
-                    android.util.Log.e(TAG, "Invalid notification type: $tipo", e)
                     NotificationsViewModel.TipoNotifica.SISTEMA
                 },
                 tempo = formatTempo(timestamp),
                 isLetta = isLetta,
                 icona = getIconaFromTipo(tipo),
-                categoria = categoria,
                 rifugioId = rifugioId,
                 utenteId = utenteId,
                 achievementId = achievementId,
                 puntiGuadagnati = puntiGuadagnati,
-                avatarUrl = avatarUrl // NUOVO: Include l'URL dell'avatar
+                avatarUrl = avatarUrl,
+                timestamp = timestamp.seconds * 1000L
             )
         }
 
+        /**
+         *
+         * Formatta il tempo
+         *
+         */
         private fun formatTempo(timestamp: Timestamp): String {
             val now = System.currentTimeMillis()
             val time = timestamp.toDate().time
@@ -486,6 +476,11 @@ class NotificationsRepository {
             }
         }
 
+        /**
+         *
+         * Recupera le icone per il tipo di notifica
+         *
+         */
         private fun getIconaFromTipo(tipo: String): String {
             return try {
                 when (NotificationsViewModel.TipoNotifica.valueOf(tipo)) {
@@ -499,7 +494,6 @@ class NotificationsRepository {
                     NotificationsViewModel.TipoNotifica.SISTEMA -> "ic_notifications_black_24dp"
                 }
             } catch (e: Exception) {
-                android.util.Log.e(TAG, "Invalid notification type for icon: $tipo", e)
                 "ic_notifications_black_24dp"
             }
         }

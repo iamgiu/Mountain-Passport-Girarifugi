@@ -150,34 +150,6 @@
     </fragment>
 
     <fragment
-        android:id="@+id/nav_group"
-        android:name="com.example.mountainpassport_girarifugi.ui.profile.GroupsFragment"
-        android:label="Gruppo"
-        tools:layout="@layout/fragment_groups">
-
-        <action
-            android:id="@+id/action_groupsFragment_to_settingsGroupFragment"
-            app:destination="@+id/nav_settings_group" />
-
-        <action
-            android:id="@+id/action_groupsFragment_to_profileFragment"
-            app:destination="@+id/nav_profile" />
-
-    </fragment>
-
-    <fragment
-        android:id="@+id/nav_settings_group"
-        android:name="com.example.mountainpassport_girarifugi.ui.profile.SettingsGroupFragment"
-        android:label="Settings Group"
-        tools:layout="@layout/fragment_settings_group">
-
-        <action
-            android:id="@+id/action_settingsGroupFragment_to_groupsFragment"
-            app:destination="@+id/nav_group" />
-
-    </fragment>
-
-    <fragment
         android:id="@+id/nav_settings"
         android:name="com.example.mountainpassport_girarifugi.ui.profile.settings.SettingsFragment"
         android:label="Settings"
@@ -190,12 +162,3 @@
     </fragment>
 
 </navigation>
-    <!-- Ampo, lo sai che bastava aggiungere questo, si? -->
-    <!--
-    <fragment
-        android:id="@+id/nav_friend_requests"
-        android:name="com.example.mountainpassport_girarifugi.ui.profile.FriendRequestsFragment"
-        android:label="Friend Requests"
-        tools:layout="@layout/fragment_friend_requests" />
-    -->
-

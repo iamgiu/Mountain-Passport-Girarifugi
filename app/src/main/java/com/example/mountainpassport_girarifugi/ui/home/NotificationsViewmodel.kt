@@ -16,25 +16,28 @@ class NotificationsViewModel : ViewModel() {
 
     private val repository = NotificationsRepository()
 
-    // LiveData per l'UI state
+
     private val _currentFilter = MutableLiveData<String>().apply { value = "tutte" }
     val currentFilter: LiveData<String> = _currentFilter
 
+    /**
+     *
+     * Due liste separate notiifiche recenti e quelle più vecchie
+     *
+     */
     private val _notificheRecenti = MutableLiveData<List<Notifica>>()
     val notificheRecenti: LiveData<List<Notifica>> = _notificheRecenti
 
     private val _notifichePrecedenti = MutableLiveData<List<Notifica>>()
     val notifichePrecedenti: LiveData<List<Notifica>> = _notifichePrecedenti
 
+    /**
+     *
+     * Indica se c'è un'operazione in corso
+     *
+     */
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
-
-    // Aggiungi messaggi di successo separati dagli errori
-    private val _successMessage = MutableLiveData<String?>()
-    val successMessage: LiveData<String?> = _successMessage
 
     private val _navigationEvent = MutableLiveData<NavigationEvent?>()
     val navigationEvent: LiveData<NavigationEvent?> = _navigationEvent
@@ -42,25 +45,33 @@ class NotificationsViewModel : ViewModel() {
     private val _azioniPending = MutableLiveData<List<AzioneNotifica>>()
     val azioniPending: LiveData<List<AzioneNotifica>> = _azioniPending
 
-    // Lista completa delle notifiche (per il filtraggio)
     private var allNotifiche: List<Notifica> = emptyList()
 
+    /**
+     *
+     * Inizializzazione
+     *
+     */
     init {
-        // Carica le notifiche all'avvio
         loadNotifiche()
-        // Pulisci le notifiche obsolete
         cleanupObsoleteNotifications()
-        // Inizia l'osservazione in tempo reale
         observeNotifications()
     }
 
+    /**
+     *
+     * Gestione dei filtri
+     *
+     */
     fun setActiveFilter(filter: String) {
         _currentFilter.value = filter
         applyFilter(filter)
     }
 
     /**
-     * Carica le notifiche dal repository
+     *
+     * Caricamento delle notifiche
+     *
      */
     private fun loadNotifiche() {
         viewModelScope.launch {
@@ -68,23 +79,23 @@ class NotificationsViewModel : ViewModel() {
             try {
                 allNotifiche = repository.getAllNotifications()
                 applyFilter(_currentFilter.value ?: "tutte")
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = "Errore nel caricamento delle notifiche: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
+
     /**
-     * Osserva le notifiche in tempo reale
+     *
+     * Observer delle notifiche
+     *
+     * Ogni volta che arrivano nuova notifiche aggiorna la lista e applica il filtro
      */
     private fun observeNotifications() {
         viewModelScope.launch {
             repository.observeNotifications()
-                .catch { e ->
-                    _error.value = "Errore nell'osservazione delle notifiche: ${e.message}"
+                .catch {
                 }
                 .collect { notifiche ->
                     allNotifiche = notifiche
@@ -93,69 +104,71 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
-
+    /**
+     *
+     * Applica il filtro alle notifiche
+     *
+     */
     private fun applyFilter(filter: String) {
         val filteredNotifiche = when (filter) {
-            "rifugi" -> allNotifiche.filter { it.categoria == "rifugi" }
-            "amici" -> allNotifiche.filter { it.categoria == "amici" }
+            "rifugi" -> allNotifiche.filter {
+                it.tipo == TipoNotifica.NUOVO_MEMBRO_GRUPPO ||
+                        it.tipo == TipoNotifica.NUOVA_SFIDA_MESE ||
+                        it.tipo == TipoNotifica.DOPPIO_PUNTI_RIFUGI ||
+                        it.tipo == TipoNotifica.SFIDA_COMPLETATA ||
+                        it.tipo == TipoNotifica.PUNTI_OTTENUTI ||
+                        it.tipo == TipoNotifica.TIMBRO_OTTENUTO ||
+                        it.tipo == TipoNotifica.SISTEMA
+            }
+            "amici" -> allNotifiche.filter { it.tipo == TipoNotifica.RICHIESTA_AMICIZIA }
+            "tutte" -> allNotifiche
             else -> allNotifiche
         }
 
-        // DEBUG: Log per vedere le notifiche
-        android.util.Log.d("NotificationsVM", "All notifiche: ${allNotifiche.size}")
-        android.util.Log.d("NotificationsVM", "Filtered notifiche: ${filteredNotifiche.size}")
+        val now = System.currentTimeMillis()
+        val oneDayAgo = now - (24 * 60 * 60 * 1000)
 
-        filteredNotifiche.forEach { notifica ->
-            android.util.Log.d("NotificationsVM", "Notifica: ${notifica.titolo} - Tipo: ${notifica.tipo} - Categoria: ${notifica.categoria}")
-        }
+        val recenti = filteredNotifiche.filter { (it.timestamp ?: 0L) >= oneDayAgo }
+        val precedenti = filteredNotifiche.filter { (it.timestamp ?: 0L) < oneDayAgo }
 
-        // Separa notifiche recenti (ultime 24 ore) e precedenti
-        val recenti = filteredNotifiche.filter {
-            it.tempo.contains("ore fa") ||
-                    it.tempo.contains("minuti fa") ||
-                    it.tempo == "Ora"
-        }
-        val precedenti = filteredNotifiche.filter {
-            it.tempo.contains("giorno") ||
-                    it.tempo.contains("giorni") ||
-                    it.tempo.contains("mesi fa")
-        }
-
-        android.util.Log.d("NotificationsVM", "Recenti: ${recenti.size}, Precedenti: ${precedenti.size}")
-
-        _notificheRecenti.value = recenti
-        _notifichePrecedenti.value = precedenti
+        _notificheRecenti.value = recenti.sortedByDescending { it.timestamp ?: 0L }
+        _notifichePrecedenti.value = precedenti.sortedByDescending { it.timestamp ?: 0L }
     }
 
-    // Metodi per azioni utente
+
+    /**
+     *
+     * Ricarica le notifiche
+     *
+     */
     fun refreshNotifiche() {
         loadNotifiche()
     }
 
     /**
-     * Pulisce le notifiche di richieste amicizia obsolete
+     *
+     * Pulisce dalla notifiche obsolete
+     *
      */
     private fun cleanupObsoleteNotifications() {
         val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
         if (currentUserId != null) {
             viewModelScope.launch {
-                try {
-                    val success = repository.cleanupObsoleteRequests(currentUserId)
-                    android.util.Log.d("NotificationsVM", "Cleanup obsolete notifications result: $success")
-                } catch (e: Exception) {
-                    android.util.Log.e("NotificationsVM", "Error during cleanup", e)
-                }
+                repository.cleanupObsoleteRequests(currentUserId)
             }
         }
     }
 
+    /**
+     *
+     * Se la notifica non è letta quando l'utente ci clicca la marca come letta
+     *
+     */
     fun onNotificaClicked(notifica: Notifica) {
-        // Segna come letta se non lo è già
         if (!notifica.isLetta) {
             markAsRead(notifica.id)
         }
 
-        // Naviga in base al tipo di notifica
         val navigationEvent = when (notifica.tipo) {
             TipoNotifica.NUOVO_MEMBRO_GRUPPO -> {
                 notifica.rifugioId?.let {
@@ -173,187 +186,84 @@ class NotificationsViewModel : ViewModel() {
         _navigationEvent.value = navigationEvent
     }
 
-    fun onImpostazioniClicked() {
-        _navigationEvent.value = NavigationEvent.OpenSettings
-    }
-
+    /**
+     *
+     * Segna la notifica come letta
+     *
+     */
     fun markAsRead(notificaId: String) {
         viewModelScope.launch {
-            try {
-                val success = repository.markAsRead(notificaId)
-                if (!success) {
-                    _error.value = "Errore nell'aggiornamento della notifica"
-                }
-                // L'aggiornamento della UI avverrà automaticamente tramite l'observer
-            } catch (e: Exception) {
-                _error.value = "Errore nell'aggiornamento della notifica: ${e.message}"
-            }
+            repository.markAsRead(notificaId)
         }
     }
 
+    /**
+     *
+     * Segna tutte le notifiche come lette
+     *
+     */
     fun markAllAsRead() {
         viewModelScope.launch {
-            try {
-                val success = repository.markAllAsRead()
-                if (!success) {
-                    _error.value = "Errore nell'aggiornamento delle notifiche"
-                }
-                // L'aggiornamento della UI avverrà automaticamente tramite l'observer
-            } catch (e: Exception) {
-                _error.value = "Errore nell'aggiornamento delle notifiche: ${e.message}"
-            }
+            repository.markAllAsRead()
         }
     }
 
+    /**
+     *
+     * Elimina una notifica
+     *
+     */
     fun deleteNotifica(notificaId: String) {
         viewModelScope.launch {
-            try {
-                val success = repository.deleteNotification(notificaId)
-                if (!success) {
-                    _error.value = "Errore nell'eliminazione della notifica"
-                }
-                // L'aggiornamento della UI avverrà automaticamente tramite l'observer
-            } catch (e: Exception) {
-                _error.value = "Errore nell'eliminazione della notifica: ${e.message}"
-            }
+            repository.deleteNotification(notificaId)
         }
     }
 
-    // MODIFICATO: Sposta la notifica in "Precedenti" invece di eliminarla
-    private suspend fun moveNotificationToPrevious(notificaId: String): Boolean {
-        return try {
-            repository.moveNotificationToPrevious(notificaId)
-        } catch (e: Exception) {
-            android.util.Log.e("NotificationsVM", "Error moving notification to previous", e)
-            false
-        }
-    }
-
+    /**
+     *
+     * Accetta le richieste di amicizia
+     *
+     */
     fun accettaRichiestaAmicizia(senderId: String, notificaId: String) {
-        android.util.Log.d("NotificationsVM", "=== ACCEPT FRIEND REQUEST START ===")
-
-        // Validazione input robusta
-        if (senderId.isNullOrBlank() || senderId == "null") {
-            android.util.Log.e("NotificationsVM", "Invalid senderId: '$senderId'")
-            _error.postValue("ID utente non valido")
-            return
-        }
-
-        if (notificaId.isNullOrBlank()) {
-            android.util.Log.e("NotificationsVM", "Invalid notificationId")
-            _error.postValue("ID notifica non valido")
-            return
-        }
-
-        // Verifica che il senderId non sia l'utente corrente
         val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-        if (senderId == currentUserId) {
-            android.util.Log.e("NotificationsVM", "Cannot accept friend request from yourself")
-            _error.postValue("Non puoi accettare una richiesta da te stesso")
-            return
-        }
+        if (senderId.isBlank() || senderId == currentUserId) return
+        if (notificaId.isBlank()) return
 
-        // Evita operazioni multiple
-        if (_isLoading.value == true) {
-            android.util.Log.w("NotificationsVM", "Operation already in progress")
-            return
-        }
+        if (_isLoading.value == true) return
 
         _isLoading.postValue(true)
 
         viewModelScope.launch {
             try {
                 val friendRepository = com.example.mountainpassport_girarifugi.data.repository.FriendRepository()
-
-                android.util.Log.d("NotificationsVM", "Calling acceptFriendRequestByUserId with senderId: $senderId")
-
-                friendRepository.acceptFriendRequestByUserId(senderId) { success, error ->
-                    android.util.Log.d("NotificationsVM", "Accept callback - Success: $success, Error: $error")
-
+                friendRepository.acceptFriendRequestByUserId(senderId) { success, _ ->
                     _isLoading.postValue(false)
-
                     if (success) {
-                        // MODIFICA: Elimina completamente la notifica invece di spostarla
                         viewModelScope.launch {
-                            try {
-                                val deleteSuccess = repository.deleteNotification(notificaId)
-
-                                if (deleteSuccess) {
-                                    _successMessage.postValue("Richiesta di amicizia accettata!")
-                                    android.util.Log.d("NotificationsVM", "Notification deleted successfully")
-                                } else {
-                                    _successMessage.postValue("Richiesta accettata!")
-                                    android.util.Log.w("NotificationsVM", "Failed to delete notification, but request was accepted")
-                                }
-
-                                // NUOVA FUNZIONE: Invia notifica di accettazione al mittente
-                                sendAcceptanceNotificationToSender(senderId, currentUserId ?: "")
-
-                            } catch (e: Exception) {
-                                android.util.Log.e("NotificationsVM", "Error deleting notification", e)
-                                _successMessage.postValue("Richiesta accettata!")
-                            }
+                            repository.deleteNotification(notificaId)
+                            sendAcceptanceNotificationToSender(senderId, currentUserId ?: "")
                         }
                     } else {
-                        // Gestione errori migliorata
-                        val errorMessage = when {
-                            error?.contains("già elaborata", ignoreCase = true) == true -> {
-                                // Caso speciale: elimina la notifica obsoleta
-                                viewModelScope.launch {
-                                    try {
-                                        repository.deleteNotification(notificaId)
-                                        _successMessage.postValue("Richiesta già processata - notifica rimossa")
-                                    } catch (e: Exception) {
-                                        _error.postValue("Richiesta già elaborata")
-                                    }
-                                }
-                                return@acceptFriendRequestByUserId
-                            }
-                            error?.contains("già amici", ignoreCase = true) == true -> {
-                                // Già amici: elimina la notifica e mostra successo
-                                viewModelScope.launch {
-                                    try {
-                                        repository.deleteNotification(notificaId)
-                                        _successMessage.postValue("Siete già amici!")
-                                    } catch (e: Exception) {
-                                        _successMessage.postValue("Siete già amici!")
-                                    }
-                                }
-                                return@acceptFriendRequestByUserId
-                            }
-                            error?.contains("non trovata", ignoreCase = true) == true -> {
-                                // Richiesta non trovata: elimina la notifica obsoleta
-                                viewModelScope.launch {
-                                    try {
-                                        repository.deleteNotification(notificaId)
-                                        _successMessage.postValue("Richiesta non più disponibile - notifica rimossa")
-                                    } catch (e: Exception) {
-                                        _error.postValue("Richiesta non più disponibile")
-                                    }
-                                }
-                                return@acceptFriendRequestByUserId
-                            }
-                            else -> error ?: "Errore nell'accettare la richiesta"
+                        viewModelScope.launch {
+                            repository.deleteNotification(notificaId)
                         }
-
-                        _error.postValue(errorMessage)
                     }
                 }
-
-            } catch (e: Exception) {
-                android.util.Log.e("NotificationsVM", "Fatal error in accettaRichiestaAmicizia", e)
-                _error.postValue("Errore critico: ${e.message}")
+            } finally {
                 _isLoading.postValue(false)
             }
         }
     }
 
-    // NUOVA FUNZIONE: Invia notifica di accettazione al mittente
+    /**
+     *
+     * Chiede al FriendRepository di accettare la richiesta
+     *
+     * Se va bene elimina la notifica e invia una nuova notifica al mittente dicendo che l'amicizia è stata accettata
+     *
+     */
     private suspend fun sendAcceptanceNotificationToSender(senderId: String, accepterId: String) {
         try {
-            android.util.Log.d("NotificationsVM", "Sending acceptance notification to sender: $senderId")
-
-            // Ottieni il nome dell'utente che ha accettato
             val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             val accepterDoc = firestore.collection("users")
                 .document(accepterId)
@@ -367,103 +277,59 @@ class NotificationsViewModel : ViewModel() {
                 "Un utente"
             }
 
-            // Crea la notifica di accettazione
             repository.createFriendAcceptedNotification(
                 receiverId = senderId,
                 accepterName = accepterName,
                 accepterId = accepterId
             )
-
-            android.util.Log.d("NotificationsVM", "Acceptance notification sent successfully")
-
-        } catch (e: Exception) {
-            android.util.Log.e("NotificationsVM", "Error sending acceptance notification", e)
+        } catch (_: Exception) {
         }
     }
 
+    /**
+     *
+     * Rifiuta la richiesta di amicizia
+     *
+     */
     fun rifiutaRichiestaAmicizia(senderId: String, notificaId: String) {
-        android.util.Log.d("NotificationsVM", "rifiutaRichiestaAmicizia called with senderId: $senderId, notificaId: $notificaId")
-
-        // Validazione input migliorata
-        if (senderId.isNullOrBlank() || notificaId.isNullOrBlank()) {
-            _error.postValue("Parametri non validi")
-            return
-        }
-
-        // Verifica che non sia in loading
-        if (_isLoading.value == true) {
-            android.util.Log.w("NotificationsVM", "Operation already in progress for decline")
-            return
-        }
+        if (senderId.isBlank() || notificaId.isBlank()) return
+        if (_isLoading.value == true) return
 
         _isLoading.postValue(true)
 
         viewModelScope.launch {
             try {
                 val friendRepository = com.example.mountainpassport_girarifugi.data.repository.FriendRepository()
-
-                android.util.Log.d("NotificationsVM", "Calling declineFriendRequestByUserId...")
-
-                // Timeout handler
                 val timeoutHandler = Handler(Looper.getMainLooper())
                 val timeoutRunnable = Runnable {
                     _isLoading.postValue(false)
-                    _error.postValue("Operazione in timeout")
                 }
                 timeoutHandler.postDelayed(timeoutRunnable, 30000)
 
-                friendRepository.declineFriendRequestByUserId(senderId) { success, error ->
-                    android.util.Log.d("NotificationsVM", "declineFriendRequestByUserId callback - Success: $success, Error: $error")
-
+                friendRepository.declineFriendRequestByUserId(senderId) { success, _ ->
                     timeoutHandler.removeCallbacks(timeoutRunnable)
-
+                    _isLoading.postValue(false)
                     if (success) {
-                        android.util.Log.d("NotificationsVM", "Friend request declined successfully, deleting notification...")
-
-                        // MODIFICA: Elimina completamente la notifica invece di spostarla
                         viewModelScope.launch {
-                            try {
-                                val deleteSuccess = repository.deleteNotification(notificaId)
-                                _isLoading.postValue(false)
-
-                                if (deleteSuccess) {
-                                    _successMessage.postValue("Richiesta di amicizia rifiutata")
-                                } else {
-                                    _successMessage.postValue("Richiesta rifiutata")
-                                }
-                            } catch (e: Exception) {
-                                android.util.Log.e("NotificationsVM", "Exception deleting notification", e)
-                                _isLoading.postValue(false)
-                                _successMessage.postValue("Richiesta rifiutata")
-                            }
+                            repository.deleteNotification(notificaId)
                         }
-                    } else {
-                        android.util.Log.e("NotificationsVM", "Failed to decline friend request: $error")
-                        _isLoading.postValue(false)
-                        _error.postValue(error ?: "Errore nel rifiutare la richiesta")
                     }
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("NotificationsVM", "Exception in rifiutaRichiestaAmicizia", e)
+            } finally {
                 _isLoading.postValue(false)
-                _error.postValue("Errore nel rifiutare la richiesta: ${e.message}")
             }
         }
-    }
-
-    fun clearError() {
-        _error.value = null
-    }
-
-    fun clearSuccessMessage() {
-        _successMessage.value = null
     }
 
     fun clearNavigationEvent() {
         _navigationEvent.value = null
     }
 
-    // Data classes
+    /**
+     *
+     * Data class che rappresenta la notifica
+     *
+     */
     data class Notifica(
         val id: String,
         val titolo: String,
@@ -472,15 +338,22 @@ class NotificationsViewModel : ViewModel() {
         val tempo: String,
         val isLetta: Boolean,
         val icona: String,
-        val categoria: String, // "rifugi", "amici", "punti", etc.
         val rifugioId: String? = null,
         val utenteId: String? = null,
         val achievementId: String? = null,
         val puntiGuadagnati: Int? = null,
         val friendRequestId: String? = null,
-        val avatarUrl: String? = null // NUOVO: URL dell'avatar per richieste amicizia
+        val avatarUrl: String? = null,
+        val timestamp: Long? = null
     )
 
+    /**
+     *
+     * Enum class che rappresenta il tipo di Notifica
+     *
+     * Per ora: Richiesta amicizia, Punti ottenuti, Timbro ottenuto, Sistema
+     *
+     */
     enum class TipoNotifica {
         RICHIESTA_AMICIZIA,
         NUOVO_MEMBRO_GRUPPO,
@@ -492,6 +365,11 @@ class NotificationsViewModel : ViewModel() {
         SISTEMA
     }
 
+    /**
+     *
+     * Data class per rappresentare la notifica di Richiesta di amicizia
+     *
+     */
     data class NotificaRichiestaAmicizia(
         val notifica: Notifica,
         val richiedenteId: String,

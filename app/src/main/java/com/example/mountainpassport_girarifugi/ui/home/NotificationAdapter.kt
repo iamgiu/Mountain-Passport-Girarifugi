@@ -241,14 +241,12 @@ class NotificationAdapter(
                 isEnabled = true
                 alpha = 1.0f
                 text = "Accetta"
-                setBackgroundColor(ContextCompat.getColor(context, R.color.green))
             }
 
             buttonDecline.apply {
                 isEnabled = true
                 alpha = 1.0f
                 text = "Rifiuta"
-                setBackgroundColor(ContextCompat.getColor(context, R.color.blue))
             }
         }
 

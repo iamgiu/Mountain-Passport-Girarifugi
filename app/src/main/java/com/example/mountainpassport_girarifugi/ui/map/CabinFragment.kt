@@ -123,14 +123,6 @@ class CabinFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        // Bottone registra visita
-        binding.fabVisit.setOnClickListener {
-            val rifugio = viewModel.rifugio.value
-            if (rifugio != null) {
-                viewModel.recordVisit()
-            }
-        }
-
         // Bottone salva rifugio
         binding.fabSave.setOnClickListener {
             val currentState = viewModel.isSaved.value ?: false

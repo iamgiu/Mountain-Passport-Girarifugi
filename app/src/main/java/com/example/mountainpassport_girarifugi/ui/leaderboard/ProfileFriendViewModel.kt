@@ -30,10 +30,10 @@ class ProfileFriendViewModel : ViewModel() {
      * Carica i timbri dell'amico da Firestore
      */
     fun loadStamps(friendId: String) {
-        Log.d(TAG, "🚀 Iniziando caricamento timbri per friendId: $friendId")
+        Log.d(TAG, "Iniziando caricamento timbri per friendId: $friendId")
 
         if (friendId.isEmpty()) {
-            Log.e(TAG, "❌ friendId è vuoto!")
+            Log.e(TAG, "friendId è vuoto!")
             _error.postValue("ID utente non valido")
             return
         }
@@ -42,7 +42,7 @@ class ProfileFriendViewModel : ViewModel() {
             _isLoading.postValue(true)
 
             try {
-                Log.d(TAG, "📡 Eseguendo query Firestore...")
+                Log.d(TAG, "Eseguendo query Firestore...")
 
                 val snapshot = firestore.collection("users")
                     .document(friendId)
@@ -50,19 +50,19 @@ class ProfileFriendViewModel : ViewModel() {
                     .get()
                     .await()
 
-                Log.d(TAG, "📋 Documenti ricevuti: ${snapshot.documents.size}")
+                Log.d(TAG, "Documenti ricevuti: ${snapshot.documents.size}")
 
                 val stampsList = snapshot.documents.mapNotNull { doc ->
-                    Log.d(TAG, "📄 Processando documento: ${doc.id}")
-                    Log.d(TAG, "📄 Dati documento: ${doc.data}")
+                    Log.d(TAG, "Processando documento: ${doc.id}")
+                    Log.d(TAG, "Dati documento: ${doc.data}")
 
                     val refugeName = doc.getString("refugeName")
                     val dateMillis = doc.getLong("date")
 
-                    Log.d(TAG, "📄 refugeName: $refugeName, dateMillis: $dateMillis")
+                    Log.d(TAG, "refugeName: $refugeName, dateMillis: $dateMillis")
 
                     if (refugeName == null || dateMillis == null) {
-                        Log.w(TAG, "⚠️ Documento con dati mancanti, saltato")
+                        Log.w(TAG, "⚠Documento con dati mancanti, saltato")
                         return@mapNotNull null
                     }
 
@@ -77,15 +77,15 @@ class ProfileFriendViewModel : ViewModel() {
                     )
                 }.sortedByDescending { it.visitDate.seconds }
 
-                Log.d(TAG, "✅ Timbri processati: ${stampsList.size}")
+                Log.d(TAG, "Timbri processati: ${stampsList.size}")
                 stampsList.forEach { stamp ->
-                    Log.d(TAG, "🏔️ Timbro: ${stamp.rifugioName} - ${stamp.visitDate.toDate()}")
+                    Log.d(TAG, "Timbro: ${stamp.rifugioName} - ${stamp.visitDate.toDate()}")
                 }
 
                 _stamps.postValue(stampsList)
 
             } catch (e: Exception) {
-                Log.e(TAG, "💥 Errore nel caricamento timbri: ${e.message}", e)
+                Log.e(TAG, "Errore nel caricamento timbri: ${e.message}", e)
                 _error.postValue("Errore nel caricamento dei timbri: ${e.message}")
                 _stamps.postValue(emptyList())
             }

@@ -79,52 +79,6 @@
                 android:textSize="16sp"
                 android:lineSpacingExtra="2dp" />
 
-            <!-- Filtri notifiche con stile identico ai tab della home -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="24dp"
-                android:padding="4dp">
-
-                <TextView
-                    android:id="@+id/filter_tutte"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/montserrat_bold"
-                    android:text="Tutte"
-                    android:textSize="18sp"
-                    android:textColor="@color/green_black"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:padding="12dp" />
-
-                <TextView
-                    android:id="@+id/filter_rifugi"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/montserrat_semibold"
-                    android:text="Rifugi"
-                    android:textSize="18sp"
-                    android:textColor="#666666"
-                    android:gravity="center"
-                    android:padding="12dp" />
-
-                <TextView
-                    android:id="@+id/filter_amici"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/montserrat_semibold"
-                    android:text="Amici"
-                    android:textSize="18sp"
-                    android:textColor="#666666"
-                    android:gravity="center"
-                    android:padding="12dp" />
-
-            </LinearLayout>
 
             <!-- Sezione Notifiche Recenti -->
             <TextView

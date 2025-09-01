@@ -21,7 +21,7 @@ data class AddFriendUser(
     val avatarResource: Int,
     val isAlreadyFriend: Boolean = false,
     val isRequestSent: Boolean = false,
-    val profileImageUrl: String? = null // AGGIUNTO per l'immagine profilo reale
+    val profileImageUrl: String? = null
 )
 
 class AddFriendsViewModel : ViewModel() {
@@ -38,84 +38,22 @@ class AddFriendsViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    // Dati mock per gruppi
-    private val allGroups = listOf(
-        AddFriendUser("g1", "Escursionisti Lombardia", "esc_lombardia", 156789, 89, R.drawable.avatar_mario),
-        AddFriendUser("g2", "Amici della Montagna", "amici_montagna", 134567, 76, R.drawable.avatar_marco),
-        AddFriendUser("g3", "Trekking Piemonte", "trek_piemonte", 112345, 65, R.drawable.avatar_luca),
-        AddFriendUser("g4", "Alpinisti Uniti", "alpinisti_uniti", 98765, 54, R.drawable.avatar_giovanni),
-        AddFriendUser("g5", "Rifugi & Sentieri", "rifugi_sentieri", 87654, 43, R.drawable.avatar_lucia),
-        AddFriendUser("g6", "Camminate nel Verde", "camminate_verde", 76543, 38, R.drawable.avatar_sara),
-        AddFriendUser("g7", "Outdoor Adventurers", "outdoor_adventurers", 65432, 32, R.drawable.avatar_mario),
-        AddFriendUser("g8", "Mountain Lovers", "mountain_lovers", 54321, 28, R.drawable.avatar_marco),
-        AddFriendUser("g9", "Vette e Valli", "vette_valli", 43210, 24, R.drawable.avatar_luca),
-        AddFriendUser("g10", "Escursioni Domenicali", "esc_domenicali", 32109, 20, R.drawable.avatar_giovanni)
-    )
-
-    // Gestione gruppi
-    private val joinedGroupRequests = mutableSetOf<String>()
-
     private val friendRepository = FriendRepository()
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
     init {
-        // Carica alcuni utenti di default
+        // Carica subito alcuni utenti
         loadDefaultUsers()
-    }
-
-    fun searchGroups(query: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val filteredGroups = if (query.isBlank()) {
-                    allGroups.take(10) // Mostra solo i primi 10 se non c'è ricerca
-                } else {
-                    allGroups.filter { group ->
-                        group.name.contains(query, ignoreCase = true)
-                    }
-                }
-
-                // Aggiorna lo stato delle richieste
-                val updatedGroups = filteredGroups.map { group ->
-                    group.copy(isRequestSent = joinedGroupRequests.contains(group.id))
-                }
-
-                _searchResults.value = updatedGroups
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = "Errore nella ricerca gruppi: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
     }
 
     fun loadDefaultUsers() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Carica utenti da Firebase
                 searchUsersFromFirebase("")
             } catch (e: Exception) {
                 _error.value = "Errore nel caricamento utenti: ${e.message}"
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun loadDefaultGroups() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val defaultGroups = allGroups.take(10).map { group ->
-                    group.copy(isRequestSent = joinedGroupRequests.contains(group.id))
-                }
-                _searchResults.value = defaultGroups
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = "Errore nel caricamento gruppi: ${e.message}"
-            } finally {
                 _isLoading.value = false
             }
         }
@@ -127,7 +65,6 @@ class AddFriendsViewModel : ViewModel() {
             try {
                 friendRepository.sendFriendRequest(user.id) { success, error ->
                     if (success) {
-                        // Aggiorna lista amici
                         val currentList = _searchResults.value ?: emptyList()
                         val updatedList = currentList.map { currentUser ->
                             if (currentUser.id == user.id) {
@@ -150,10 +87,9 @@ class AddFriendsViewModel : ViewModel() {
         }
     }
 
-    // NUOVA FUNZIONE: Controlla lo stato delle amicizie e richieste
+    // Controlla lo stato delle amicizie e richieste
     private suspend fun checkFriendshipStatus(userId: String, currentUserId: String): Pair<Boolean, Boolean> {
         return try {
-            // Controlla se sono già amici
             val friendDoc = firestore.collection("users")
                 .document(currentUserId)
                 .collection("friends")
@@ -163,7 +99,6 @@ class AddFriendsViewModel : ViewModel() {
 
             val isAlreadyFriend = friendDoc.exists()
 
-            // Controlla se c'è una richiesta pendente
             val requestSnapshot = firestore.collection("friendRequests")
                 .whereEqualTo("senderId", currentUserId)
                 .whereEqualTo("receiverId", userId)
@@ -193,25 +128,27 @@ class AddFriendsViewModel : ViewModel() {
                             val users = mutableListOf<AddFriendUser>()
 
                             for (doc in documents) {
-                                val user = doc.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
+                                val user =
+                                    doc.toObject(com.example.mountainpassport_girarifugi.user.User::class.java)
 
                                 if (doc.id != currentUserId &&
                                     (query.isBlank() ||
                                             user.nome.contains(query, ignoreCase = true) ||
                                             user.cognome.contains(query, ignoreCase = true) ||
-                                            user.nickname.contains(query, ignoreCase = true))) {
+                                            user.nickname.contains(query, ignoreCase = true))
+                                ) {
 
-                                    val (isAlreadyFriend, isRequestSent) = checkFriendshipStatus(doc.id, currentUserId)
+                                    val (isAlreadyFriend, isRequestSent) =
+                                        checkFriendshipStatus(doc.id, currentUserId)
 
-                                    // OTTIENI LE STATISTICHE REALI DAL POINTSREPOSITORY
                                     val userStats = getUserStatsFromPoints(doc.id)
 
                                     val addFriendUser = AddFriendUser(
                                         id = doc.id,
                                         name = "${user.nome} ${user.cognome}".trim(),
                                         username = user.nickname,
-                                        points = userStats.first, // PUNTI REALI
-                                        refugesCount = userStats.second, // RIFUGI REALI
+                                        points = userStats.first,
+                                        refugesCount = userStats.second,
                                         avatarResource = R.drawable.avatar_mario,
                                         isAlreadyFriend = isAlreadyFriend,
                                         isRequestSent = isRequestSent,
@@ -239,16 +176,15 @@ class AddFriendsViewModel : ViewModel() {
         }
     }
 
-    // AGGIUNGI QUESTO METODO
     private suspend fun getUserStatsFromPoints(userId: String): Pair<Int, Int> {
         return try {
-            // Ottieni le statistiche dal sistema punti
             val userStatsDoc = firestore.collection("user_points_stats")
                 .document(userId)
                 .get()
                 .await()
 
-            val userStats = userStatsDoc.toObject(com.example.mountainpassport_girarifugi.data.model.UserPointsStats::class.java)
+            val userStats =
+                userStatsDoc.toObject(com.example.mountainpassport_girarifugi.data.model.UserPointsStats::class.java)
 
             if (userStats != null) {
                 Pair(userStats.totalPoints, userStats.totalVisits)
@@ -258,29 +194,6 @@ class AddFriendsViewModel : ViewModel() {
         } catch (e: Exception) {
             android.util.Log.e("AddFriendsVM", "Error getting user stats", e)
             Pair(0, 0)
-        }
-    }
-
-    fun joinGroup(group: AddFriendUser) {
-        viewModelScope.launch {
-            try {
-                // Simula una chiamata API
-                joinedGroupRequests.add(group.id)
-
-                // Aggiorna la lista corrente marcando il gruppo come "richiesta inviata"
-                val currentList = _searchResults.value ?: emptyList()
-                val updatedList = currentList.map { currentGroup ->
-                    if (currentGroup.id == group.id) {
-                        currentGroup.copy(isRequestSent = true)
-                    } else {
-                        currentGroup
-                    }
-                }
-                _searchResults.value = updatedList
-
-            } catch (e: Exception) {
-                _error.value = "Errore nell'invio della richiesta di accesso al gruppo: ${e.message}"
-            }
         }
     }
 

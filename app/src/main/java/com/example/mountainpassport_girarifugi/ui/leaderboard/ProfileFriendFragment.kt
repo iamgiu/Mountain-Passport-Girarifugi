@@ -28,7 +28,7 @@ class ProfileFriendFragment : Fragment() {
 
     private val friendId by lazy {
         val id = arguments?.getString("USER_ID") ?: ""
-        Log.d(TAG, "🆔 FriendId recuperato: '$id'")
+        Log.d(TAG, "FriendId recuperato: '$id'")
         id
     }
 
@@ -39,14 +39,14 @@ class ProfileFriendFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        Log.d(TAG, "🏗️ Creando vista...")
+        Log.d(TAG, "Creando vista...")
         return inflater.inflate(R.layout.fragment_profile_leaderboard, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d(TAG, "👀 Vista creata, inizializzando...")
+        Log.d(TAG, "Vista creata, inizializzando...")
 
         // Recupera e logga tutti gli argomenti per debug
         logArguments()
@@ -65,16 +65,16 @@ class ProfileFriendFragment : Fragment() {
 
         // Carica i timbri se abbiamo un ID valido
         if (friendId.isNotEmpty()) {
-            Log.d(TAG, "📍 Caricando timbri per: $friendId")
+            Log.d(TAG, "Caricando timbri per: $friendId")
             viewModel.loadStamps(friendId)
         } else {
-            Log.e(TAG, "❌ FriendId vuoto, impossibile caricare timbri")
+            Log.e(TAG, "FriendId vuoto, impossibile caricare timbri")
             showError("ID utente non valido")
         }
     }
 
     private fun logArguments() {
-        Log.d(TAG, "📋 Argomenti ricevuti:")
+        Log.d(TAG, "Argomenti ricevuti:")
         arguments?.let { args ->
             args.keySet().forEach { key ->
                 Log.d(TAG, "  $key: ${args.get(key)}")
@@ -90,7 +90,7 @@ class ProfileFriendFragment : Fragment() {
         val avatar = arguments?.getInt("USER_AVATAR") ?: R.drawable.avatar_sara
         val profileImageUrl = arguments?.getString("USER_PROFILE_IMAGE_URL")
 
-        Log.d(TAG, "👤 Dati utente: name=$name, username=$username, points=$points, refuges=$refuges")
+        Log.d(TAG, "Dati utente: name=$name, username=$username, points=$points, refuges=$refuges")
 
         // Popola UI
         view.findViewById<TextView>(R.id.fullNameTextView).text = name
@@ -103,7 +103,7 @@ class ProfileFriendFragment : Fragment() {
     }
 
     private fun setupRecyclerView(view: View) {
-        Log.d(TAG, "🔄 Setup RecyclerView...")
+        Log.d(TAG, "Setup RecyclerView...")
 
         stampsRecyclerView = view.findViewById(R.id.stampsRecyclerView)
         stampsRecyclerView.layoutManager = LinearLayoutManager(
@@ -116,15 +116,15 @@ class ProfileFriendFragment : Fragment() {
         stampsAdapter = StampsAdapter(emptyList())
         stampsRecyclerView.adapter = stampsAdapter
 
-        Log.d(TAG, "✅ RecyclerView configurata")
+        Log.d(TAG, "RecyclerView configurata")
     }
 
     private fun setupObservers() {
-        Log.d(TAG, "👁️ Setup observers...")
+        Log.d(TAG, "Setup observers...")
 
         // Observer per i timbri
         viewModel.stamps.observe(viewLifecycleOwner) { stamps ->
-            Log.d(TAG, "🏔️ Timbri ricevuti: ${stamps.size}")
+            Log.d(TAG, "Timbri ricevuti: ${stamps.size}")
             stamps.forEach { stamp ->
                 Log.d(TAG, "  - ${stamp.rifugioName}")
             }
@@ -138,14 +138,13 @@ class ProfileFriendFragment : Fragment() {
 
         // Observer per il loading
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            Log.d(TAG, "⏳ Loading: $isLoading")
-            // Qui puoi mostrare/nascondere un progress bar
+            Log.d(TAG, "Loading: $isLoading")
         }
 
         // Observer per gli errori
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             if (errorMessage.isNotEmpty()) {
-                Log.e(TAG, "❌ Errore: $errorMessage")
+                Log.e(TAG, "Errore: $errorMessage")
                 showError(errorMessage)
             }
         }
@@ -189,7 +188,7 @@ class ProfileFriendFragment : Fragment() {
 
     private fun setupClickListeners(view: View) {
         view.findViewById<FloatingActionButton>(R.id.fabBack)?.setOnClickListener {
-            Log.d(TAG, "🔙 Tornando indietro...")
+            Log.d(TAG, "Tornando indietro...")
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
     }

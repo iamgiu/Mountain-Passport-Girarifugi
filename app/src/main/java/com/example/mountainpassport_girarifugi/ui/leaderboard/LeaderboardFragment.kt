@@ -25,7 +25,7 @@ class LeaderboardFragment : Fragment() {
     private var _binding: FragmentLeaderboardBinding? = null
     private val binding get() = _binding!!
 
-    // IMPORTANTE: Usa activityViewModels per condividere il ViewModel con i fragment figli
+    // Usa activityViewModels per condividere il ViewModel con i fragment figli
     private val viewModel: LeaderboardViewModel by activityViewModels()
 
     private var isSearchVisible = false
@@ -48,10 +48,9 @@ class LeaderboardFragment : Fragment() {
 
         setupViewPager()
         setupTabs()
-        setupSearchFunctionality()
 
         // Imposta "Amici" come tab selezionato di default
-        selectTab(1)
+        selectTab(0)
 
         val fabAddFriend = view.findViewById<FloatingActionButton>(R.id.fabAddFriend)
         fabAddFriend.setOnClickListener {
@@ -79,138 +78,28 @@ class LeaderboardFragment : Fragment() {
     }
 
     private fun setupTabs() {
-        binding.btnTabGroups.setOnClickListener {
+
+        binding.btnTabFriends.setOnClickListener {
             selectTab(0)
             binding.viewPagerLeaderboard.currentItem = 0
         }
-        binding.btnTabFriends.setOnClickListener {
+        binding.btnTabGlobal.setOnClickListener {
             selectTab(1)
             binding.viewPagerLeaderboard.currentItem = 1
         }
-        binding.btnTabGlobal.setOnClickListener {
-            selectTab(2)
-            binding.viewPagerLeaderboard.currentItem = 2
-        }
     }
 
-    private fun setupSearchFunctionality() {
-        // Click listener per il FAB di ricerca
-        binding.fabSearch.setOnClickListener {
-            toggleSearchBar()
-        }
-
-        // Listener per la SearchView
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String): Boolean {
-                performSearch(query)
-                return true
-            }
-
-            override fun onQueryTextChange(newText: String): Boolean {
-                // Ricerca in tempo reale mentre l'utente digita
-                performSearch(newText)
-                return true
-            }
-        })
-
-        // Listener per quando la SearchView viene chiusa
-        binding.searchView.setOnCloseListener {
-            hideSearchBar()
-            false
-        }
-    }
-
-    private fun toggleSearchBar() {
-        if (isSearchVisible) {
-            hideSearchBar()
-        } else {
-            showSearchBar()
-        }
-    }
-
-    private fun showSearchBar() {
-        binding.searchContainer.visibility = View.VISIBLE
-        binding.searchView.requestFocus()
-        isSearchVisible = true
-
-        // Animazione di entrata
-        val slideIn = ObjectAnimator.ofFloat(binding.searchContainer, "translationX", 300f, 0f)
-        val fadeIn = ObjectAnimator.ofFloat(binding.searchContainer, "alpha", 0f, 1f)
-        val scaleX = ObjectAnimator.ofFloat(binding.searchContainer, "scaleX", 0.8f, 1f)
-        val scaleY = ObjectAnimator.ofFloat(binding.searchContainer, "scaleY", 0.8f, 1f)
-
-        val animatorSet = AnimatorSet()
-        animatorSet.playTogether(slideIn, fadeIn, scaleX, scaleY)
-        animatorSet.duration = 300
-        animatorSet.start()
-
-        // Mostra la tastiera
-        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(binding.searchView, InputMethodManager.SHOW_IMPLICIT)
-
-        // Cambia l'icona del FAB
-        binding.fabSearch.setImageResource(R.drawable.ic_close_24px)
-    }
-
-    private fun hideSearchBar() {
-        val slideOut = ObjectAnimator.ofFloat(binding.searchContainer, "translationX", 0f, 300f)
-        val fadeOut = ObjectAnimator.ofFloat(binding.searchContainer, "alpha", 1f, 0f)
-        val scaleX = ObjectAnimator.ofFloat(binding.searchContainer, "scaleX", 1f, 0.8f)
-        val scaleY = ObjectAnimator.ofFloat(binding.searchContainer, "scaleY", 1f, 0.8f)
-
-        val animatorSet = AnimatorSet()
-        animatorSet.playTogether(slideOut, fadeOut, scaleX, scaleY)
-        animatorSet.duration = 250
-
-        animatorSet.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                binding.searchContainer.visibility = View.GONE
-                binding.searchView.setQuery("", false)
-                binding.searchContainer.translationX = 0f
-                binding.searchContainer.alpha = 1f
-                binding.searchContainer.scaleX = 1f
-                binding.searchContainer.scaleY = 1f
-            }
-        })
-        animatorSet.start()
-
-        isSearchVisible = false
-
-        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
-
-        binding.fabSearch.setImageResource(R.drawable.ic_search_24)
-        clearSearch()
-    }
-
-    private fun performSearch(query: String) {
-        Log.d(TAG, "Performing search: $query")
-        when (binding.viewPagerLeaderboard.currentItem) {
-            0 -> viewModel.searchInGroups(query)
-            1 -> viewModel.searchInFriends(query)
-            2 -> viewModel.searchInGlobal(query)
-        }
-    }
-
-    private fun clearSearch() {
-        viewModel.clearSearch()
-    }
 
     private fun selectTab(position: Int) {
         resetAllTabs()
 
         when (position) {
             0 -> {
-                binding.btnTabGroups.setBackgroundResource(R.drawable.rounded_button_selected)
-                binding.btnTabGroups.setTextColor(ContextCompat.getColor(requireContext(), R.color.light_green))
-                animateTabSize(binding.btnTabGroups, 1.15f)
-            }
-            1 -> {
                 binding.btnTabFriends.setBackgroundResource(R.drawable.rounded_button_selected)
                 binding.btnTabFriends.setTextColor(ContextCompat.getColor(requireContext(), R.color.light_green))
                 animateTabSize(binding.btnTabFriends, 1.15f)
             }
-            2 -> {
+            1 -> {
                 binding.btnTabGlobal.setBackgroundResource(R.drawable.rounded_button_selected)
                 binding.btnTabGlobal.setTextColor(ContextCompat.getColor(requireContext(), R.color.light_green))
                 animateTabSize(binding.btnTabGlobal, 1.15f)
@@ -228,11 +117,6 @@ class LeaderboardFragment : Fragment() {
     }
 
     private fun resetAllTabs() {
-        binding.btnTabGroups.setBackgroundResource(R.drawable.rounded_button_unselected)
-        binding.btnTabGroups.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
-        binding.btnTabGroups.scaleX = 1.0f
-        binding.btnTabGroups.scaleY = 1.0f
-
         binding.btnTabFriends.setBackgroundResource(R.drawable.rounded_button_unselected)
         binding.btnTabFriends.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
         binding.btnTabFriends.scaleX = 1.0f
@@ -242,15 +126,6 @@ class LeaderboardFragment : Fragment() {
         binding.btnTabGlobal.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
         binding.btnTabGlobal.scaleX = 1.0f
         binding.btnTabGlobal.scaleY = 1.0f
-    }
-
-    fun onBackPressed(): Boolean {
-        return if (isSearchVisible) {
-            hideSearchBar()
-            true
-        } else {
-            false
-        }
     }
 
     override fun onDestroyView() {
@@ -263,9 +138,8 @@ class LeaderboardFragment : Fragment() {
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {
-                0 -> GroupsLeaderboardFragment()
-                1 -> FriendsLeaderboardFragment()
-                2 -> GlobalLeaderboardFragment()
+                0 -> FriendsLeaderboardFragment()
+                1 -> GlobalLeaderboardFragment()
                 else -> FriendsLeaderboardFragment()
             }
         }

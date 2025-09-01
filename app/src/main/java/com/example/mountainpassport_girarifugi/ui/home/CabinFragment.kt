@@ -120,10 +120,6 @@ class CabinFragment : Fragment() {
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
 
-        // Bottone per registrare visita (se presente nel layout)
-        view.findViewById<FloatingActionButton>(R.id.fabVisit)?.setOnClickListener {
-            viewModel.recordVisit()
-        }
     }
 
     private fun populateUI(view: View, rifugio: CabinViewModel.RifugioDisplay) {

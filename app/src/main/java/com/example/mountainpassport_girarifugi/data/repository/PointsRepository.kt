@@ -3,6 +3,7 @@ package com.example.mountainpassport_girarifugi.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.mountainpassport_girarifugi.data.model.*
+import com.example.mountainpassport_girarifugi.ui.notifications.NotificationsViewModel
 import com.example.mountainpassport_girarifugi.utils.NotificationHelper
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -135,6 +136,8 @@ class PointsRepository(private val context: Context) {
         }
     }
 
+    // Nel metodo registerRifugioVisitWithPoints(), aggiungi questa chiamata dopo il salvataggio dei punti:
+
     suspend fun registerRifugioVisitWithPoints(
         userId: String,
         rifugioId: Int
@@ -159,6 +162,15 @@ class PointsRepository(private val context: Context) {
             firestore.collection("user_points").add(userPoints).await()
             Log.d(TAG, "Visita salvata in user_points")
 
+            // ✅ AGGIUNGI QUESTA CHIAMATA PER LA NOTIFICA DEI PUNTI
+            NotificationsRepository().createPointsEarnedNotification(
+                userId = userId,
+                punti = pointsCalculated,
+                rifugioName = rifugio.nome,
+                rifugioId = rifugioId
+            )
+            Log.d(TAG, "Notifica punti guadagnati creata")
+
             // ✅ timbro solo se è la prima visita
             if (!hasUserVisitedRifugio(userId, rifugioId)) {
                 val stampData = mapOf(
@@ -171,20 +183,20 @@ class PointsRepository(private val context: Context) {
                     .add(stampData)
                     .await()
                 Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
-                
+
                 // Notifica timbro ottenuto
                 NotificationHelper.showStampObtainedNotification(context, rifugio.nome)
                 NotificationsRepository().createNotification(
                     userId = userId,
                     titolo = "Timbro ottenuto!",
                     descrizione = "Hai ottenuto il timbro di ${rifugio.nome}!",
-                    tipo = com.example.mountainpassport_girarifugi.ui.notifications.NotificationsViewModel.TipoNotifica.TIMBRO_OTTENUTO,
+                    tipo = NotificationsViewModel.TipoNotifica.TIMBRO_OTTENUTO,
                     categoria = "rifugi",
                     rifugioId = rifugioId.toString()
                 )
             }
 
-            // Aggiorna interazione con contatore
+            // Resto del codice rimane uguale...
             val interaction = mapOf(
                 "userId" to userId,
                 "rifugioId" to rifugioId,

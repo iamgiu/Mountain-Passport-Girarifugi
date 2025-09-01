@@ -39,22 +39,16 @@ class CabinFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza il ViewModel
         viewModel = ViewModelProvider(this)[CabinViewModel::class.java]
 
-        // Inizializza l'adapter per le recensioni
         reviewsAdapter = ReviewAdapter()
 
-        // Configura gli observer
         setupObservers()
 
-        // Configura i click listeners
         setupClickListeners()
 
-        // Carica i dati del rifugio
         loadRifugioData()
 
-        // Configura la RecyclerView per le recensioni
         setupReviewsRecyclerView()
     }
 
@@ -64,7 +58,6 @@ class CabinFragment : Fragment() {
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Mostra/nasconde un indicatore di caricamento se necessario
             if (isLoading) {
                 // binding.progressBar.visibility = View.VISIBLE
             } else {
@@ -87,10 +80,6 @@ class CabinFragment : Fragment() {
             android.util.Log.d("CabinFragment", "Recensioni aggiornate: ${reviews.size} recensioni")
             reviewsAdapter.updateReviews(reviews)
             updateReviewsVisibility(reviews)
-
-            if (reviews.isNotEmpty()) {
-                Toast.makeText(requireContext(), "Recensioni caricate: ${reviews.size} recensioni", Toast.LENGTH_SHORT).show()
-            }
         }
 
         viewModel.successMessage.observe(viewLifecycleOwner) { message ->
@@ -101,13 +90,11 @@ class CabinFragment : Fragment() {
         }
 
         viewModel.stats.observe(viewLifecycleOwner) { stats ->
-            // Aggiorna le statistiche quando cambiano
             viewModel.rifugio.value?.let { populateUI(it) }
         }
     }
 
     private fun loadRifugioData() {
-        // Recupera l'ID del rifugio dagli argomenti del bundle
         val rifugioId = arguments?.getInt("rifugioId") ?: run {
             Toast.makeText(requireContext(), "Errore: ID rifugio mancante", Toast.LENGTH_LONG).show()
             findNavController().popBackStack()
@@ -117,18 +104,18 @@ class CabinFragment : Fragment() {
         viewModel.loadRifugio(rifugioId)
     }
 
+    /**
+     * Setup dei bottoni
+     */
     private fun setupClickListeners() {
-        // Bottone indietro
         binding.fabBack.setOnClickListener {
             findNavController().popBackStack()
         }
 
-        // Bottone salva rifugio
         binding.fabSave.setOnClickListener {
             val currentState = viewModel.isSaved.value ?: false
             viewModel.toggleSaveRifugio()
 
-            // Mostra il toast appropriato
             val message = if (!currentState) {
                 "Rifugio salvato!"
             } else {
@@ -137,7 +124,6 @@ class CabinFragment : Fragment() {
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
 
-        // Bottone per aggiungere recensione utente (usando il FAB principale)
         binding.fabAddReview.setOnClickListener {
             showAddReviewDialog()
         }
@@ -145,47 +131,37 @@ class CabinFragment : Fragment() {
 
     private fun populateUI(rifugio: com.example.mountainpassport_girarifugi.data.model.Rifugio) {
         with(binding) {
-            // Dati principali
             cabinNameTextView.text = rifugio.nome
             altitudeTextView.text = "${rifugio.altitudine}m"
             coordinatesTextView.text = "${rifugio.latitudine}\n${rifugio.longitudine}"
             locationTextView.text = rifugio.localita
 
-            // Immagine del rifugio
             if (!rifugio.immagineUrl.isNullOrEmpty()) {
-                // Carica l'immagine dall'URL usando Glide
                 Glide.with(requireContext())
                     .load(rifugio.immagineUrl)
-                    .placeholder(R.drawable.rifugio_torino) // Immagine di fallback
-                    .error(R.drawable.rifugio_torino) // Immagine in caso di errore
+                    .placeholder(R.drawable.rifugio_torino)
+                    .error(R.drawable.rifugio_torino)
                     .centerCrop()
                     .into(cabinImageView)
             } else {
-                // Se non c'è URL, usa l'immagine di default
                 cabinImageView.setImageResource(R.drawable.rifugio_torino)
             }
 
-            // Timbro (placeholder)
             stampView.setImageResource(R.drawable.stamps)
 
-            // Servizi (usa le funzioni del ViewModel)
             openingPeriodTextView.text = viewModel.getOpeningPeriod(rifugio)
             bedsTextView.text = viewModel.getBeds(rifugio)
 
-            // Servizi dinamici
             updateServicesVisibility(rifugio)
 
-            // Come arrivare (usa le funzioni del ViewModel)
             distanceTextView.text = viewModel.getDistance(rifugio)
             elevationTextView.text = viewModel.getElevation(rifugio)
             timeTextView.text = viewModel.getTime(rifugio)
             difficultyTextView.text = viewModel.getDifficulty(rifugio)
             routeDescriptionTextView.text = viewModel.getRouteDescription(rifugio)
 
-            // Recensioni (usa le funzioni del ViewModel)
             reviewsRatingTextView.text = "⭐ ${viewModel.getAverageRating(rifugio)} (${viewModel.getReviewCount(rifugio)} recensioni)"
 
-            // Punti disponibili per questo rifugio
             val rifugioPoints = viewModel.getRifugioPoints(rifugio)
             pointsTextView.text = if (rifugioPoints.isDoublePoints) {
                 "+${rifugioPoints.totalPoints} punti (doppi!)"
@@ -195,6 +171,9 @@ class CabinFragment : Fragment() {
         }
     }
 
+    /**
+     * Cambia icona del favSave
+     */
     private fun updateSaveButtonIcon(isSaved: Boolean) {
         val iconRes = if (isSaved) {
             R.drawable.ic_bookmark_added_24px
@@ -222,6 +201,9 @@ class CabinFragment : Fragment() {
         }
     }
 
+    /**
+     * Controlla se ci sono i servizi all'interno del JSON
+     */
     private fun updateServicesVisibility(rifugio: com.example.mountainpassport_girarifugi.data.model.Rifugio) {
         android.util.Log.d("CabinFragment", "Aggiornando servizi per rifugio: ${rifugio.nome} (Tipo: ${rifugio.tipo}, Altitudine: ${rifugio.altitudine})")
 
@@ -233,24 +215,23 @@ class CabinFragment : Fragment() {
         android.util.Log.d("CabinFragment", "Servizi disponibili - Acqua: $hasHotWater, Docce: $hasShowers, Elettricità: $hasElectricity, Ristorante: $hasRestaurant")
 
         with(binding) {
-            // Acqua calda
             hotWaterLayout.visibility = if (hasHotWater) View.VISIBLE else View.GONE
             android.util.Log.d("CabinFragment", "Acqua calda visibility: ${hotWaterLayout.visibility}")
 
-            // Docce
             showersLayout.visibility = if (hasShowers) View.VISIBLE else View.GONE
             android.util.Log.d("CabinFragment", "Docce visibility: ${showersLayout.visibility}")
 
-            // Luce elettrica
             electricityLayout.visibility = if (hasElectricity) View.VISIBLE else View.GONE
             android.util.Log.d("CabinFragment", "Elettricità visibility: ${electricityLayout.visibility}")
 
-            // Ristorante
             restaurantLayout.visibility = if (hasRestaurant) View.VISIBLE else View.GONE
             android.util.Log.d("CabinFragment", "Ristorante visibility: ${restaurantLayout.visibility}")
         }
     }
 
+    /**
+     * Apre il dialogo per aggiungere una recensione al rifugio
+     */
     private fun showAddReviewDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_review, null)
         val dialog = AlertDialog.Builder(requireContext())

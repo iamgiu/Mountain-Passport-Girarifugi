@@ -39,29 +39,26 @@ class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 
     override fun getItemCount(): Int = reviews.size
 
+    /**
+     * Mette i dati dell'utente corrispondente nel item_review
+     */
     class ReviewViewHolder(private val binding: ItemReviewBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(review: Review) {
             with(binding) {
-                // Nome utente con fallback migliorato
                 userNameTextView.text = if (review.userName.isNotBlank() && review.userName != "Utente Anonimo") {
                     review.userName
                 } else {
-                    // Prova a generare un nome basato sull'userId
                     "Utente ${review.userId.take(6)}"
                 }
 
-                // Rating
                 ratingTextView.text = "⭐ ${review.rating}"
 
-                // Commento
                 commentTextView.text = review.comment
 
-                // Data
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                 dateTextView.text = dateFormat.format(review.timestamp.toDate())
 
-                // Avatar - usa la stessa strategia del FeedAmiciAdapter
                 loadUserAvatar(review.userAvatar)
 
                 android.util.Log.d("ReviewAdapter", "Review bound - User: '${review.userName}', Avatar: '${review.userAvatar}'")
@@ -69,7 +66,7 @@ class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
         }
 
         /**
-         * Caricamento avatar con stessa strategia del FeedAmiciAdapter
+         * Caricamente immagine profilo dell'utente
          */
         private fun loadUserAvatar(avatarUrl: String?) {
             if (!avatarUrl.isNullOrBlank()) {
@@ -80,11 +77,9 @@ class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
                             avatarUrl.substringAfter("base64,")
                         }
                         avatarUrl.startsWith("/9j/") || avatarUrl.startsWith("iVBORw0KGgo") -> {
-                            // È già Base64 puro (JPEG inizia con /9j/, PNG con iVBORw0KGgo)
                             avatarUrl
                         }
                         avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") -> {
-                            // URL remoto - usa Glide con crop circolare
                             com.bumptech.glide.Glide.with(itemView.context)
                                 .load(avatarUrl)
                                 .circleCrop()
@@ -104,7 +99,6 @@ class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
                         val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
 
                         if (bitmap != null) {
-                            // Applica il crop circolare direttamente al bitmap
                             val circularBitmap = createCircularBitmap(bitmap)
                             binding.userAvatarImageView.setImageBitmap(circularBitmap)
                         } else {
@@ -122,9 +116,6 @@ class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
             }
         }
 
-        /**
-         * Crea bitmap circolare
-         */
         private fun createCircularBitmap(bitmap: Bitmap): Bitmap {
             val size = kotlin.math.min(bitmap.width, bitmap.height)
             val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)

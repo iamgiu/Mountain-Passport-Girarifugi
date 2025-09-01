@@ -29,17 +29,14 @@ class PointsRepository(private val context: Context) {
         userId: String,
         rifugioId: Int
     ): Result<UserPoints> {
-        Log.d(TAG, "🚀 INIZIO recordVisit: userId=$userId, rifugioId=$rifugioId")
+        Log.d(TAG, "INIZIO recordVisit: userId=$userId, rifugioId=$rifugioId")
 
         return try {
-            // Ottieni rifugio
             val rifugio = rifugioRepository.getRifugioById(rifugioId)
                 ?: return Result.failure(Exception("Rifugio non trovato"))
 
-            // Calcola punti
             val pointsEarned = PointsCalculator.calculateVisitPoints(rifugioId, rifugio.altitudine)
 
-            // Crea UserPoints
             val userPoints = UserPoints(
                 userId = userId,
                 rifugioId = rifugioId,
@@ -50,10 +47,8 @@ class PointsRepository(private val context: Context) {
                 isDoublePoints = PointsCalculator.isDoublePointsRifugio(rifugioId)
             )
 
-            // Salva in Firebase
             val docRef = firestore.collection("user_points").add(userPoints).await()
 
-            // ✅ Timbro solo alla prima visita
             val firstVisit = !hasUserVisitedRifugio(userId, rifugioId)
             if (firstVisit) {
                 val stampData = mapOf(
@@ -65,7 +60,7 @@ class PointsRepository(private val context: Context) {
                     .collection("stamps")
                     .add(stampData)
                     .await()
-                Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+                Log.d(TAG, "Timbro aggiunto in users/$userId/stamps")
                 
                 // Notifica timbro ottenuto
                 NotificationHelper.showStampObtainedNotification(context, rifugio.nome)
@@ -92,13 +87,10 @@ class PointsRepository(private val context: Context) {
             )
             activityRepository.logUserActivity(activity)
 
-            // Aggiorna stats utente
             updateUserStats(userId, pointsEarned)
 
-            // Aggiorna stats rifugio
             updateRifugioStats(rifugioId)
 
-            // Notifiche
             NotificationHelper.showPointsEarnedNotification(context, pointsEarned, rifugio.nome)
             NotificationsRepository().createPointsEarnedNotification(
                 userId = userId,
@@ -107,7 +99,6 @@ class PointsRepository(private val context: Context) {
                 rifugioId = rifugioId
             )
 
-            // ✅ Aggiorna interazioni utente-rifugio senza bloccare
             val interactionRef = firestore.collection("user_rifugio_interactions")
                 .document("${userId}_${rifugioId}")
 
@@ -124,19 +115,16 @@ class PointsRepository(private val context: Context) {
                 transaction.set(interactionRef, interaction, SetOptions.merge())
             }.await()
 
-            // Verifica completamento sfida mensile
             monthlyChallengeRepository.checkAndNotifyChallengeCompletion(userId, pointsEarned)
 
-            Log.d(TAG, "🎉 SUCCESS: Visita registrata completamente")
+            Log.d(TAG, "SUCCESS: Visita registrata completamente")
             Result.success(userPoints.copy(id = docRef.id))
 
         } catch (e: Exception) {
-            Log.e(TAG, "💥 EXCEPTION: ${e.message}", e)
+            Log.e(TAG, "EXCEPTION: ${e.message}", e)
             Result.failure(e)
         }
     }
-
-    // Nel metodo registerRifugioVisitWithPoints(), aggiungi questa chiamata dopo il salvataggio dei punti:
 
     suspend fun registerRifugioVisitWithPoints(
         userId: String,
@@ -162,7 +150,6 @@ class PointsRepository(private val context: Context) {
             firestore.collection("user_points").add(userPoints).await()
             Log.d(TAG, "Visita salvata in user_points")
 
-            // ✅ AGGIUNGI QUESTA CHIAMATA PER LA NOTIFICA DEI PUNTI
             NotificationsRepository().createPointsEarnedNotification(
                 userId = userId,
                 punti = pointsCalculated,
@@ -171,7 +158,6 @@ class PointsRepository(private val context: Context) {
             )
             Log.d(TAG, "Notifica punti guadagnati creata")
 
-            // ✅ timbro solo se è la prima visita
             if (!hasUserVisitedRifugio(userId, rifugioId)) {
                 val stampData = mapOf(
                     "refugeName" to rifugio.nome,
@@ -182,9 +168,8 @@ class PointsRepository(private val context: Context) {
                     .collection("stamps")
                     .add(stampData)
                     .await()
-                Log.d(TAG, "✅ Timbro aggiunto in users/$userId/stamps")
+                Log.d(TAG, "Timbro aggiunto in users/$userId/stamps")
 
-                // Notifica timbro ottenuto
                 NotificationHelper.showStampObtainedNotification(context, rifugio.nome)
                 NotificationsRepository().createNotification(
                     userId = userId,
@@ -196,7 +181,6 @@ class PointsRepository(private val context: Context) {
                 )
             }
 
-            // Resto del codice rimane uguale...
             val interaction = mapOf(
                 "userId" to userId,
                 "rifugioId" to rifugioId,
@@ -226,7 +210,6 @@ class PointsRepository(private val context: Context) {
 
             NotificationHelper.showPointsEarnedNotification(context, pointsCalculated, rifugio.nome)
 
-            // Verifica completamento sfida mensile
             monthlyChallengeRepository.checkAndNotifyChallengeCompletion(userId, pointsCalculated)
 
             Log.d(TAG, "Visita registrata con successo!")

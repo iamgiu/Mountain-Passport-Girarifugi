@@ -23,6 +23,9 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
 
     private var friends: List<LeaderboardUser> = emptyList()
 
+    /**
+     * Mette in ordine decrescente di punti e aggiorna le posizioni
+     */
     fun submitList(newFriends: List<LeaderboardUser>) {
         CoroutineScope(Dispatchers.IO).launch {
             val updatedFriends = newFriends.map { user ->
@@ -36,9 +39,8 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
                     e.printStackTrace()
                     user
                 }
-            }.sortedByDescending { it.points } // <-- ordina dal punteggio più alto
+            }.sortedByDescending { it.points }
 
-            // Aggiorna posizione (1°, 2°, 3°, ...)
             val withPosition = updatedFriends.mapIndexed { index, user ->
                 user.copy(position = index + 1)
             }
@@ -50,7 +52,6 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
         }
     }
 
-    // Funzione sospesa per ottenere i dati reali
     private suspend fun getUserStatsFromPoints(userId: String): Pair<Int, Int> {
         return try {
             val firestore = FirebaseFirestore.getInstance()
@@ -73,7 +74,6 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
 
 
     override fun getItemViewType(position: Int): Int {
-        // La prima cella è sempre il podio (anche se ci sono meno di 3 utenti)
         return if (position == 0) VIEW_TYPE_TOP3 else VIEW_TYPE_ROW
     }
 
@@ -83,7 +83,6 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
             0
         } else {
             1 + maxOf(0, friends.size - 3)
-            // 1 per il podio + eventuali righe extra se ci sono più di 3 utenti
         }
     }
 
@@ -106,12 +105,10 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is Top3ViewHolder -> {
-                // Prendi i primi 3 utenti per il podio (se ci sono almeno 3)
                 val top3 = friends.take(3)
                 if (top3.size == 3) {
                     holder.bind(top3[0], top3[1], top3[2])
                 } else {
-                    // In caso ci siano meno di 3 utenti, mostra solo quelli disponibili
                     val first = top3.getOrNull(0)
                     val second = top3.getOrNull(1)
                     val third = top3.getOrNull(2)
@@ -124,7 +121,7 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
             }
 
             is RowViewHolder -> {
-                val userIndex = position + 2 // Il podio occupa position 0, quindi position 1 = 4° posto (index 3)
+                val userIndex = position + 2
                 if (userIndex < friends.size) {
                     holder.bind(friends[userIndex])
                 }
@@ -132,22 +129,17 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
         }
     }
 
-
-    // ViewHolder per il podio (top 3)
     class Top3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         fun bind(first: LeaderboardUser, second: LeaderboardUser, third: LeaderboardUser) {
-            // Primo posto (centro)
             itemView.findViewById<TextView>(R.id.textFirstPlaceName).text = first.name
             itemView.findViewById<TextView>(R.id.textFirstPlaceScore).text = first.points.toString()
             setProfileImage(itemView.findViewById<ImageView>(R.id.imageFirstPlace), first)
 
-            // Secondo posto (sinistra)
             itemView.findViewById<TextView>(R.id.textSecondPlaceName).text = second.name
             itemView.findViewById<TextView>(R.id.textSecondPlaceScore).text = second.points.toString()
             setProfileImage(itemView.findViewById<ImageView>(R.id.imageSecondPlace), second)
 
-            // Terzo posto (destra)
             itemView.findViewById<TextView>(R.id.textThirdPlaceName).text = third.name
             itemView.findViewById<TextView>(R.id.textThirdPlaceScore).text = third.points.toString()
             setProfileImage(itemView.findViewById<ImageView>(R.id.imageThirdPlace), third)
@@ -188,7 +180,6 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
         }
     }
 
-    // ViewHolder per le righe normali (dal 4° posto in poi o tutti se meno di 3)
     class RowViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         fun bind(user: LeaderboardUser) {
@@ -197,7 +188,6 @@ class FriendsLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
             itemView.findViewById<TextView>(R.id.textViewPoints).text = "${user.points}"
             itemView.findViewById<TextView>(R.id.textViewRefuges).text = "${user.refugesCount} rifugi"
 
-            // Prova diversi ID possibili per l'avatar
             val avatarImageView = itemView.findViewById<ImageView>(R.id.imageSecondPlace)
 
             avatarImageView?.let { setProfileImage(it, user) }

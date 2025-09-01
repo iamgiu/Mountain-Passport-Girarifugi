@@ -22,9 +22,8 @@ class FirebaseInitializer(private val context: Context) {
      */
     suspend fun initializeFirebase() {
         try {
-            Log.d(TAG, "Inizializzazione Firebase in corso...")
-            
-            // Crea raccolte con dati di esempio
+            Log.d(TAG, "Inizializzazione Firebase")
+
             createSampleReviews()
             createSampleStats()
             createSamplePoints()
@@ -74,8 +73,7 @@ class FirebaseInitializer(private val context: Context) {
                     timestamp = Timestamp.now()
                 )
             )
-            
-            // Inserisci le recensioni
+
             sampleReviews.forEach { review ->
                 firestore.collection("reviews")
                     .add(review)
@@ -119,8 +117,7 @@ class FirebaseInitializer(private val context: Context) {
                     lastUpdated = Timestamp.now()
                 )
             )
-            
-            // Inserisci le statistiche
+
             sampleStats.forEach { stats ->
                 firestore.collection("rifugio_stats")
                     .document(stats.rifugioId.toString())
@@ -135,7 +132,7 @@ class FirebaseInitializer(private val context: Context) {
     }
     
     /**
-     * Verifica se Firebase è già inizializzato
+     * Verifica se Firebase è inizializzato
      */
     suspend fun isFirebaseInitialized(): Boolean {
         return try {
@@ -155,9 +152,8 @@ class FirebaseInitializer(private val context: Context) {
      */
     private suspend fun createSamplePoints() {
         try {
-            Log.d(TAG, "Creazione dati di esempio per il sistema di punti...")
-            
-            // Crea alcuni utenti di esempio con punti
+            Log.d(TAG, "Creazione dati di esempio per il sistema di punti")
+
             val sampleUsers = listOf(
                 "user_123" to 1250,
                 "user_456" to 890,
@@ -168,8 +164,8 @@ class FirebaseInitializer(private val context: Context) {
                 val userStats = com.example.mountainpassport_girarifugi.data.model.UserPointsStats(
                     userId = userId,
                     totalPoints = points,
-                    totalVisits = points / 25, // Circa 25 punti per visita media
-                    monthlyPoints = points / 3, // Circa 1/3 dei punti del mese corrente
+                    totalVisits = points / 25,
+                    monthlyPoints = points / 3,
                     monthlyVisits = (points / 25) / 3,
                     lastUpdated = com.google.firebase.Timestamp.now()
                 )
@@ -179,8 +175,7 @@ class FirebaseInitializer(private val context: Context) {
                     .set(userStats)
                     .await()
             }
-            
-            // Crea alcune visite di esempio
+
             val sampleVisits = listOf(
                 com.example.mountainpassport_girarifugi.data.model.UserPoints(
                     userId = "user_123",

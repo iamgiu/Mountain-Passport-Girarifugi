@@ -42,18 +42,15 @@ class AddFriendsAdapter(
 
                 val profileImageView = binding.imageViewProfile
 
-                // --- Gestione immagine profilo ---
                 val profileData = user.profileImageUrl
                 if (!profileData.isNullOrBlank()) {
                     try {
                         val base64Data = if (profileData.startsWith("data:image")) {
-                            // Ha il prefisso MIME completo
+
                             profileData.substringAfter("base64,")
                         } else if (profileData.startsWith("/9j/") || profileData.startsWith("iVBORw0KGgo")) {
-                            // È già Base64 puro (JPEG inizia con /9j/, PNG con iVBORw0KGgo)
                             profileData
                         } else {
-                            // Caso URL remoto o altro formato
                             null
                         }
 
@@ -66,7 +63,6 @@ class AddFriendsAdapter(
                                 profileImageView.setImageResource(user.avatarResource)
                             }
                         } else {
-                            // URL remoto - qui potresti usare Glide se necessario
                             profileImageView.setImageResource(user.avatarResource)
                         }
                     } catch (e: Exception) {
@@ -74,11 +70,12 @@ class AddFriendsAdapter(
                         profileImageView.setImageResource(user.avatarResource)
                     }
                 } else {
-                    // Nessuna immagine, usa avatar locale
                     profileImageView.setImageResource(user.avatarResource)
                 }
 
-                // --- Bottone aggiungi amico ---
+                /**
+                 * Cambia il tasto AddFriend
+                 */
                 when {
                     user.isAlreadyFriend -> {
                         btnAddFriend.text = "Già Amici"
@@ -100,7 +97,6 @@ class AddFriendsAdapter(
                     }
                 }
 
-                // --- Click listener ---
                 cardViewFriend.setOnClickListener { onUserClick(user) }
                 btnAddFriend.setOnClickListener {
                     if (!user.isAlreadyFriend && !user.isRequestSent) {
@@ -108,7 +104,6 @@ class AddFriendsAdapter(
                     }
                 }
 
-                // --- Animazioni touch ---
                 cardViewFriend.setOnClickListener { onUserClick(user) }
                 btnAddFriend.setOnClickListener {
                     if (!user.isAlreadyFriend && !user.isRequestSent) {

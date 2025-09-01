@@ -11,7 +11,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
-// Data class per gli utenti che possono essere aggiunti come amici
+/**
+ * Data class che rappresenta l'utente
+ */
 data class AddFriendUser(
     val id: String,
     val name: String,
@@ -26,15 +28,12 @@ data class AddFriendUser(
 
 class AddFriendsViewModel : ViewModel() {
 
-    // LiveData per i risultati della ricerca
     private val _searchResults = MutableLiveData<List<AddFriendUser>>()
     val searchResults: LiveData<List<AddFriendUser>> = _searchResults
 
-    // LiveData per gli stati di caricamento
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    // LiveData per gestire gli errori
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
@@ -43,7 +42,6 @@ class AddFriendsViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
     init {
-        // Carica subito alcuni utenti
         loadDefaultUsers()
     }
 
@@ -87,7 +85,6 @@ class AddFriendsViewModel : ViewModel() {
         }
     }
 
-    // Controlla lo stato delle amicizie e richieste
     private suspend fun checkFriendshipStatus(userId: String, currentUserId: String): Pair<Boolean, Boolean> {
         return try {
             val friendDoc = firestore.collection("users")

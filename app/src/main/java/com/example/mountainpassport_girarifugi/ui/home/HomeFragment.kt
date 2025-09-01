@@ -42,19 +42,16 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza il ViewModel
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
 
-        // Inizializza il repository delle notifiche
         notificationsRepository = NotificationsRepository()
 
-        // Imposta il repository per caricare dati dal JSON
         viewModel.setRepository(requireContext())
 
         setupUI(view)
         observeViewModel(view)
-        setupEventBusObserver() // AGGIUNTO: Observer per eventi di salvataggio rifugi
-        setupNotificationObserver(view) // NUOVO: Observer per notifiche non lette
+        setupEventBusObserver()
+        setupNotificationObserver(view)
 
         val fabNotifications = view.findViewById<FloatingActionButton>(R.id.fabNotifications)
         fabNotifications.setOnClickListener {
@@ -67,17 +64,13 @@ class HomeFragment : Fragment() {
         }
     }
 
-    /**
-     * NUOVO: Observer per le notifiche non lette
-     */
     private fun setupNotificationObserver(view: View) {
         val fabNotifications = view.findViewById<FloatingActionButton>(R.id.fabNotifications)
         
         lifecycleScope.launch {
             notificationsRepository.observeNotifications().collect { notifiche ->
                 val hasUnreadNotifications = notifiche.any { !it.isLetta }
-                
-                // Cambia l'icona in base alle notifiche non lette
+
                 val iconResource = if (hasUnreadNotifications) {
                     R.drawable.ic_notifications_unread_24px
                 } else {
@@ -101,27 +94,20 @@ class HomeFragment : Fragment() {
             viewModel.refreshFeedAmici()
         }
 
-        // Inizializza con il tab rifugi attivo
         viewModel.setActiveTab("rifugi")
     }
 
-    /**
-     * AGGIUNTO: Observer per l'evento di salvataggio rifugi
-     */
     private fun setupEventBusObserver() {
         RifugioSavedEventBus.rifugioSavedEvent.observe(viewLifecycleOwner) {
-            // Quando un rifugio viene salvato/rimosso, aggiorna la lista dei rifugi salvati
             viewModel.refreshRifugiSalvati()
         }
     }
 
     private fun observeViewModel(view: View) {
-        // Osserva il tab attivo
         viewModel.currentTab.observe(viewLifecycleOwner) { activeTab ->
             highlightActiveButton(activeTab)
         }
 
-        // Osserva il punteggio
         viewModel.punteggio.observe(viewLifecycleOwner) { punteggio ->
             setupPunteggio(view, punteggio)
         }
@@ -130,31 +116,24 @@ class HomeFragment : Fragment() {
             setupRifugiSalvati(view, rifugiSalvati)
         }
 
-        // Osserva i rifugi bonus
         viewModel.rifugiBonus.observe(viewLifecycleOwner) { rifugiBonus ->
             setupRifugiBonus(view, rifugiBonus)
         }
 
-        // Osserva i suggerimenti personalizzati
         viewModel.suggerimentiPersonalizzati.observe(viewLifecycleOwner) { suggerimenti ->
             setupSuggerimenti(view, suggerimenti)
         }
 
-        // Osserva il feed amici
         viewModel.feedAmici.observe(viewLifecycleOwner) { feedAmici ->
             setupFeedAmici(view, feedAmici)
         }
 
-        // Osserva gli errori
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             errorMessage?.let {
-                // Mostra errore (puoi usare Toast, Snackbar, etc.)
-                // Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                 viewModel.clearError()
             }
         }
 
-        // Osserva lo stato di loading
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             // Mostra/nascondi loading indicator se necessario
         }
@@ -165,12 +144,10 @@ class HomeFragment : Fragment() {
         val emptyMessage = view.findViewById<TextView>(R.id.emptyRifugiSalvatiTextView)
 
         if (rifugiSalvati.isEmpty()) {
-            // Mostra il messaggio quando non ci sono rifugi salvati
             recycler.visibility = View.GONE
             emptyMessage.visibility = View.VISIBLE
             emptyMessage.text = "Inizia ad esplorare!"
         } else {
-            // Mostra la lista quando ci sono rifugi salvati
             recycler.visibility = View.VISIBLE
             emptyMessage.visibility = View.GONE
 
@@ -182,7 +159,9 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Metodo per navigare dai rifugi delle card orizzontali - AGGIORNATO
+    /**
+     * Funzione che permette di andare alla pagina di un rifugio cliccando sulla card corrispondente
+     */
     private fun navigateToRifugioFromCard(rifugioCard: HomeViewModel.RifugioCard) {
         lifecycleScope.launch {
             try {
@@ -190,10 +169,8 @@ class HomeFragment : Fragment() {
 
                 val bundle = Bundle().apply {
                     if (rifugio != null) {
-                        // OPZIONE 1: Se trovato nel JSON, passa l'ID (navigazione moderna)
                         putInt("rifugioId", rifugio.id)
                     } else {
-                        // OPZIONE 2: Se non trovato nel JSON, passa tutti i dati (navigazione legacy)
                         putString("RIFUGIO_NOME", rifugioCard.nome)
                         putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
                         putString("RIFUGIO_DISTANZA", rifugioCard.distanza)
@@ -210,7 +187,6 @@ class HomeFragment : Fragment() {
             } catch (e: Exception) {
                 android.util.Log.e("HomeFragment", "Errore navigazione: ${e.message}")
 
-                // Fallback: passa sempre i dati della card
                 val bundle = Bundle().apply {
                     putString("RIFUGIO_NOME", rifugioCard.nome)
                     putString("RIFUGIO_ALTITUDINE", rifugioCard.altitudine)
@@ -226,7 +202,9 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Metodo per navigare dai feed amici - VERSIONE CORRETTA
+    /**
+     * Setup del Feed degli Amici per ora si vede solo quando un utente e i suoi amici visitano un Rifugio
+     */
     private fun setupFeedAmici(view: View, feedAmici: List<HomeViewModel.FeedAmico>) {
         val recyclerFeed = view.findViewById<RecyclerView>(R.id.recyclerFeedAmici)
         val emptyFeedLayout = view.findViewById<View>(R.id.emptyFeedLayout)
@@ -240,29 +218,23 @@ class HomeFragment : Fragment() {
 
             recyclerFeed.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
 
-            // Converti da FeedAmico a FriendActivity per l'adapter
             val friendActivities = feedAmici.mapNotNull { feedAmico ->
                 convertFeedAmicoToFriendActivity(feedAmico)
             }
 
             val adapter = FeedAmiciAdapter(friendActivities) { rifugioId ->
-                // Il callback ora riceve direttamente il rifugioId
                 lifecycleScope.launch {
                     try {
-                        // Se abbiamo un ID valido, naviga direttamente
                         if (rifugioId.isNotBlank()) {
                             val bundle = Bundle().apply {
-                                // Se rifugioId è numerico, convertilo a Int
                                 val rifugioIdInt = rifugioId.toIntOrNull()
                                 if (rifugioIdInt != null) {
                                     putInt("rifugioId", rifugioIdInt)
                                 } else {
-                                    // Fallback: cerca per nome se l'ID non è numerico
                                     val rifugio = viewModel.findRifugioByName(rifugioId)
                                     if (rifugio != null) {
                                         putInt("rifugioId", rifugio.id)
                                     } else {
-                                        // Ultimo fallback: usa i dati che abbiamo
                                         putString("RIFUGIO_NOME", rifugioId)
                                         putString("RIFUGIO_ALTITUDINE", "0 m")
                                         putString("RIFUGIO_DISTANZA", "N/A")
@@ -296,7 +268,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Funzione helper per convertire FeedAmico in FriendActivity
     private fun convertFeedAmicoToFriendActivity(feedAmico: HomeViewModel.FeedAmico): FriendActivity? {
         return try {
             FriendActivity(
@@ -324,12 +295,14 @@ class HomeFragment : Fragment() {
         }
     }
 
-
+    /**
+     * Setup del punteggio della sfida mensile
+     */
     private fun setupPunteggio(view: View, punteggio: Int) {
         val progress = view.findViewById<ProgressBar>(R.id.progressScore)
         val textScoreOverlay = view.findViewById<TextView>(R.id.textScoreOverlay)
 
-        val clamped = punteggio.coerceIn(0, MAX_POINTS) // evita valori fuori scala
+        val clamped = punteggio.coerceIn(0, MAX_POINTS)
         val percent = (clamped * 100) / MAX_POINTS
 
         progress.max = 100
@@ -343,7 +316,7 @@ class HomeFragment : Fragment() {
 
         val adapterRifugiBonus = RifugiHorizontalAdapter(
             rifugiBonus,
-            true, // mostra badge bonus
+            true,
             onRifugioClick = { rifugioCard ->
                 navigateToRifugioFromCard(rifugioCard)
             }
@@ -357,7 +330,7 @@ class HomeFragment : Fragment() {
 
         val adapterSuggerimenti = RifugiHorizontalAdapter(
             suggerimenti,
-            false, // nascondi badge bonus
+            false,
             onRifugioClick = { rifugioCard ->
                 navigateToRifugioFromCard(rifugioCard)
             }
@@ -365,8 +338,9 @@ class HomeFragment : Fragment() {
         recyclerSuggerimenti.adapter = adapterSuggerimenti
     }
 
-
-
+    /**
+     * Gestisce le tab "Per te" e "Amici"
+     */
     private fun highlightActiveButton(activeButton: String) {
         val tabPerTe = view?.findViewById<TextView>(R.id.tab_per_te)
         val tabAmici = view?.findViewById<TextView>(R.id.tab_amici)
@@ -375,9 +349,7 @@ class HomeFragment : Fragment() {
 
         when (activeButton) {
             "rifugi" -> {
-                // attivo
                 tabPerTe?.paintFlags = (tabPerTe?.paintFlags ?: 0) or Paint.UNDERLINE_TEXT_FLAG
-                // non attivo
                 tabAmici?.paintFlags = (tabAmici?.paintFlags ?: 0) and Paint.UNDERLINE_TEXT_FLAG.inv()
                 tabPerTe?.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
                 tabPerTe?.setTypeface(null, android.graphics.Typeface.BOLD)
@@ -394,9 +366,7 @@ class HomeFragment : Fragment() {
             }
 
             "amici" -> {
-                // attivo
                 tabAmici?.paintFlags = (tabAmici?.paintFlags ?: 0) or Paint.UNDERLINE_TEXT_FLAG
-                // non attivo
                 tabPerTe?.paintFlags = (tabPerTe?.paintFlags ?: 0) and Paint.UNDERLINE_TEXT_FLAG.inv()
                 tabAmici?.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_black))
                 tabAmici?.setTypeface(null, android.graphics.Typeface.BOLD)

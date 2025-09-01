@@ -39,7 +39,6 @@ class RifugiSalvatiAdapter(
             textDistanza.text = rifugio.distanza
             textAltitudine.text = rifugio.altitudine
 
-            // Carica immagine (da URL o risorsa locale)
             if (rifugio.immagine.startsWith("http")) {
                 Glide.with(itemView.context)
                     .load(rifugio.immagine)

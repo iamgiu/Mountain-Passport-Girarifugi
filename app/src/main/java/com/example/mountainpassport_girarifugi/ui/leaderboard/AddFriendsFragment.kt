@@ -38,7 +38,6 @@ class AddFriendsFragment : Fragment() {
         setupSearchFunctionality()
         observeViewModel()
 
-        // Carica subito tutti gli utenti
         viewModel.searchUsersFromFirebase("")
 
         val fabForwardLeaderboard =

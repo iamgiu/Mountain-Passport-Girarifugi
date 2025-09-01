@@ -19,7 +19,7 @@ import com.example.mountainpassport_girarifugi.data.repository.ActivityType
 
 class FeedAmiciAdapter(
     private val feedItems: List<FriendActivity>,
-    private val onRifugioClick: ((String) -> Unit)? = null // rifugioId come parametro
+    private val onRifugioClick: ((String) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -58,17 +58,14 @@ class FeedAmiciAdapter(
 
     override fun getItemCount(): Int = feedItems.size
 
-    // ViewHolder generico - SEMPLIFICATO
     class GenericFeedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val avatarImage: ImageView = itemView.findViewById(R.id.imageSecondPlace)
         private val textNotifica: TextView = itemView.findViewById(R.id.textNotifica)
         private val textTempo: TextView = itemView.findViewById(R.id.textTempo)
 
         fun bind(item: FriendActivity) {
-            // Carica avatar utente con metodo semplificato
             loadUserAvatar(item.userAvatarUrl)
 
-            // Imposta il testo dell'attività
             textNotifica.text = "${item.username} ${getActivityText(item)}"
             textTempo.text = item.timeAgo
         }
@@ -83,21 +80,17 @@ class FeedAmiciAdapter(
             }
         }
 
-        // METODO SEMPLIFICATO come in AddFriendsAdapter
         private fun loadUserAvatar(avatarUrl: String?) {
             if (!avatarUrl.isNullOrBlank()) {
                 try {
                     val base64Data = when {
                         avatarUrl.startsWith("data:image") -> {
-                            // Ha il prefisso MIME completo
                             avatarUrl.substringAfter("base64,")
                         }
                         avatarUrl.startsWith("/9j/") || avatarUrl.startsWith("iVBORw0KGgo") -> {
-                            // È già Base64 puro (JPEG inizia con /9j/, PNG con iVBORw0KGgo)
                             avatarUrl
                         }
                         avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") -> {
-                            // URL remoto - usa Glide con crop circolare
                             Glide.with(itemView.context)
                                 .load(avatarUrl)
                                 .circleCrop()
@@ -117,7 +110,6 @@ class FeedAmiciAdapter(
                         val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
 
                         if (bitmap != null) {
-                            // Applica il crop circolare direttamente al bitmap
                             val circularBitmap = createCircularBitmap(bitmap)
                             avatarImage.setImageBitmap(circularBitmap)
                         } else {
@@ -153,7 +145,6 @@ class FeedAmiciAdapter(
         }
     }
 
-    // ViewHolder rifugio visitato
     class RifugioVisitatoViewHolder(
         itemView: View,
         private val onRifugioClick: ((String) -> Unit)?
@@ -170,14 +161,11 @@ class FeedAmiciAdapter(
         private val rifugioDetailsContainer: LinearLayout? = itemView.findViewById(R.id.rifugioDetailsContainer)
 
         fun bind(item: FriendActivity) {
-            // Carica avatar utente con metodo semplificato
             loadUserAvatar(item.userAvatarUrl)
 
-            // Setup header
             textNotifica.text = "${item.username} ha visitato un rifugio"
             textTempo.text = item.timeAgo
 
-            // Setup dati rifugio
             nomeRifugio.text = item.rifugioName ?: "Nome non disponibile"
             localitaRifugio.text = item.rifugioLocation ?: "Località non disponibile"
             altitudineRifugio.text = item.rifugioAltitude?.let {
@@ -185,10 +173,8 @@ class FeedAmiciAdapter(
             } ?: "Altitudine non disponibile"
             textPunti.text = "+${item.pointsEarned} punti"
 
-            // Carica immagine rifugio con metodo semplificato
             loadRifugioImage(item.rifugioImageUrl, item.rifugioName)
 
-            // Imposta click listener
             item.rifugioId?.let { rifugioId ->
                 rifugioDetailsContainer?.setOnClickListener {
                     onRifugioClick?.invoke(rifugioId)
@@ -198,7 +184,9 @@ class FeedAmiciAdapter(
             }
         }
 
-        // METODO SEMPLIFICATO come in AddFriendsAdapter
+        /**
+         * Carica l'immagine dell'utente
+         */
         private fun loadUserAvatar(avatarUrl: String?) {
             if (!avatarUrl.isNullOrBlank()) {
                 try {
@@ -263,7 +251,9 @@ class FeedAmiciAdapter(
             return output
         }
 
-        // METODO MIGLIORATO per immagini rifugio
+        /**
+         * Carica l'imamgine del rifugio
+         */
         private fun loadRifugioImage(rifugioImageUrl: String?, rifugioName: String?) {
             if (!rifugioImageUrl.isNullOrBlank()) {
                 try {
@@ -275,7 +265,6 @@ class FeedAmiciAdapter(
                             rifugioImageUrl
                         }
                         rifugioImageUrl.startsWith("http://") || rifugioImageUrl.startsWith("https://") -> {
-                            // 🔹 Caso URL remoto
                             Glide.with(itemView.context)
                                 .load(rifugioImageUrl)
                                 .centerCrop()
@@ -287,7 +276,6 @@ class FeedAmiciAdapter(
                             return
                         }
                         else -> {
-                            // 🔹 Caso nome drawable locale (es. "rifugio_contrin")
                             val context = itemView.context
                             val resId = context.resources.getIdentifier(
                                 rifugioImageUrl.lowercase(),
@@ -325,7 +313,6 @@ class FeedAmiciAdapter(
                     imageRifugio.setImageResource(localImageResource)
                 }
             } else {
-                // 🔹 Nessuna immagine disponibile → fallback
                 val localImageResource = getLocalRifugioImage(rifugioName)
                 imageRifugio.setImageResource(localImageResource)
             }

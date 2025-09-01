@@ -18,9 +18,8 @@ import kotlinx.coroutines.tasks.await
 
 class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Repository per dati JSON locali
     private val rifugioRepository = RifugioRepository(application)
-    // Repository per punti Firebase
+
     private val pointsRepository = PointsRepository(application)
 
     private val _rifugio = MutableLiveData<RifugioDisplay>()
@@ -38,7 +37,6 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     private val _isSaved = MutableLiveData<Boolean>()
     val isSaved: LiveData<Boolean> = _isSaved
 
-    // ID del rifugio corrente (per operazioni Firebase)
     private var currentRifugioId: Int = -1
 
     /**
@@ -49,17 +47,14 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _isLoading.value = true
 
-                // Carica dal JSON locale
                 val rifugio = rifugioRepository.getRifugioById(rifugioId)
 
                 if (rifugio != null) {
                     currentRifugioId = rifugioId
 
-                    // Converte in RifugioDisplay
                     val rifugioDisplay = convertToDisplay(rifugio)
                     _rifugio.value = rifugioDisplay
 
-                    // Carica stato salvato da Firebase
                     loadSavedState(rifugioId)
                 } else {
                     _error.value = "Rifugio con ID $rifugioId non trovato"
@@ -81,7 +76,6 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _isLoading.value = true
 
-                // Cerca nel JSON locale
                 val allRifugi = rifugioRepository.getAllRifugi()
                 val rifugio = allRifugi.find { it.nome == nome }
 
@@ -90,7 +84,6 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
                     val rifugioDisplay = convertToDisplay(rifugio)
                     _rifugio.value = rifugioDisplay
 
-                    // Carica stato salvato da Firebase
                     loadSavedState(rifugio.id)
                 } else {
                     _error.value = "Rifugio '$nome' non trovato"
@@ -105,7 +98,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Carica dati direttamente dagli arguments (compatibilità legacy)
+     * Carica dati direttamente dagli arguments
      */
     fun loadFromArguments(
         nome: String,
@@ -121,12 +114,10 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _isLoading.value = true
 
-                // Prova a trovare il rifugio nel JSON per avere l'ID
                 val allRifugi = rifugioRepository.getAllRifugi()
                 val rifugioFromJson = allRifugi.find { it.nome == nome }
 
                 val rifugioDisplay = if (rifugioFromJson != null) {
-                    // Usa dati JSON con alcune sovrascritture dagli arguments
                     currentRifugioId = rifugioFromJson.id
                     convertToDisplay(rifugioFromJson).copy(
                         distanza = distanza,
@@ -135,8 +126,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
                         descrizione = descrizione
                     )
                 } else {
-                    // Crea un rifugio solo con i dati degli arguments
-                    currentRifugioId = -1 // Nessun ID valido
+                    currentRifugioId = -1
                     RifugioDisplay(
                         id = -1,
                         nome = nome,
@@ -155,7 +145,6 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
                 _rifugio.value = rifugioDisplay
 
-                // Carica stato salvato solo se abbiamo un ID valido
                 if (currentRifugioId != -1) {
                     loadSavedState(currentRifugioId)
                 } else {
@@ -273,7 +262,7 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Registra una visita al rifugio (solo se ha un ID valido)
+     * Registra una visita al rifugio
      */
     fun recordVisit() {
         if (currentRifugioId == -1) {
@@ -291,14 +280,12 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
 
                 val userId = firebaseUser.uid
 
-                // Verifica se ha già visitato
                 val alreadyVisited = pointsRepository.hasUserVisitedRifugio(userId, currentRifugioId)
                 if (alreadyVisited) {
                     _error.value = "Hai già visitato questo rifugio!"
                     return@launch
                 }
 
-                // Registra la visita
                 val result = pointsRepository.recordVisit(userId, currentRifugioId)
                 result.fold(
                     onSuccess = { userPoints ->
@@ -316,7 +303,9 @@ class CabinViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Funzioni di utilità per generare dati coerenti
+    /**
+     * Funzioni per la creazione di dati non presenti nel JSON
+     */
     private fun getDistanceForRifugio(rifugio: Rifugio): String {
         return when (rifugio.altitudine) {
             in 0..2000 -> "${(1..5).random()}.${(0..9).random()} km"

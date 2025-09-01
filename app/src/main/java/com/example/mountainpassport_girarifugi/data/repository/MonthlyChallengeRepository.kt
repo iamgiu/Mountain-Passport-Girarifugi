@@ -41,7 +41,6 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
             val challengeRef = firestore.collection("monthly_challenges").document(monthKey)
             val snapshot = challengeRef.get().await()
 
-            // Se il documento non esiste → crealo
             if (!snapshot.exists()) {
                 challengeRef.set(
                     mapOf(
@@ -61,16 +60,13 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
                 return
             }
 
-            // 🚀 Avvio reset
             val batch = firestore.batch()
 
-            // Reset punti utenti
             val usersSnap = firestore.collection("users").get().await()
             for (doc in usersSnap.documents) {
                 batch.update(doc.reference, "points", 0)
             }
 
-            // Reset stats mensili
             val statsSnap = firestore.collection("user_points_stats").get().await()
             for (doc in statsSnap.documents) {
                 batch.update(
@@ -83,11 +79,10 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
                 )
             }
 
-            // Aggiorna resetDone = true
             batch.update(challengeRef, "resetDone", true)
 
             batch.commit().await()
-            Log.d("MonthlyReset", "✅ Reset completato per $monthKey")
+            Log.d("MonthlyReset", "Reset completato per $monthKey")
 
         } catch (e: Exception) {
             Log.e("MonthlyReset", "Errore nel reset mensile: ${e.message}", e)
@@ -95,17 +90,15 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
     }
 
     /**
-     * NUOVO: Verifica se un utente ha completato una sfida e invia notifica
+     * Verifica se un utente ha completato una sfida e invia notifica
      */
     suspend fun checkAndNotifyChallengeCompletion(userId: String, pointsEarned: Int) {
         try {
             val currentChallenge = getCurrentChallenge()
             if (currentChallenge?.bonusRifugi?.isNotEmpty() == true) {
-                // Verifica se l'utente ha visitato tutti i rifugi bonus
                 val hasCompletedChallenge = checkIfUserCompletedChallenge(userId, currentChallenge.bonusRifugi)
                 
                 if (hasCompletedChallenge) {
-                    // Invia notifica di completamento sfida
                     context?.let { ctx ->
                         NotificationHelper.showChallengeCompletedNotification(
                             context = ctx,
@@ -113,8 +106,7 @@ class MonthlyChallengeRepository(private val context: Context? = null) {
                             points = pointsEarned
                         )
                     }
-                    
-                    // Crea notifica in-app
+
                     NotificationsRepository().createNotification(
                         userId = userId,
                         titolo = "Sfida completata!",

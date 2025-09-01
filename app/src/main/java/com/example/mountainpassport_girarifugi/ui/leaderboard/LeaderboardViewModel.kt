@@ -36,26 +36,21 @@ class LeaderboardViewModel : ViewModel() {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // LiveData per la classifica generale
     private val _globalLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val globalLeaderboard: LiveData<List<LeaderboardUser>> = _globalLeaderboard
 
-    // LiveData per la classifica degli amici
     private val _friendsLeaderboard = MutableLiveData<List<LeaderboardUser>>()
     val friendsLeaderboard: LiveData<List<LeaderboardUser>> = _friendsLeaderboard
 
-    // Liste originali per la ricerca
     private var originalFriendsList: List<LeaderboardUser> = emptyList()
     private var originalGlobalList: List<LeaderboardUser> = emptyList()
 
-    // Stati di caricamento
     private val _isLoadingGlobal = MutableLiveData<Boolean>()
     val isLoadingGlobal: LiveData<Boolean> = _isLoadingGlobal
 
     private val _isLoadingFriends = MutableLiveData<Boolean>()
     val isLoadingFriends: LiveData<Boolean> = _isLoadingFriends
 
-    // Errori
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
@@ -75,7 +70,7 @@ class LeaderboardViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoadingGlobal.value = true
             try {
-                Log.d(TAG, "Caricando classifica globale...")
+                Log.d(TAG, "Caricando classifica globale")
 
                 val snapshot = firestore.collection("users")
                     .limit(500)
@@ -84,11 +79,9 @@ class LeaderboardViewModel : ViewModel() {
 
                 val users = mutableListOf<LeaderboardUser>()
 
-                // Carica tutti gli utenti con i loro dati reali
                 for (doc in snapshot.documents) {
                     val userData = doc.data
                     if (userData != null) {
-                        // Carica i dati reali dai punti come fai per gli amici
                         val (realPoints, realRefuges) = getUserStatsFromPoints(doc.id)
 
                         val nome = userData["nome"] as? String ?: ""
@@ -105,10 +98,10 @@ class LeaderboardViewModel : ViewModel() {
                         val user = LeaderboardUser(
                             id = doc.id,
                             name = displayName,
-                            points = realPoints,  // USA I DATI REALI
-                            refugesCount = realRefuges,  // USA I DATI REALI
-                            position = 0, // Verrà aggiornato dopo l'ordinamento
-                            avatarResource = R.drawable.avatar_mario,
+                            points = realPoints,
+                            refugesCount = realRefuges,
+                            position = 0,
+                            avatarResource = R.drawable.ic_account_circle_24,
                             profileImageUrl = profileImageUrl
                         )
 
@@ -116,7 +109,6 @@ class LeaderboardViewModel : ViewModel() {
                     }
                 }
 
-                // Ordina per punti e assegna le posizioni
                 val sortedUsers = users.sortedByDescending { it.points }
                 val usersWithPositions = sortedUsers.mapIndexed { index, user ->
                     user.copy(position = index + 1)
@@ -172,7 +164,6 @@ class LeaderboardViewModel : ViewModel() {
 
                 Log.d(TAG, "Caricando classifica amici per utente: $currentUserId")
 
-                // Carica prima l'utente corrente per debug
                 val currentUserDoc = firestore.collection("users")
                     .document(currentUserId)
                     .get()
@@ -184,7 +175,6 @@ class LeaderboardViewModel : ViewModel() {
                     Log.d(TAG, "Dati utente corrente: $data")
                 }
 
-                // 1. Carica la lista degli amici
                 val friendsSnapshot = firestore.collection("users")
                     .document(currentUserId)
                     .collection("friends")
@@ -195,7 +185,6 @@ class LeaderboardViewModel : ViewModel() {
 
                 val friendsUsers = mutableListOf<LeaderboardUser>()
 
-                // Aggiungi l'utente corrente
                 if (currentUserDoc.exists()) {
                     val currentUserData = currentUserDoc.data!!
                     val currentUser = createLeaderboardUser(currentUserId, currentUserData, 0)
@@ -203,7 +192,6 @@ class LeaderboardViewModel : ViewModel() {
                     friendsUsers.add(currentUser)
                 }
 
-                // Carica i dati di ogni amico
                 val friendIds = friendsSnapshot.documents.map { it.id }
                 Log.d(TAG, "ID amici: $friendIds")
 
@@ -227,7 +215,6 @@ class LeaderboardViewModel : ViewModel() {
                     }
                 }
 
-                // Ordina per punti e assegna le posizioni
                 val sortedFriends = friendsUsers.sortedByDescending { it.points }
                 val friendsWithPositions = sortedFriends.mapIndexed { index, user ->
                     user.copy(position = index + 1)
@@ -253,7 +240,7 @@ class LeaderboardViewModel : ViewModel() {
     }
 
     /**
-     * Helper per creare un LeaderboardUser da dati Firebase
+     * Helper per creare un LeaderboardUser utilizzando i dati di Firebase
      */
     private fun createLeaderboardUser(
         userId: String,
@@ -285,14 +272,14 @@ class LeaderboardViewModel : ViewModel() {
     }
 
     /**
-     * Aggiorna solo la classifica degli amici
+     * Aggiorna la classifica degli amici
      */
     fun refreshFriendsLeaderboard() {
         loadFriendsLeaderboard()
     }
 
     /**
-     * Aggiorna solo la classifica globale
+     * Aggiorna la classifica globale
      */
     fun refreshGlobalLeaderboard() {
         loadGlobalLeaderboard()

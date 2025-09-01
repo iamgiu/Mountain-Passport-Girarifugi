@@ -39,31 +39,25 @@ class ProfileFriendFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        Log.d(TAG, "Creando vista...")
+        Log.d(TAG, "Creando vista")
         return inflater.inflate(R.layout.fragment_profile_leaderboard, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d(TAG, "Vista creata, inizializzando...")
+        Log.d(TAG, "Vista creata, inizializzando")
 
-        // Recupera e logga tutti gli argomenti per debug
         logArguments()
 
-        // Popola i dati dell'utente
         populateUserData(view)
 
-        // Setup RecyclerView
         setupRecyclerView(view)
 
-        // Setup observers
         setupObservers()
 
-        // Setup click listeners
         setupClickListeners(view)
 
-        // Carica i timbri se abbiamo un ID valido
         if (friendId.isNotEmpty()) {
             Log.d(TAG, "Caricando timbri per: $friendId")
             viewModel.loadStamps(friendId)
@@ -87,12 +81,11 @@ class ProfileFriendFragment : Fragment() {
         val username = arguments?.getString("USER_USERNAME") ?: ""
         val points = arguments?.getInt("USER_POINTS") ?: 0
         val refuges = arguments?.getInt("USER_REFUGES") ?: 0
-        val avatar = arguments?.getInt("USER_AVATAR") ?: R.drawable.avatar_sara
+        val avatar = arguments?.getInt("USER_AVATAR") ?: R.drawable.ic_account_circle_24
         val profileImageUrl = arguments?.getString("USER_PROFILE_IMAGE_URL")
 
         Log.d(TAG, "Dati utente: name=$name, username=$username, points=$points, refuges=$refuges")
 
-        // Popola UI
         view.findViewById<TextView>(R.id.fullNameTextView).text = name
         view.findViewById<TextView>(R.id.usernameTextView).text = username
         view.findViewById<TextView>(R.id.monthlyScoreTextView).text = "$points"
@@ -112,7 +105,6 @@ class ProfileFriendFragment : Fragment() {
             false
         )
 
-        // Inizializza adapter con lista vuota
         stampsAdapter = StampsAdapter(emptyList())
         stampsRecyclerView.adapter = stampsAdapter
 
@@ -130,18 +122,15 @@ class ProfileFriendFragment : Fragment() {
             }
             stampsAdapter.updateStamps(stamps)
 
-            // Mostra messaggio se non ci sono timbri
             if (stamps.isEmpty()) {
                 showToast("Nessun timbro trovato per questo utente")
             }
         }
 
-        // Observer per il loading
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             Log.d(TAG, "Loading: $isLoading")
         }
 
-        // Observer per gli errori
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             if (errorMessage.isNotEmpty()) {
                 Log.e(TAG, "Errore: $errorMessage")

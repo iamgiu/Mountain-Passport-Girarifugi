@@ -7,8 +7,6 @@ import kotlinx.coroutines.tasks.await
 
 /**
  * Repository per gestire l'invio di notifiche push
- * Nota: Per l'invio effettivo di notifiche push, dovrai implementare
- * Firebase Cloud Functions o utilizzare l'API di Firebase Cloud Messaging
  */
 class PushNotificationRepository {
 
@@ -57,7 +55,6 @@ class PushNotificationRepository {
 
     /**
      * Prepara i dati per l'invio di una notifica push
-     * Nota: L'invio effettivo richiede Firebase Cloud Functions
      */
     suspend fun preparePushNotification(
         userId: String,
@@ -71,7 +68,6 @@ class PushNotificationRepository {
         puntiGuadagnati: Int? = null
     ): Boolean {
         return try {
-            // Salva la notifica nel database per l'invio
             val notificationData = mapOf(
                 "userId" to userId,
                 "title" to title,

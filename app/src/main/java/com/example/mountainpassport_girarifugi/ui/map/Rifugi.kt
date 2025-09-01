@@ -1,5 +1,8 @@
 package com.example.mountainpassport_girarifugi.data.model
 
+/**
+ * Data class che rappresenta il rifugio
+ */
 data class Rifugio(
     val id: Int,
     val nome: String,
@@ -17,6 +20,9 @@ data class Rifugio(
     val tempo: String? = null
 )
 
+/**
+ * Enum class che rappresenta la tipologia
+ */
 enum class TipoRifugio {
     RIFUGIO,
     BIVACCO,

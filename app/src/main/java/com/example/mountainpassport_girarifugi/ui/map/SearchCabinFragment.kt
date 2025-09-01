@@ -46,33 +46,30 @@ class SearchCabinFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza ViewModel
         viewModel = ViewModelProvider(this)[SearchCabinViewModel::class.java]
 
-        // Inizializza il client di localizzazione
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         setupLocationRequest()
         setupLocationCallback()
 
-        // Configura l'adapter
         setupAdapter()
 
-        // Configura la RecyclerView
         setupRecyclerView()
 
-        // Configura la SearchView
         setupSearchView()
 
-        // Configura i bottoni
         setupClickListeners()
 
-        // Osserva i dati del ViewModel
         observeViewModel()
 
-        // Richiedi i permessi di localizzazione e ottieni la posizione
         requestLocationPermissions()
     }
 
+    /**
+     * Gestisce come mostrare il rifugio
+     *
+     * I Rifugi inizialmente vengono visualizzati in ordine dal più vicino al più lontano
+     */
     private fun setupAdapter() {
         adapter = SearchCabinAdapter(
             onRifugioClick = { rifugio ->
@@ -84,17 +81,17 @@ class SearchCabinFragment : Fragment() {
         )
     }
 
+    /**
+     * Inizializza il RecyclerView
+     */
     private fun setupRecyclerView() {
         binding.recyclerViewUsers.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@SearchCabinFragment.adapter
 
-            // Aggiungi animazioni
             itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator()
-            
-            // Aggiungi un listener per il layout
+
             addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                // Quando il layout cambia, prova a scrollare al top se necessario
                 adapter?.let { safeAdapter ->
                     if (safeAdapter.itemCount > 0) {
                         post {
@@ -106,6 +103,9 @@ class SearchCabinFragment : Fragment() {
         }
     }
 
+    /**
+     * Inizializza la barra di ricerca
+     */
     private fun setupSearchView() {
         binding.searchView.apply {
             queryHint = "Cerca rifugi..."
@@ -114,8 +114,7 @@ class SearchCabinFragment : Fragment() {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     query?.let { viewModel.searchRifugi(it) }
                     clearFocus()
-                    
-                    // Scroll al top dopo la ricerca
+
                     binding.recyclerViewUsers.postDelayed({
                         binding.recyclerViewUsers.scrollToPosition(0)
                     }, 100)
@@ -125,8 +124,7 @@ class SearchCabinFragment : Fragment() {
 
                 override fun onQueryTextChange(newText: String?): Boolean {
                     newText?.let { viewModel.searchRifugi(it) }
-                    
-                    // Scroll al top quando cambia il testo
+
                     if (!newText.isNullOrEmpty()) {
                         binding.recyclerViewUsers.postDelayed({
                             binding.recyclerViewUsers.scrollToPosition(0)
@@ -137,26 +135,28 @@ class SearchCabinFragment : Fragment() {
                 }
             })
 
-            // Gestisci il pulsante di chiusura
             setOnCloseListener {
                 viewModel.clearSearch()
                 false
             }
 
-            // Gestisci anche quando la query viene cancellata manualmente
             setOnSearchClickListener {
-                // Quando si clicca sulla search view, assicurati che sia visibile
             }
         }
     }
 
+    /**
+     * Per tornare alla mappa
+     */
     private fun setupClickListeners() {
-        // Bottone per tornare alla mappa
         binding.fabForwardMap.setOnClickListener {
             findNavController().popBackStack()
         }
     }
 
+    /**
+     * Osserva i LiveData
+     */
     private fun observeViewModel() {
         viewModel.filteredRifugi.observe(viewLifecycleOwner) { rifugi ->
             android.util.Log.d("SearchCabinFragment", "Lista aggiornata con ${rifugi.size} elementi")
@@ -165,20 +165,16 @@ class SearchCabinFragment : Fragment() {
             }
             
             adapter.submitList(rifugi)
-            
-            // Scroll al primo elemento dopo aver aggiornato la lista
+
             if (rifugi.isNotEmpty()) {
                 android.util.Log.d("SearchCabinFragment", "Tentativo di scroll al primo elemento")
                 binding.recyclerViewUsers.postDelayed({
                     try {
-                        // Forza un layout refresh
                         binding.recyclerViewUsers.layoutManager?.requestLayout()
-                        
-                        // Prova prima con scroll immediato
+
                         binding.recyclerViewUsers.scrollToPosition(0)
                         android.util.Log.d("SearchCabinFragment", "Scroll immediato eseguito")
-                        
-                        // Se non funziona, prova con smooth scroll
+
                         binding.recyclerViewUsers.postDelayed({
                             binding.recyclerViewUsers.smoothScrollToPosition(0)
                             android.util.Log.d("SearchCabinFragment", "Smooth scroll eseguito")
@@ -186,7 +182,7 @@ class SearchCabinFragment : Fragment() {
                     } catch (e: Exception) {
                         android.util.Log.e("SearchCabinFragment", "Errore nello scroll: ${e.message}")
                     }
-                }, 300) // Aumentato ulteriormente il delay
+                }, 300)
             }
         }
 
@@ -205,10 +201,10 @@ class SearchCabinFragment : Fragment() {
     }
 
     private fun setupLocationRequest() {
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000) // Aggiorna ogni 10 secondi
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
             .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(5000) // Minimo 5 secondi tra aggiornamenti
-            .setMaxUpdateDelayMillis(15000) // Massimo ritardo 15 secondi
+            .setMinUpdateIntervalMillis(5000)
+            .setMaxUpdateDelayMillis(15000)
             .build()
     }
 
@@ -218,7 +214,6 @@ class SearchCabinFragment : Fragment() {
                 super.onLocationResult(locationResult)
                 locationResult.lastLocation?.let { location ->
                     viewModel.updateUserLocation(location)
-                    // Continua ad aggiornare la posizione per mantenere l'ordinamento aggiornato
                 }
             }
         }
@@ -288,14 +283,11 @@ class SearchCabinFragment : Fragment() {
                 return
             }
 
-            // Prima prova con l'ultima posizione conosciuta
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     viewModel.updateUserLocation(location)
-                    // Avvia aggiornamenti continui per mantenere la posizione aggiornata
                     startLocationUpdates()
                 } else {
-                    // Se non c'è una posizione conosciuta, richiedi aggiornamenti
                     startLocationUpdates()
                 }
             }
@@ -327,24 +319,20 @@ class SearchCabinFragment : Fragment() {
     }
 
     private fun onRifugioClick(rifugio: Rifugio) {
-        // Naviga al CabinFragment con l'ID del rifugio selezionato
         try {
             val bundle = Bundle().apply {
                 putInt("rifugioId", rifugio.id)
             }
 
-            // Naviga al fragment del rifugio
             findNavController().navigate(R.id.action_searchCabinFragment_to_cabinFragment, bundle)
 
         } catch (e: Exception) {
-            // Fallback in caso di errore di navigazione
             Toast.makeText(
                 requireContext(),
                 "Apertura dettagli per: ${rifugio.nome}\nAltitudine: ${rifugio.altitudine}m\nDistanza: ${viewModel.getDistanceToRifugio(rifugio)}",
                 Toast.LENGTH_LONG
             ).show()
 
-            // Log dell'errore per il debug
             android.util.Log.e("SearchCabinFragment", "Errore navigazione: ${e.message}")
         }
     }

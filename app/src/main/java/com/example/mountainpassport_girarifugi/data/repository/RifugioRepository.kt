@@ -19,7 +19,6 @@ class RifugioRepository(private val context: Context) {
     private val firestore = FirebaseFirestore.getInstance()
     private val gson = Gson()
 
-    // Cache per i dati statici
     private var rifugiCache: List<Rifugio>? = null
 
     /**
@@ -270,7 +269,6 @@ class RifugioRepository(private val context: Context) {
 
     /**
      * Registra la visita di un rifugio da parte dell'utente.
-     * Restituisce true se è la PRIMA visita (così da aggiungere timbro + punti).
      */
     suspend fun registerRifugioVisit(userId: String, rifugioId: Int): Boolean {
         val docRef = firestore.collection("user_rifugio_interactions")
@@ -280,10 +278,8 @@ class RifugioRepository(private val context: Context) {
             val snapshot = docRef.get().await()
 
             if (snapshot.exists()) {
-                // Già visitato → non fare nulla
                 false
             } else {
-                // Prima visita → crea l'interazione
                 val interaction = com.example.mountainpassport_girarifugi.data.model.UserRifugioInteraction(
                     userId = userId,
                     rifugioId = rifugioId,
@@ -296,7 +292,6 @@ class RifugioRepository(private val context: Context) {
 
                 docRef.set(interaction).await()
 
-                // Aggiorna anche il contatore rifugi dell'utente
                 val userRef = firestore.collection("users").document(userId)
                 firestore.runTransaction { transaction ->
                     val userDoc = transaction.get(userRef)
@@ -304,7 +299,7 @@ class RifugioRepository(private val context: Context) {
                     transaction.update(userRef, "refugesCount", currentCount + 1)
                 }.await()
 
-                true // segnala che è la prima visita
+                true
             }
         } catch (e: Exception) {
             android.util.Log.e("RifugioRepository", "Errore in registerRifugioVisit: ${e.message}", e)

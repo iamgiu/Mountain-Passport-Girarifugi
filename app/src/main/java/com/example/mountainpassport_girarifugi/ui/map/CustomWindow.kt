@@ -17,8 +17,10 @@ class CustomInfoWindow(
     private val onDettagliClick: (Rifugio) -> Unit
 ) : InfoWindow(R.layout.custom_info_window, mapView) {
 
+    /**
+     * Finestra che si apre nella mappa con le informazioni basilari del rifugio
+     */
     override fun onOpen(item: Any?) {
-        // Popola i dati del rifugio
         val textNome = mView.findViewById<TextView>(R.id.textNome)
         val textLocalita = mView.findViewById<TextView>(R.id.textLocalita)
         val textAltitudine = mView.findViewById<TextView>(R.id.textAltitudine)
@@ -26,32 +28,26 @@ class CustomInfoWindow(
         val buttonDettagli = mView.findViewById<Button>(R.id.buttonDettagli)
         val buttonClose = mView.findViewById<ImageButton>(R.id.buttonClose)
 
-        // Imposta i dati
         textNome.text = rifugio.nome
         textLocalita.text = rifugio.localita
         textAltitudine.text = "${rifugio.altitudine} m s.l.m."
 
-        // Carica l'immagine del rifugio dall'URL se disponibile
         if (!rifugio.immagineUrl.isNullOrEmpty()) {
-            // Carica l'immagine dall'URL usando Glide
             Glide.with(mView.context)
                 .load(rifugio.immagineUrl)
-                .placeholder(R.drawable.ic_cabin_24) // Immagine di fallback
-                .error(R.drawable.ic_cabin_24) // Immagine in caso di errore
+                .placeholder(R.drawable.ic_cabin_24)
+                .error(R.drawable.ic_cabin_24)
                 .centerCrop()
                 .into(imageRifugio)
         } else {
-            // Se non c'è URL, usa l'immagine di default
             imageRifugio.setImageResource(R.drawable.ic_cabin_24)
         }
 
-        // Gestisci il click sul pulsante dettagli
         buttonDettagli.setOnClickListener {
             onDettagliClick(rifugio)
-            close() // Chiudi l'info window dopo aver navigato
+            close()
         }
 
-        // Gestisci il click sul pulsante di chiusura (X)
         buttonClose.setOnClickListener {
             close() // Chiudi l'info window
         }

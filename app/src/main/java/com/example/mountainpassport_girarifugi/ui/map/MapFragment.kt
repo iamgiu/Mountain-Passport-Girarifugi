@@ -52,10 +52,8 @@ class MapFragment : Fragment(), MapListener {
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
-    // Lista dei rifugi caricati dal JSON
     private var rifugiList: List<Rifugio> = emptyList()
 
-    // Flag per controllare il follow location
     private var isFollowingLocation = true
     private var userInteractedWithMap = false
 
@@ -68,35 +66,41 @@ class MapFragment : Fragment(), MapListener {
         return binding.root
     }
 
+    /**
+     * Inizializza il repository
+     *
+     * Configura richiesta e callback di localizzazione
+     *
+     * Avvia la mappa
+     *
+     * Collega i bottoni
+     *
+     * Richiede i permessi di localizzaizone
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza il repository
         rifugioRepository = RifugioRepository(requireContext())
 
-        // Inizializza il client di localizzazione
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
-        // Configura la richiesta di localizzazione
         setupLocationRequest()
 
-        // Configura il callback per gli aggiornamenti di posizione
         setupLocationCallback()
 
-        // Inizializza osmdroid
         initializeMap()
 
-        // Configura i bottoni
         setupClickListeners()
 
-        // Richiedi i permessi di localizzazione
         requestLocationPermissions()
 
-        // Inizializzazione Search Cabin Button
         setupSeachCabinButton(view)
 
     }
 
+    /**
+     * Passa dalla mappa alla pagina SearchCabin
+     */
     private fun setupSeachCabinButton(view: View) {
         val buttonFilterRifugi = view.findViewById<FloatingActionButton>(R.id.buttonFilterRifugi)
         buttonFilterRifugi.setOnClickListener {
@@ -104,21 +108,25 @@ class MapFragment : Fragment(), MapListener {
         }
     }
 
+    /**
+     * Aggiorna la posizione ogni 5 secondi
+     */
     private fun setupLocationRequest() {
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000) // Aggiorna ogni 5 secondi
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
             .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(2000) // Minimo 2 secondi tra aggiornamenti
-            .setMaxUpdateDelayMillis(10000) // Massimo ritardo 10 secondi
+            .setMinUpdateIntervalMillis(2000)
+            .setMaxUpdateDelayMillis(10000)
             .build()
     }
 
+    /**
+     * Aggiorna la posizione solo se l'utente non ha interagito manualmente e isFollowingLocation è true
+     */
     private fun setupLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
                 locationResult.lastLocation?.let { location ->
-                    // Aggiorna la posizione solo se l'utente non ha interagito con la mappa
-                    // o se è attivo il follow location
                     if (isFollowingLocation && !userInteractedWithMap) {
                         updateMapLocation(location)
                     }
@@ -127,39 +135,39 @@ class MapFragment : Fragment(), MapListener {
         }
     }
 
+    /**
+     * Configura osmdroid
+     *
+     * Centra inizialmente la mappa su Valle d'Aosta con zoom 9
+     *
+     * Carica i rifugi dal JSON tramite repository
+     *
+     * Aggiorna la mappa
+     */
     private fun initializeMap() {
         try {
-            // Configura osmdroid
             Configuration.getInstance().load(
                 requireContext(),
                 PreferenceManager.getDefaultSharedPreferences(requireContext())
             )
 
-            // Imposta User Agent per evitare problemi con le tile
             Configuration.getInstance().userAgentValue = requireContext().packageName
 
-            // Configura la mappa
             binding.mapView.setTileSource(TileSourceFactory.MAPNIK)
             binding.mapView.setMultiTouchControls(true)
 
-            // Aggiungi il listener per detectare le interazioni utente
             binding.mapView.addMapListener(this)
 
-            // Ottieni il controller della mappa
             mapController = binding.mapView.controller
 
-            // Imposta zoom e posizione iniziale sulle Alpi italiane
             mapController.setZoom(9.0)
             val startPoint = GeoPoint(45.7370, 7.3210) // Aosta, Valle d'Aosta
             mapController.setCenter(startPoint)
 
-            // Configura l'overlay per la posizione utente
             setupLocationOverlay()
 
-            // Carica i rifugi dal JSON e aggiungi i marker
             loadRifugiAndAddMarkers()
 
-            // Forza il refresh della mappa
             binding.mapView.invalidate()
 
             Toast.makeText(requireContext(), "Mappa caricata correttamente", Toast.LENGTH_SHORT).show()
@@ -169,6 +177,9 @@ class MapFragment : Fragment(), MapListener {
         }
     }
 
+    /**
+     * Carica i rifugi nella mappa con il rispettivo marker
+     */
     private fun loadRifugiAndAddMarkers() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
@@ -179,10 +190,8 @@ class MapFragment : Fragment(), MapListener {
 
                 rifugiList = rifugi
 
-                // Aggiungi i marker alla mappa
                 addRifugiMarkers()
 
-                // Mostra un messaggio con il numero di rifugi caricati
                 Toast.makeText(
                     requireContext(),
                     "Caricati ${rifugi.size} rifugi sulla mappa",
@@ -202,11 +211,13 @@ class MapFragment : Fragment(), MapListener {
     private fun setupLocationOverlay() {
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(requireContext()), binding.mapView)
         myLocationOverlay?.enableMyLocation()
-        // NON abilitare il follow location automatico
-        // myLocationOverlay?.enableFollowLocation()
+
         binding.mapView.overlays.add(myLocationOverlay)
     }
 
+    /**
+     * Ogni marker ha posizione (longitudine e latitudine), mostra nome e altitudine, il pulsante per i dettagli che porta alla pagina del rifugio corrispondente
+     */
     private fun addRifugiMarkers() {
         rifugiList.forEach { rifugio ->
             val marker = Marker(binding.mapView).apply {
@@ -214,15 +225,12 @@ class MapFragment : Fragment(), MapListener {
                 title = rifugio.nome
                 snippet = "${rifugio.localita} - ${rifugio.altitudine} m"
 
-                // Imposta l'icona in base al tipo di rifugio
                 icon = getMarkerIcon(rifugio.tipo)
 
-                // Configura l'info window personalizzata
                 infoWindow = CustomInfoWindow(binding.mapView, rifugio) { rifugioCliccato ->
                     onRifugioDettagliClick(rifugioCliccato)
                 }
 
-                // Gestisci il click sul marker
                 setOnMarkerClickListener { marker, mapView ->
                     if (marker.isInfoWindowShown) {
                         marker.closeInfoWindow()
@@ -243,13 +251,11 @@ class MapFragment : Fragment(), MapListener {
             TipoRifugio.BIVACCO -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_cabin_24)
             TipoRifugio.CAPANNA -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_cabin_24)
         }?.apply {
-            // Colora l'icona
             setTint(ContextCompat.getColor(requireContext(), R.color.brown))
         }
     }
 
     private fun onRifugioDettagliClick(rifugio: Rifugio) {
-        // Naviga al dettaglio del rifugio
         val bundle = Bundle().apply {
             putInt("rifugioId", rifugio.id)
         }
@@ -259,7 +265,6 @@ class MapFragment : Fragment(), MapListener {
     private fun setupClickListeners() {
         binding.buttonMyLocation.setOnClickListener {
             if (checkLocationPermissions()) {
-                // Riabilita il follow location e centra sulla posizione utente
                 isFollowingLocation = true
                 userInteractedWithMap = false
                 centerMapOnUserLocation()
@@ -269,31 +274,29 @@ class MapFragment : Fragment(), MapListener {
         }
     }
 
-    // Implementazione MapListener per detectare interazioni utente
     override fun onScroll(event: ScrollEvent?): Boolean {
-        // L'utente ha fatto scroll, disabilita il follow location
         userInteractedWithMap = true
         isFollowingLocation = false
         return false
     }
 
     override fun onZoom(event: ZoomEvent?): Boolean {
-        // L'utente ha fatto zoom, disabilita il follow location
         userInteractedWithMap = true
         isFollowingLocation = false
         return false
     }
 
+    /**
+     * Richiede i permessi di localizzazione
+     */
     private fun requestLocationPermissions() {
         if (!checkLocationPermissions()) {
-            // Mostra un messaggio informativo prima di richiedere i permessi
             Toast.makeText(
                 requireContext(),
                 "L'app ha bisogno dei permessi di localizzazione per mostrare la tua posizione sulla mappa",
                 Toast.LENGTH_LONG
             ).show()
 
-            // Richiedi i permessi
             requestPermissions(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -329,7 +332,6 @@ class MapFragment : Fragment(), MapListener {
                     startLocationUpdates()
                     Toast.makeText(requireContext(), "Permessi di localizzazione concessi", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Verifica se l'utente ha negato i permessi permanentemente
                     val shouldShowRationale = shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
                     if (shouldShowRationale) {
                         Toast.makeText(
@@ -397,7 +399,6 @@ class MapFragment : Fragment(), MapListener {
                 }
             }
         } else {
-            // Se i permessi non sono concessi, richiedili
             Toast.makeText(
                 requireContext(),
                 "Permessi di localizzazione necessari per centrare la mappa sulla tua posizione",
@@ -408,7 +409,6 @@ class MapFragment : Fragment(), MapListener {
     }
 
     private fun updateMapLocation(location: Location) {
-        // Aggiorna la posizione sulla mappa solo se il follow location è attivo
         if (isFollowingLocation && !userInteractedWithMap) {
             val userLocation = GeoPoint(location.latitude, location.longitude)
             mapController.setCenter(userLocation)

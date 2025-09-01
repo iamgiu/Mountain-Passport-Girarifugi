@@ -19,6 +19,9 @@ class FriendRepository {
     private val auth = FirebaseAuth.getInstance()
     private val notificationsRepository = NotificationsRepository()
 
+    /**
+     * Manda richiesta di amicizia e crea la notifica
+     */
     fun sendFriendRequest(receiverId: String, callback: (Boolean, String?) -> Unit) {
         val currentUser = auth.currentUser
         if (currentUser == null) {
@@ -30,13 +33,13 @@ class FriendRepository {
 
         checkIfAlreadyFriends(senderId, receiverId) { alreadyFriends ->
             if (alreadyFriends) {
-                callback(false, "Gia' amici")
+                callback(false, "Già amici")
                 return@checkIfAlreadyFriends
             }
 
             checkIfRequestExists(senderId, receiverId) { requestExists ->
                 if (requestExists) {
-                    callback(false, "Richiesta gia' inviata")
+                    callback(false, "Richiesta già inviata")
                     return@checkIfRequestExists
                 }
 
@@ -63,7 +66,6 @@ class FriendRepository {
                                 .document(requestId)
                                 .set(friendRequest)
                                 .addOnSuccessListener {
-                                    // Create the notification
                                     CoroutineScope(Dispatchers.IO).launch {
                                         notificationsRepository.createFriendRequestNotification(
                                             receiverId = receiverId,
@@ -110,7 +112,7 @@ class FriendRepository {
     }
 
     fun acceptFriendRequestByUserId(senderId: String, callback: (Boolean, String?) -> Unit) {
-        android.util.Log.d("FriendRepository", "acceptFriendRequestByUserId called with senderId: $senderId")
+        android.util.Log.d("FriendRepository", "acceptFriendRequestByUserId chiamata con senderId: $senderId")
 
         val currentUser = auth.currentUser
         if (currentUser == null) {
@@ -130,19 +132,17 @@ class FriendRepository {
             return
         }
 
-        // PRIMA: Controlla se sono già amici
         checkIfAlreadyFriends(senderId, currentUserId) { alreadyFriends ->
             if (alreadyFriends) {
                 android.util.Log.d("FriendRepository", "Users are already friends")
-                callback(true, null) // Considera come successo se sono già amici
+                callback(true, null)
                 return@checkIfAlreadyFriends
             }
 
-            // TROVA LA RICHIESTA PENDENTE
             firestore.collection("friendRequests")
                 .whereEqualTo("senderId", senderId)
                 .whereEqualTo("receiverId", currentUserId)
-                .get() // Rimuovi il filtro per status per trovare tutte le richieste
+                .get()
                 .addOnSuccessListener { snapshot ->
                     android.util.Log.d("FriendRepository", "Found ${snapshot.documents.size} requests")
 
@@ -152,7 +152,6 @@ class FriendRepository {
                         return@addOnSuccessListener
                     }
 
-                    // TROVA LA RICHIESTA PIÙ RECENTE
                     val mostRecentRequest = snapshot.documents
                         .mapNotNull { doc ->
                             val data = doc.data
@@ -174,17 +173,14 @@ class FriendRepository {
 
                     when (currentStatus) {
                         "pending" -> {
-                            // Procedi con l'accettazione
                             processAcceptance(mostRecentRequest.id, senderId, currentUserId, callback)
                         }
                         "accepted" -> {
-                            // Già accettata, controlla se l'amicizia esiste
-                            android.util.Log.d("FriendRepository", "Request already accepted, checking friendship")
+                            android.util.Log.d("FriendRepository", "Richiesta già accetata, controllo amicizia")
                             ensureFriendshipExists(senderId, currentUserId) { friendshipExists ->
                                 if (friendshipExists) {
                                     callback(true, null)
                                 } else {
-                                    // Amicizia non esiste, ricreala
                                     addFriendshipConnectionSafe(senderId, currentUserId) { success ->
                                         callback(success, if (success) null else "Errore nel ricreare l'amicizia")
                                     }
@@ -200,20 +196,22 @@ class FriendRepository {
                     }
                 }
                 .addOnFailureListener { e ->
-                    android.util.Log.e("FriendRepository", "Error querying requests", e)
+                    android.util.Log.e("FriendRepository", "Errore", e)
                     callback(false, "Errore nella ricerca: ${e.message}")
                 }
         }
     }
 
-    // NUOVO METODO: Processa l'accettazione
+    /**
+     * Processa l'accettazione
+     */
     private fun processAcceptance(
         requestId: String,
         senderId: String,
         receiverId: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        android.util.Log.d("FriendRepository", "Processing acceptance for request: $requestId")
+        android.util.Log.d("FriendRepository", "Processa la richiesta: $requestId")
 
         firestore.runTransaction { transaction ->
             val requestRef = firestore.collection("friendRequests").document(requestId)
@@ -225,14 +223,13 @@ class FriendRepository {
 
             val currentStatus = requestSnapshot.getString("status")
             if (currentStatus == "accepted") {
-                throw Exception("ALREADY_ACCEPTED") // Speciale per identificare questo caso
+                throw Exception("ALREADY_ACCEPTED")
             }
 
             if (currentStatus != "pending") {
                 throw Exception("Richiesta non più pendente (status: $currentStatus)")
             }
 
-            // Aggiorna lo status
             transaction.update(requestRef, mapOf(
                 "status" to "accepted",
                 "acceptedAt" to System.currentTimeMillis()
@@ -242,7 +239,6 @@ class FriendRepository {
         }.addOnSuccessListener {
             android.util.Log.d("FriendRepository", "Transaction successful")
 
-            // Crea l'amicizia
             addFriendshipConnectionSafe(senderId, receiverId) { success ->
                 if (success) {
                     createAcceptanceNotificationAsync(receiverId, senderId)
@@ -255,7 +251,6 @@ class FriendRepository {
             android.util.Log.e("FriendRepository", "Transaction failed: ${e.message}")
 
             if (e.message == "ALREADY_ACCEPTED") {
-                // Caso speciale: già accettata, verifica l'amicizia
                 ensureFriendshipExists(senderId, receiverId) { friendshipExists ->
                     callback(friendshipExists, if (!friendshipExists) "Amicizia non trovata" else null)
                 }
@@ -265,13 +260,15 @@ class FriendRepository {
         }
     }
 
-    // NUOVO METODO: Verifica che l'amicizia esista davvero
+    /**
+     * Verifica se l'amicizia esiste
+     */
     private fun ensureFriendshipExists(
         userId1: String,
         userId2: String,
         callback: (Boolean) -> Unit
     ) {
-        android.util.Log.d("FriendRepository", "Checking if friendship exists: $userId1 <-> $userId2")
+        android.util.Log.d("FriendRepository", "Controllo se l'amicizia esiste: $userId1 <-> $userId2")
 
         firestore.collection("users")
             .document(userId1)
@@ -280,18 +277,17 @@ class FriendRepository {
             .get()
             .addOnSuccessListener { doc ->
                 val exists = doc.exists()
-                android.util.Log.d("FriendRepository", "Friendship exists: $exists")
+                android.util.Log.d("FriendRepository", "L'amicizia esiste: $exists")
                 callback(exists)
             }
             .addOnFailureListener { e ->
-                android.util.Log.e("FriendRepository", "Error checking friendship", e)
+                android.util.Log.e("FriendRepository", "Errore", e)
                 callback(false)
             }
     }
 
-    // CORREZIONE del metodo checkIfAlreadyFriends per essere più robusto
     private fun checkIfAlreadyFriends(userId1: String, userId2: String, callback: (Boolean) -> Unit) {
-        android.util.Log.d("FriendRepository", "Checking if already friends: $userId1 -> $userId2")
+        android.util.Log.d("FriendRepository", "Controllo se sono già amici: $userId1 -> $userId2")
 
         firestore.collection("users")
             .document(userId1)
@@ -300,17 +296,15 @@ class FriendRepository {
             .get()
             .addOnSuccessListener { doc ->
                 val areFriends = doc.exists()
-                android.util.Log.d("FriendRepository", "Already friends: $areFriends")
+                android.util.Log.d("FriendRepository", "Già amici: $areFriends")
                 callback(areFriends)
             }
             .addOnFailureListener { e ->
-                android.util.Log.e("FriendRepository", "Error checking friendship status", e)
-                // In caso di errore, assume che non siano amici per procedere
+                android.util.Log.e("FriendRepository", "Errore", e)
                 callback(false)
             }
     }
 
-    // Helper class per gestire callback multipli
     private class CallbackHandler(private val originalCallback: (Boolean, String?) -> Unit) {
         @Volatile
         private var invoked = false
@@ -329,6 +323,9 @@ class FriendRepository {
         }
     }
 
+    /**
+     * Crea i documenti uno per ogni utente dentro al Firebase e uno per la collection globale friend
+     */
     private fun addFriendshipConnectionSafe(
         userId1: String,
         userId2: String,
@@ -336,14 +333,12 @@ class FriendRepository {
     ) {
         android.util.Log.d("FriendRepository", "addFriendshipConnectionSafe: $userId1 -> $userId2")
 
-        // Validazione input
         if (userId1.isBlank() || userId2.isBlank() || userId1 == userId2) {
             android.util.Log.e("FriendRepository", "Invalid user IDs")
             callback(false)
             return
         }
 
-        // PRIMO: Ottieni i documenti degli utenti
         val user1Ref = firestore.collection("users").document(userId1)
         val user2Ref = firestore.collection("users").document(userId2)
 
@@ -365,14 +360,11 @@ class FriendRepository {
                     val user1Data = user1Doc.data ?: emptyMap()
                     val user2Data = user2Doc.data ?: emptyMap()
 
-                    // Crea oggetti Friend con null safety
                     val friend1 = createFriendSafely(userId1, user1Data)
                     val friend2 = createFriendSafely(userId2, user2Data)
 
-                    // SECONDO: Crea una nuova batch DOPO aver ottenuto i dati
                     val batch = firestore.batch()
 
-                    // Batch operations
                     batch.set(
                         firestore.collection("users")
                             .document(userId1)
@@ -389,7 +381,6 @@ class FriendRepository {
                         friend1
                     )
 
-                    // Global friends collection
                     val friendData = mapOf(
                         "user1" to userId1,
                         "user2" to userId2,
@@ -401,7 +392,6 @@ class FriendRepository {
                         friendData
                     )
 
-                    // COMMIT la batch
                     batch.commit().addOnSuccessListener {
                         android.util.Log.d("FriendRepository", "Friendship created successfully")
                         callback(true)
@@ -424,7 +414,6 @@ class FriendRepository {
         }
     }
 
-    // Helper per creare oggetti Friend in modo sicuro
     private fun createFriendSafely(userId: String, userData: Map<String, Any>): Friend {
         val nome = userData["nome"] as? String ?: ""
         val cognome = userData["cognome"] as? String ?: ""
@@ -442,7 +431,9 @@ class FriendRepository {
         )
     }
 
-    // Crea notifica di accettazione in modo async e non bloccante
+    /**
+     * Crea notifica di accettazione amicizia
+     */
     private fun createAcceptanceNotificationAsync(receiverId: String, senderId: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -465,7 +456,6 @@ class FriendRepository {
                 }
             } catch (e: Exception) {
                 android.util.Log.w("FriendRepository", "Failed to create acceptance notification", e)
-                // Non propagare l'errore perché è operazione secondaria
             }
         }
     }
@@ -503,7 +493,6 @@ class FriendRepository {
 
                 android.util.Log.d("FriendRepository", "Request validated, proceeding with acceptance")
 
-                // Usa una variabile atomica per evitare callback multipli
                 val callbackHandler = object {
                     @Volatile
                     var invoked = false
@@ -518,19 +507,16 @@ class FriendRepository {
                     }
                 }
 
-                // Prima aggiorna lo status della richiesta
                 firestore.collection("friendRequests")
                     .document(requestId)
                     .update("status", "accepted")
                     .addOnSuccessListener {
                         android.util.Log.d("FriendRepository", "Request status updated to accepted")
 
-                        // Poi aggiungi la connessione di amicizia
                         addFriendshipConnection(request.senderId, request.receiverId, request) { friendshipSuccess ->
                             android.util.Log.d("FriendRepository", "Friendship connection result: $friendshipSuccess")
 
                             if (friendshipSuccess) {
-                                // Crea la notifica di accettazione in background (non bloccante)
                                 try {
                                     CoroutineScope(Dispatchers.IO).launch {
                                         try {
@@ -572,6 +558,9 @@ class FriendRepository {
             }
     }
 
+    /**
+     * Declina la richiesta di amicizia
+     */
     fun declineFriendRequest(requestId: String, callback: (Boolean, String?) -> Unit) {
         firestore.collection("friendRequests")
             .document(requestId)
@@ -584,11 +573,9 @@ class FriendRepository {
             }
     }
 
-    // Rifiuta richiesta per User ID
     fun declineFriendRequestByUserId(senderId: String, callback: (Boolean, String?) -> Unit) {
         val currentUser = auth.currentUser ?: return callback(false, "Utente non autenticato")
 
-        // Trova la richiesta pendente
         firestore.collection("friendRequests")
             .whereEqualTo("senderId", senderId)
             .whereEqualTo("receiverId", currentUser.uid)
@@ -597,7 +584,6 @@ class FriendRepository {
             .addOnSuccessListener { snapshot ->
                 val request = snapshot.documents.firstOrNull()
                 if (request != null) {
-                    // Usa il metodo esistente con l'ID trovato
                     declineFriendRequest(request.id, callback)
                 } else {
                     callback(false, "Richiesta non trovata")
@@ -611,14 +597,12 @@ class FriendRepository {
     private fun addFriendshipConnection(userId1: String, userId2: String, request: FriendRequest, callback: (Boolean) -> Unit) {
         android.util.Log.d("FriendRepository", "addFriendshipConnection: $userId1 -> $userId2")
 
-        // Validazione input
         if (userId1.isBlank() || userId2.isBlank()) {
             android.util.Log.e("FriendRepository", "Invalid user IDs")
             callback(false)
             return
         }
 
-        // Get user info for both users
         firestore.collection("users")
             .document(userId1)
             .get()
@@ -653,7 +637,6 @@ class FriendRepository {
 
                             val batch = firestore.batch()
 
-                            // Create Friend objects with null checks
                             val friend1 = Friend(
                                 userId = userId1,
                                 fullName = "${user1.nome ?: ""} ${user1.cognome ?: ""}".trim().takeIf { it.isNotBlank() } ?: "Utente",
@@ -670,7 +653,6 @@ class FriendRepository {
                                 addedTimestamp = System.currentTimeMillis()
                             )
 
-                            // Add to subcollections
                             batch.set(
                                 firestore.collection("users")
                                     .document(userId1)
@@ -687,7 +669,6 @@ class FriendRepository {
                                 friend1
                             )
 
-                            // Add to global friends collection
                             val friendData = mapOf(
                                 "user1" to userId1,
                                 "user2" to userId2,

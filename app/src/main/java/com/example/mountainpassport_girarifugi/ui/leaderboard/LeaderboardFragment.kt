@@ -25,7 +25,6 @@ class LeaderboardFragment : Fragment() {
     private var _binding: FragmentLeaderboardBinding? = null
     private val binding get() = _binding!!
 
-    // Usa activityViewModels per condividere il ViewModel con i fragment figli
     private val viewModel: LeaderboardViewModel by activityViewModels()
 
     private var isSearchVisible = false
@@ -49,7 +48,6 @@ class LeaderboardFragment : Fragment() {
         setupViewPager()
         setupTabs()
 
-        // Imposta "Amici" come tab selezionato di default
         selectTab(0)
 
         val fabAddFriend = view.findViewById<FloatingActionButton>(R.id.fabAddFriend)
@@ -57,7 +55,6 @@ class LeaderboardFragment : Fragment() {
             findNavController().navigate(R.id.action_leaderboardfragment_to_addfriendsFragment)
         }
 
-        // Debug: Carica subito i dati
         Log.d(TAG, "Fragment creato, caricando dati...")
         viewModel.refreshFriendsLeaderboard()
         viewModel.refreshGlobalLeaderboard()
@@ -67,7 +64,6 @@ class LeaderboardFragment : Fragment() {
         val adapter = LeaderboardPagerAdapter(this)
         binding.viewPagerLeaderboard.adapter = adapter
 
-        // Sincronizza ViewPager con i tab
         binding.viewPagerLeaderboard.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
@@ -77,6 +73,9 @@ class LeaderboardFragment : Fragment() {
         })
     }
 
+    /**
+     * Setup delle tab "Amici" e "Globale"
+     */
     private fun setupTabs() {
 
         binding.btnTabFriends.setOnClickListener {
@@ -89,7 +88,9 @@ class LeaderboardFragment : Fragment() {
         }
     }
 
-
+    /**
+     * Seleziona la tab corrispondente
+     */
     private fun selectTab(position: Int) {
         resetAllTabs()
 

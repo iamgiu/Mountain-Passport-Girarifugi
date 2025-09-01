@@ -17,7 +17,6 @@ class FriendsLeaderboardFragment : Fragment() {
     private var _binding: FragmentFriendsLeaderboardBinding? = null
     private val binding get() = _binding!!
 
-    // Usa activityViewModels per condividere con il parent
     private val viewModel: LeaderboardViewModel by activityViewModels()
 
     private lateinit var adapter: FriendsLeaderboardAdapter
@@ -41,7 +40,6 @@ class FriendsLeaderboardFragment : Fragment() {
         setupRecyclerView()
         observeViewModel()
 
-        // Forza un refresh quando il fragment diventa visibile
         viewModel.refreshFriendsLeaderboard()
     }
 
@@ -53,7 +51,6 @@ class FriendsLeaderboardFragment : Fragment() {
 
 
     private fun observeViewModel() {
-        // Osserva i dati degli amici
         viewModel.friendsLeaderboard.observe(viewLifecycleOwner) { friends ->
             Log.d(TAG, "Ricevuti ${friends.size} amici dal ViewModel")
             friends.forEach { friend ->
@@ -64,7 +61,6 @@ class FriendsLeaderboardFragment : Fragment() {
             updateEmptyState(friends.isEmpty())
         }
 
-        // Osserva gli errori
         viewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
                 Log.e(TAG, "Errore ricevuto: $it")
@@ -95,7 +91,6 @@ class FriendsLeaderboardFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh dei dati quando il fragment torna visibile
         Log.d(TAG, "Fragment resumed, refreshing data")
         viewModel.refreshFriendsLeaderboard()
     }

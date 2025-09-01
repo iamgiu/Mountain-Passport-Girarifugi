@@ -20,6 +20,7 @@ class ActivityRepository {
     /**
      * Registra un'attività dell'utente (visita rifugio, achievement, etc.)
      */
+
     suspend fun logUserActivity(activity: UserActivity): Boolean {
         return try {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -92,7 +93,7 @@ class ActivityRepository {
 
             FeedResult.Success(activities)
         } catch (e: Exception) {
-            FeedResult.Error(e.message ?: "Errore sconosciuto")
+            FeedResult.Error(e.message ?: "Errore")
         }
     }
 
@@ -136,7 +137,7 @@ class ActivityRepository {
                     val title = data["title"] as? String ?: return@forEach
                     val timestamp = data["timestamp"] as? Long ?: return@forEach
 
-                    // 🔹 Carica direttamente i dati utente
+                    // Carica direttamente i dati utente
                     val userDoc = firestore.collection("users").document(userId).get().await()
                     val nome = userDoc.getString("nome") ?: ""
                     val cognome = userDoc.getString("cognome") ?: ""
@@ -345,7 +346,9 @@ data class FriendActivity(
 )
 
 /**
- * Enum per i tipi di attività
+ *
+ * Enum per i tipi di attività per ora implementato solo RIfugio visitato
+ *
  */
 enum class ActivityType {
     RIFUGIO_VISITATO,

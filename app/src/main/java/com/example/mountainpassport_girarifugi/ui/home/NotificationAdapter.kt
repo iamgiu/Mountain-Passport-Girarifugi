@@ -58,7 +58,6 @@ class NotificationAdapter(
 
     override fun getItemCount(): Int = notifiche.size
 
-    // ViewHolder per richieste di amicizia
     inner class FriendRequestViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textViewSenderName: TextView = itemView.findViewById(R.id.textViewSenderName)
         private val textViewSenderNickname: TextView = itemView.findViewById(R.id.textViewSenderNickname)
@@ -67,14 +66,11 @@ class NotificationAdapter(
         private val imageViewSenderAvatar: ImageView? = itemView.findViewById(R.id.imageViewSenderAvatar)
 
         fun bind(notifica: NotificationsViewModel.Notifica) {
-            // PROTEZIONE CONTRO STRINGHE NULL
             textViewSenderName.text = notifica.titolo.takeIf { it.isNotBlank() } ?: "Utente sconosciuto"
             textViewSenderNickname.text = notifica.descrizione.takeIf { it.isNotBlank() } ?: "Richiesta di amicizia"
 
-            // Regola l'opacity se già letta
             itemView.alpha = if (notifica.isLetta) 0.7f else 1.0f
 
-            // LOG per debug
             Log.d(TAG, "Binding friend request:")
             Log.d(TAG, "- Notification ID: ${notifica.id}")
             Log.d(TAG, "- Sender ID (utenteId): ${notifica.utenteId}")
@@ -82,10 +78,8 @@ class NotificationAdapter(
             Log.d(TAG, "- Description: ${notifica.descrizione}")
             Log.d(TAG, "- Avatar URL: ${notifica.avatarUrl}")
 
-            // CARICA IMMAGINE PROFILO DELL'UTENTE
             loadUserProfileImage(notifica.avatarUrl, notifica.utenteId)
 
-            // VALIDAZIONE ROBUSTA del senderId
             val senderId = notifica.utenteId
             val isValidSenderId = !senderId.isNullOrBlank() && senderId != "null"
 
@@ -97,7 +91,7 @@ class NotificationAdapter(
                 return
             }
 
-            // VERIFICA CHE NON SIA UNA RICHIESTA A SE STESSO
+
             val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
             if (senderId == currentUserId) {
                 Log.e(TAG, "ERROR: Friend request from self detected!")
@@ -105,10 +99,8 @@ class NotificationAdapter(
                 return
             }
 
-            // STATO NORMALE - Abilita i bottoni
             resetButtonStates()
 
-            // CLICK LISTENERS CON PROTEZIONE DOPPIO-CLICK
             var acceptClicked = false
             var declineClicked = false
 
@@ -161,7 +153,6 @@ class NotificationAdapter(
                 Log.d(TAG, "- Calling onDeclineFriendRequest with senderId: $senderId, notificationId: ${notifica.id}")
 
                 try {
-                    // Disabilita immediatamente i bottoni
                     disableButtonsWithFeedback("Rifiutando...")
 
                     onDeclineFriendRequest(senderId!!, notifica.id)
@@ -174,7 +165,6 @@ class NotificationAdapter(
                 }
             }
 
-            // Click listener per l'intera card (CON PROTEZIONE)
             itemView.setOnClickListener {
                 try {
                     if (!acceptClicked && !declineClicked) {
@@ -186,11 +176,9 @@ class NotificationAdapter(
             }
         }
 
-        // NUOVA FUNZIONE: Carica l'immagine profilo dell'utente
         private fun loadUserProfileImage(avatarUrl: String?, userId: String?) {
             imageViewSenderAvatar?.let { imageView ->
                 if (!avatarUrl.isNullOrBlank()) {
-                    // Carica l'immagine dall'URL
                     Glide.with(itemView.context)
                         .load(avatarUrl)
                         .placeholder(R.drawable.ic_person_24)
@@ -198,7 +186,6 @@ class NotificationAdapter(
                         .circleCrop()
                         .into(imageView)
                 } else if (!userId.isNullOrBlank()) {
-                    // Fallback: carica l'immagine dall'utente Firebase
                     val firestore = FirebaseFirestore.getInstance()
                     firestore.collection("users")
                         .document(userId)
@@ -209,7 +196,6 @@ class NotificationAdapter(
                                 val profileImageUrl = user?.profileImageUrl
 
                                 if (!profileImageUrl.isNullOrBlank()) {
-                                    // Usa Glide per caricare l'immagine
                                     Glide.with(itemView.context)
                                         .load(profileImageUrl)
                                         .placeholder(R.drawable.ic_person_24)
@@ -217,7 +203,6 @@ class NotificationAdapter(
                                         .circleCrop()
                                         .into(imageView)
                                 } else {
-                                    // Usa immagine di default
                                     imageView.setImageResource(R.drawable.ic_person_24)
                                 }
                             } catch (e: Exception) {
@@ -230,7 +215,6 @@ class NotificationAdapter(
                             imageView.setImageResource(R.drawable.ic_person_24)
                         }
                 } else {
-                    // UserId non valido, usa immagine di default
                     imageView.setImageResource(R.drawable.ic_person_24)
                 }
             }
@@ -294,7 +278,6 @@ class NotificationAdapter(
         }
     }
 
-    // ViewHolder normale per altre notifiche
     inner class NotificationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val iconNotification: ImageView = itemView.findViewById(R.id.iconNotification)
         private val textTitolo: TextView = itemView.findViewById(R.id.textTitoloNotifica)
@@ -307,17 +290,13 @@ class NotificationAdapter(
             textDescrizione.text = notifica.descrizione
             textTempo.text = notifica.tempo
 
-            // Mostra/nascondi badge non letto
             badgeNonLetto.visibility = if (!notifica.isLetta) View.VISIBLE else View.GONE
 
-            // Imposta l'icona in base al tipo di notifica
             val iconResource = getIconResource(notifica.tipo)
             iconNotification.setImageResource(iconResource)
 
-            // Regola l'opacity se già letta
             itemView.alpha = if (notifica.isLetta) 0.7f else 1.0f
 
-            // Click listener
             itemView.setOnClickListener {
                 try {
                     onNotificaClick(notifica)

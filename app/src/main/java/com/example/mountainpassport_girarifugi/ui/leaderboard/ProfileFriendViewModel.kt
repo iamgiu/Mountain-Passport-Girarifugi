@@ -27,13 +27,13 @@ class ProfileFriendViewModel : ViewModel() {
     val error: LiveData<String> = _error
 
     /**
-     * Carica i timbri dell'amico da Firestore
+     * Carica i timbri dell'amico da Firebase
      */
     fun loadStamps(friendId: String) {
-        Log.d(TAG, "Iniziando caricamento timbri per friendId: $friendId")
+        Log.d(TAG, "Caricamento timbri per friendId: $friendId")
 
         if (friendId.isEmpty()) {
-            Log.e(TAG, "friendId è vuoto!")
+            Log.e(TAG, "friendId è vuoto")
             _error.postValue("ID utente non valido")
             return
         }
@@ -42,7 +42,7 @@ class ProfileFriendViewModel : ViewModel() {
             _isLoading.postValue(true)
 
             try {
-                Log.d(TAG, "Eseguendo query Firestore...")
+                Log.d(TAG, "Eseguo la query di Firebase")
 
                 val snapshot = firestore.collection("users")
                     .document(friendId)
@@ -53,7 +53,7 @@ class ProfileFriendViewModel : ViewModel() {
                 Log.d(TAG, "Documenti ricevuti: ${snapshot.documents.size}")
 
                 val stampsList = snapshot.documents.mapNotNull { doc ->
-                    Log.d(TAG, "Processando documento: ${doc.id}")
+                    Log.d(TAG, "Passo il documento: ${doc.id}")
                     Log.d(TAG, "Dati documento: ${doc.data}")
 
                     val refugeName = doc.getString("refugeName")
@@ -62,7 +62,7 @@ class ProfileFriendViewModel : ViewModel() {
                     Log.d(TAG, "refugeName: $refugeName, dateMillis: $dateMillis")
 
                     if (refugeName == null || dateMillis == null) {
-                        Log.w(TAG, "⚠Documento con dati mancanti, saltato")
+                        Log.w(TAG, "Documento con dati mancanti, saltato")
                         return@mapNotNull null
                     }
 

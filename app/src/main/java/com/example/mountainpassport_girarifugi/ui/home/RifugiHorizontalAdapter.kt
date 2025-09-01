@@ -13,7 +13,7 @@ import com.bumptech.glide.Glide
 class RifugiHorizontalAdapter(
     private val rifugi: List<HomeViewModel.RifugioCard>,
     private val showBonusBadge: Boolean,
-    private val onRifugioClick: (HomeViewModel.RifugioCard) -> Unit // Aggiungi questo callback
+    private val onRifugioClick: (HomeViewModel.RifugioCard) -> Unit
 ) : RecyclerView.Adapter<RifugiHorizontalAdapter.RifugioViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RifugioViewHolder {
@@ -26,7 +26,6 @@ class RifugiHorizontalAdapter(
         val rifugio = rifugi[position]
         holder.bind(rifugio, showBonusBadge)
 
-        // Aggiungi il click listener
         holder.itemView.setOnClickListener {
             onRifugioClick(rifugio)
         }
@@ -51,9 +50,7 @@ class RifugiHorizontalAdapter(
             textDifficolta.text = rifugio.difficolta
             textTempo.text = rifugio.tempo
 
-            // Gestione immagine rifugio
             if (rifugio.immagine.startsWith("http")) {
-                // Carica immagine dall'URL usando Glide
                 Glide.with(itemView.context)
                     .load(rifugio.immagine)
                     .placeholder(R.drawable.mountain_background)
@@ -61,7 +58,6 @@ class RifugiHorizontalAdapter(
                     .centerCrop()
                     .into(imageRifugio)
             } else {
-                // Fallback per immagini locali
                 val context = itemView.context
                 val nomeRisorsa = rifugio.immagine.lowercase()
                 val resId = context.resources.getIdentifier(nomeRisorsa, "drawable", context.packageName)
@@ -69,12 +65,10 @@ class RifugiHorizontalAdapter(
                 if (resId != 0) {
                     imageRifugio.setImageResource(resId)
                 } else {
-                    // Immagine di fallback se non esiste
                     imageRifugio.setImageResource(R.drawable.mountain_background)
                 }
             }
 
-            // Gestione badge bonus punti
             if (showBonusBadge && rifugio.bonusPunti != null) {
                 badgeBonus.visibility = View.VISIBLE
                 textBonusPunti.text = "+${rifugio.bonusPunti}"

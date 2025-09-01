@@ -39,7 +39,6 @@ class GlobalLeaderboardFragment : Fragment() {
         setupRecyclerView()
         observeViewModel()
 
-        // Forza il caricamento all'apertura
         viewModel.refreshGlobalLeaderboard()
     }
 
@@ -50,7 +49,6 @@ class GlobalLeaderboardFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Osserva i dati della classifica globale
         viewModel.globalLeaderboard.observe(viewLifecycleOwner) { global ->
             Log.d(TAG, "Ricevuti ${global.size} utenti dal ViewModel")
             global.forEach { user ->
@@ -60,7 +58,6 @@ class GlobalLeaderboardFragment : Fragment() {
             adapter.submitList(global)
             updateEmptyState(global.isEmpty())
         }
-        // Osserva gli errori
         viewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
                 Log.e(TAG, "Errore ricevuto: $it")
@@ -91,7 +88,6 @@ class GlobalLeaderboardFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Aggiorna i dati quando il fragment torna visibile
         Log.d(TAG, "Fragment resumed, refreshing global leaderboard")
         viewModel.refreshGlobalLeaderboard()
     }

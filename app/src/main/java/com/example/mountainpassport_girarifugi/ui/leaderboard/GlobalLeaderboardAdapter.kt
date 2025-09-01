@@ -20,7 +20,6 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
     private var global: List<LeaderboardUser> = emptyList()
 
     fun submitList(newGlobal: List<LeaderboardUser>) {
-        // I dati dovrebbero arrivare già ordinati e con le posizioni dal ViewModel
         global = newGlobal
         notifyDataSetChanged()
     }
@@ -64,7 +63,6 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
                 )
             }
             is RowViewHolder -> {
-                // CORREZIONE: position 1 deve mostrare il 4° utente (index 3)
                 val userIndex = position + 2
 
                 if (userIndex < global.size) {
@@ -74,10 +72,9 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
         }
     }
 
-    // ViewHolder per il podio (top 3)
     class Top3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(first: LeaderboardUser, second: LeaderboardUser, third: LeaderboardUser) {
-            // Primo posto (centro)
+
             bindUser(
                 itemView.findViewById(R.id.imageFirstPlace),
                 itemView.findViewById(R.id.textFirstPlaceName),
@@ -85,7 +82,6 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
                 first
             )
 
-            // Secondo posto (sinistra)
             bindUser(
                 itemView.findViewById(R.id.imageSecondPlace),
                 itemView.findViewById(R.id.textSecondPlaceName),
@@ -93,7 +89,6 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
                 second
             )
 
-            // Terzo posto (destra)
             bindUser(
                 itemView.findViewById(R.id.imageThirdPlace),
                 itemView.findViewById(R.id.textThirdPlaceName),
@@ -139,7 +134,6 @@ class GlobalLeaderboardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>()
         }
     }
 
-    // ViewHolder per le righe normali (dal 4° posto in poi)
     class RowViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(user: LeaderboardUser) {
             itemView.findViewById<TextView>(R.id.textViewPosition).text = "${user.position}°"

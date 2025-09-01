@@ -24,7 +24,6 @@ class HomeViewModel : ViewModel() {
     private lateinit var activityRepository: ActivityRepository
     private lateinit var monthlyChallengeRepository: MonthlyChallengeRepository
 
-    // LiveData per l'UI state
     private val _currentTab = MutableLiveData<String>().apply { value = "rifugi" }
     val currentTab: LiveData<String> = _currentTab
 
@@ -64,7 +63,6 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Controlla se serve reset mensile
                 monthlyChallengeRepository.resetMonthlyPointsIfNeeded()
 
                 loadPunteggio()
@@ -88,7 +86,6 @@ class HomeViewModel : ViewModel() {
         try {
             android.util.Log.d("HomeViewModel", "Caricamento rifugi bonus...")
 
-            // Ottieni la sfida mensile corrente
             val monthlyChallenge = monthlyChallengeRepository.getCurrentChallenge()
 
             if (monthlyChallenge?.bonusRifugi?.isNotEmpty() == true) {
@@ -145,7 +142,6 @@ class HomeViewModel : ViewModel() {
                 _rifugiBonus.value = rifugiBonus
             }
         } catch (e: Exception) {
-            // Rifugi di esempio come ultimo fallback
             val rifugi = listOf(
                 RifugioCard(
                     nome = "Rifugio Laghi Gemelli",
@@ -210,7 +206,7 @@ class HomeViewModel : ViewModel() {
     }
 
     /**
-     *  Carica il feed reale degli amici dalle attività
+     *  Carica il feed degli amici dalle attività
      */
     private fun loadRealFeedAmici() {
         viewModelScope.launch {
@@ -251,31 +247,6 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Metodo per registrare un achievement
-     */
-    suspend fun logAchievement(
-        achievementType: String,
-        title: String,
-        description: String,
-        pointsEarned: Int = 100
-    ): Boolean {
-        return try {
-            activityRepository.logAchievement(
-                achievementType = achievementType,
-                title = title,
-                description = description,
-                pointsEarned = pointsEarned
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("HomeViewModel", "Errore nel registrare achievement", e)
-            false
-        }
-    }
-
-    /**
-     * Refresh del feed amici
-     */
     fun refreshFeedAmici() {
         viewModelScope.launch {
             try {
@@ -399,7 +370,6 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    // Utility methods per generare dati coerenti
     private fun getDistanceForRifugio(rifugio: Rifugio): String {
         return when (rifugio.altitudine) {
             in 0..2000 -> "${(1..5).random()}.${(0..9).random()} km"

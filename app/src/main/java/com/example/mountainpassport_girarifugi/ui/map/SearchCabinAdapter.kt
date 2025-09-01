@@ -50,7 +50,6 @@ class SearchCabinAdapter(
                 "${rifugio.altitudine} m s.l.m. • 🔍 Attiva GPS per distanza"
             }
 
-            // Carica immagine dal database
             rifugio.immagineUrl?.let { url ->
                 Glide.with(itemView.context)
                     .load(url)

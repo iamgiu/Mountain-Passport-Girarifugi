@@ -27,16 +27,12 @@ class CabinFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza il ViewModel
         viewModel = ViewModelProvider(this)[CabinViewModel::class.java]
 
-        // Configura gli observer
         setupObservers(view)
 
-        // Configura i click listeners
         setupClickListeners(view)
 
-        // Carica i dati del rifugio
         loadRifugioData()
     }
 
@@ -46,7 +42,6 @@ class CabinFragment : Fragment() {
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Mostra/nasconde loading se hai un ProgressBar
             view.findViewById<ProgressBar>(R.id.progressBar)?.visibility =
                 if (isLoading) View.VISIBLE else View.GONE
         }
@@ -75,15 +70,12 @@ class CabinFragment : Fragment() {
         val rifugioNome = arguments?.getString("RIFUGIO_NOME")
 
         when {
-            // Caso 1: Abbiamo l'ID (navigazione moderna)
             rifugioId != null && rifugioId != 0 -> {
                 viewModel.loadRifugioById(rifugioId)
             }
-            // Caso 2: Abbiamo solo il nome (navigazione legacy dal HomeFragment)
             rifugioNome != null -> {
                 viewModel.loadRifugioByName(rifugioNome)
             }
-            // Caso 3: Abbiamo tutti i dati negli arguments (compatibilità totale)
             else -> {
                 loadFromArguments()
             }
@@ -91,7 +83,6 @@ class CabinFragment : Fragment() {
     }
 
     private fun loadFromArguments() {
-        // Carica i dati direttamente dagli arguments per compatibilità
         val rifugioNome = arguments?.getString("RIFUGIO_NOME") ?: "Rifugio Sconosciuto"
         val rifugioAltitudine = arguments?.getString("RIFUGIO_ALTITUDINE") ?: "0 m"
         val rifugioDistanza = arguments?.getString("RIFUGIO_DISTANZA") ?: "0 km"
@@ -123,27 +114,22 @@ class CabinFragment : Fragment() {
     }
 
     private fun populateUI(view: View, rifugio: CabinViewModel.RifugioDisplay) {
-        // Dati principali
         view.findViewById<TextView>(R.id.cabinNameTextView)?.text = rifugio.nome
         view.findViewById<TextView>(R.id.altitudeTextView)?.text = rifugio.altitudine
         view.findViewById<TextView>(R.id.locationTextView)?.text = rifugio.localita
 
-        // Coordinate
         val coords = rifugio.coordinate.split(",")
         if (coords.size == 2) {
             view.findViewById<TextView>(R.id.coordinatesTextView)?.text = "${coords[0]}\n${coords[1]}"
         }
 
-        // Dati del percorso
         view.findViewById<TextView>(R.id.distanceTextView)?.text = rifugio.distanza
         view.findViewById<TextView>(R.id.timeTextView)?.text = rifugio.tempo
         view.findViewById<TextView>(R.id.difficultyTextView)?.text = "Difficoltà: ${rifugio.difficolta}"
         view.findViewById<TextView>(R.id.routeDescriptionTextView)?.text = rifugio.descrizione
 
-        // Immagine del rifugio
         setupRifugioImage(view, rifugio.nome, rifugio.immagineUrl)
 
-        // Punti (se il rifugio ha un ID valido)
         if (rifugio.id != -1) {
             view.findViewById<TextView>(R.id.pointsTextView)?.text = rifugio.punti
         }
@@ -161,7 +147,6 @@ class CabinFragment : Fragment() {
     private fun setupRifugioImage(view: View, nomeRifugio: String, immagineUrl: String?) {
         val imageView = view.findViewById<ImageView>(R.id.cabinImageView) ?: return
 
-        // Prova prima con l'URL se disponibile
         if (!immagineUrl.isNullOrEmpty()) {
             Glide.with(requireContext())
                 .load(immagineUrl)
@@ -170,7 +155,6 @@ class CabinFragment : Fragment() {
                 .centerCrop()
                 .into(imageView)
         } else {
-            // Fallback alle immagini locali
             val nomeRisorsa = nomeRifugio
                 .lowercase()
                 .replace(" ", "_")

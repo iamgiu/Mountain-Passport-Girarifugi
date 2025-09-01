@@ -77,15 +77,13 @@ class MainActivity : AppCompatActivity() {
         // Setup bottom navigation (esclude scan dal controllo automatico)
         navView.setupWithNavController(navController)
 
-        // OPTIONAL: Gestisci manualmente il click sul centro del bottom nav se necessario
+        // Gestisci manualmente il click sul centro del bottom nav se necessario
         navView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_scan -> {
-                    // Non fare nulla per il scan - è gestito dal FAB
                     false
                 }
                 else -> {
-                    // Comportamento normale per altri elementi
                     navController.navigate(item.itemId)
                     true
                 }
@@ -123,7 +121,6 @@ class MainActivity : AppCompatActivity() {
     private fun initializeFirebase() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Verifica se Firebase è già inizializzato
                 if (!firebaseInitializer.isFirebaseInitialized()) {
                     Log.d(TAG, "Firebase non inizializzato, procedo con l'inizializzazione...")
                     firebaseInitializer.initializeFirebase()
@@ -138,7 +135,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeNotifications() {
         try {
-            // Crea il canale di notifica
             NotificationHelper.createNotificationChannel(this)
             Log.d(TAG, "Sistema di notifiche inizializzato")
         } catch (e: Exception) {
@@ -156,11 +152,9 @@ class MainActivity : AppCompatActivity() {
                     Log.d(TAG, "Permesso notifiche già concesso")
                 }
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
-                    // Mostra spiegazione all'utente
                     showNotificationPermissionDialog()
                 }
                 else -> {
-                    // Richiedi il permesso
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }

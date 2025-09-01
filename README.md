@@ -7,12 +7,13 @@ GiraRifugi trasforma le tue escursioni ai rifugi in un'avventura digitale. Accum
 ## Screenshots
 
 <div align="center">
-  <img width="1080" height="2400" alt="Screenshot_20250901_193357" src="https://github.com/user-attachments/assets/1c4f793d-d47f-443e-a201-7a3996c49b80" />
-  <img width="1080" height="2400" alt="Screenshot_20250901_193644" src="https://github.com/user-attachments/assets/d47c5eae-8c2a-48fc-9fb3-4f722da49286" />
-  <img width="1080" height="2400" alt="Screenshot_20250901_193654" src="https://github.com/user-attachments/assets/e2543369-a099-41f7-b2f1-56230d3318ab" />
-  <img width="1080" height="2400" alt="Screenshot_20250901_193707" src="https://github.com/user-attachments/assets/129bb65e-3c96-4aff-b4fc-3aee2cb1422f" />
-  <img width="1080" height="2400" alt="Screenshot_20250901_193726" src="https://github.com/user-attachments/assets/75af3b20-5334-4e80-a30e-b432c0244906" />
-
+  <img width="250" alt="Home Screen" src="https://github.com/user-attachments/assets/1c4f793d-d47f-443e-a201-7a3996c49b80" />
+  <img width="250" alt="Mappa Rifugi" src="https://github.com/user-attachments/assets/d47c5eae-8c2a-48fc-9fb3-4f722da49286" />
+  <br/>
+  <img width="250" alt="Dettaglio Rifugio" src="https://github.com/user-attachments/assets/e2543369-a099-41f7-b2f1-56230d3318ab" />
+  <img width="250" alt="Check-in System" src="https://github.com/user-attachments/assets/129bb65e-3c96-4aff-b4fc-3aee2cb1422f" />
+  <br/>
+  <img width="250" alt="Profilo Utente" src="https://github.com/user-attachments/assets/75af3b20-5334-4e80-a30e-b432c0244906" />
 </div>
 
 ## Come funziona

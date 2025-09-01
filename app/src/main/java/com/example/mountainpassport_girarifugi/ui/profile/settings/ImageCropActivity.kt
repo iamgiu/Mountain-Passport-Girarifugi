@@ -49,7 +49,6 @@ class ImageCropActivity : AppCompatActivity() {
         cancelButton = findViewById(R.id.cancelButton)
         chooseButton = findViewById(R.id.chooseButton)
 
-        // Replace the overlay view with our custom one
         val imageContainer = findViewById<android.widget.FrameLayout>(R.id.imageContainer)
         val overlayViewFromLayout = findViewById<android.view.View>(R.id.overlayView)
         imageContainer.removeView(overlayViewFromLayout)
@@ -58,6 +57,7 @@ class ImageCropActivity : AppCompatActivity() {
         imageContainer.addView(overlayView)
     }
 
+    // Zoom immagine, limitato tra 1/2x e 3x
     private fun setupGestureDetector() {
         scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -71,6 +71,7 @@ class ImageCropActivity : AppCompatActivity() {
         })
     }
 
+    // Riceve uri immagine
     private fun loadImage() {
         val imageUri = intent.getParcelableExtra<Uri>(EXTRA_IMAGE_URI)
         imageUri?.let { uri ->
@@ -159,17 +160,16 @@ class ImageCropActivity : AppCompatActivity() {
         }
     }
 
+    // Salva immagine tagliata e ne riduce la qualità per alleggerirla
     private fun saveCroppedImageTemporary(bitmap: Bitmap): Boolean {
         return try {
             val sharedPreferences = getSharedPreferences("crop_temp", Context.MODE_PRIVATE)
 
-            // Converti in Base64
             val byteArrayOutputStream = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
             val imageBytes = byteArrayOutputStream.toByteArray()
             val base64String = Base64.encodeToString(imageBytes, Base64.DEFAULT)
 
-            // Salva nelle SharedPreferences temporaneamente
             sharedPreferences.edit()
                 .putString("cropped_image", base64String)
                 .apply()
@@ -181,26 +181,20 @@ class ImageCropActivity : AppCompatActivity() {
         }
     }
 
+    // Taglia immagine
     private fun cropImage(): Bitmap? {
         return try {
             val originalBitmap = bitmap ?: return null
             val circleBounds = overlayView.getCircleBounds()
-
-            // Create a square bitmap for the circular crop
             val size = (circleBounds.width()).toInt()
             val croppedBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(croppedBitmap)
-
-            // Calculate the source rectangle from the image matrix
             val imageView = cropImageView
             val matrix = Matrix(imageMatrix)
             val inverse = Matrix()
             matrix.invert(inverse)
-
             val srcRect = RectF(circleBounds)
             inverse.mapRect(srcRect)
-
-            // Draw the cropped portion
             val srcRectF = Rect(
                 srcRect.left.toInt().coerceAtLeast(0),
                 srcRect.top.toInt().coerceAtLeast(0),

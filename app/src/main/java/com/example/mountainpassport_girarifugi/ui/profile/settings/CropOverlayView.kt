@@ -35,17 +35,14 @@ class CropOverlayView @JvmOverloads constructor(
         circleCenterY = h / 2f
     }
 
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas: Canvas) {   // Overlay scuro con cerchio trasparente grande quanto immagine profilo
         super.onDraw(canvas)
 
-        // Bitmap overlay
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val overlayCanvas = Canvas(bitmap)
 
-        // Overlay scuro
         overlayCanvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), overlayPaint)
 
-        // Cerchio trasparente
         overlayCanvas.drawCircle(circleCenterX, circleCenterY, circleRadius, clearPaint)
 
         canvas.drawBitmap(bitmap, 0f, 0f, null)

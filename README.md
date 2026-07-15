@@ -1,4 +1,4 @@
-# GiraRifugi 
+# <img width="470" height="466" alt="logo" src="https://github.com/user-attachments/assets/58c06a3b-3524-43bf-8b2a-dcd18cca5f18" /> GiraRifugi 
 
 **App Android per digitalizzare le visite ai rifugi alpini con gamification e recensioni verificate**
 
